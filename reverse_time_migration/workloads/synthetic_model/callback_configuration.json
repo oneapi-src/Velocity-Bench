@@ -1,0 +1,62 @@
+{
+  "callbacks": {
+    "su": {
+      "enable": true,
+      "show-each": 200,
+      "little-endian": false
+    },
+    "csv": {
+      "enable": true,
+      "show-each": 200
+    },
+    "image": {
+      "enable": true,
+      "show-each": 200,
+      "percentile": 98.5
+    },
+    "norm": {
+      "enable": true,
+      "show-each": 200
+    },
+    "bin": {
+      "enable": true,
+      "show-each": 200
+    },
+    "segy": {
+      "enable": true,
+      "show-each": 200
+    },
+    "writers": {
+      "migration": {
+        "enable": true
+      },
+      "velocity": {
+        "enable": true
+      },
+      "traces-raw": {
+        "enable": true
+      },
+      "traces-preprocessed": {
+        "enable": true
+      },
+      "re-extended-velocity": {
+        "enable": true
+      },
+      "each-stacked-shot": {
+        "enable": true
+      },
+      "single-shot-correlation": {
+        "enable": true
+      },
+      "backward": {
+        "enable": true
+      },
+      "forward": {
+        "enable": true
+      },
+      "reverse": {
+        "enable": true
+      }
+    }
+  }
+}

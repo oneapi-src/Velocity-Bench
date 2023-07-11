@@ -1,0 +1,38 @@
+{
+  "model-name": "velocity",
+  "is-traces": false,
+  "percentile": 98.5,
+  "grid-size": {
+    "nx": 500,
+    "ny": 1,
+    "nz": 500,
+    "nt": 1
+  },
+  "cell-dimension": {
+    "dx": 6.25,
+    "dy": 0,
+    "dz": 6.25,
+    "dt": 0.005
+  },
+  "properties": {
+    "value-range": {
+      "min": 2,
+      "max": 32
+    },
+    "layers": {
+      "enable": true,
+      "count": 3,
+      "type": "sharp"
+    },
+    "cracks": {
+      "enable": true,
+      "count": 1
+    },
+    "salt-bodies": {
+      "enable": false,
+      "count": 4,
+      "type": "random",
+      "width": "narrow"
+    }
+  }
+}

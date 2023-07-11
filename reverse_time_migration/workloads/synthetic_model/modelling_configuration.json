@@ -1,0 +1,34 @@
+{
+  "models": {
+    "velocity": "data/big_velocity.csv"
+  },
+  "wave": {
+    "physics": "acoustic",
+    "approximation": "isotropic",
+    "equation-order": "second",
+    "grid-sampling": "uniform"
+  },
+  "components": {
+    "boundary-manager": {
+      "type": "none",
+      "use-top-layer": "yes",
+      "reflect-coeff": "0.05",
+      "shift-ratio": "0.2",
+      "relax-cp": "0.9"
+    },
+    "trace-writer": {
+      "type": "binary"
+    },
+    "source-injector": {
+      "type": "ricker"
+    },
+    "model-handler": {
+      "type": "synthetic"
+    },
+    "modelling-configuration-parser": {
+      "type": "text"
+    }
+  },
+  "modelling-file": "workloads/synthetic_model/modelling.json",
+  "output-file": "data/shot.trace"
+}

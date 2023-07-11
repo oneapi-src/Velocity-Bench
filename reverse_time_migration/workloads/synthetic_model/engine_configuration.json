@@ -1,0 +1,49 @@
+{
+  "traces": {
+    "min": 0,
+    "max": 0,
+    "sort-type": "CSR",
+    "paths": [
+      "data/shot.trace"
+    ]
+  },
+  "models": {
+    "velocity": "data/big_velocity.csv"
+  },
+  "wave": {
+    "physics": "acoustic",
+    "approximation": "isotropic",
+    "equation-order": "second",
+    "grid-sampling": "uniform"
+  },
+  "components": {
+    "boundary-manager": {
+      "type": "none",
+      "properties": {
+        "use-top-layer": false
+      }
+    },
+    "migration-accommodator": {
+      "type": "cross-correlation",
+      "properties": {
+        "compensation": "no"
+      }
+    },
+    "forward-collector": {
+      "type": "three"
+    },
+    "trace-manager": {
+      "type": "binary",
+      "interpolation": "none"
+    },
+    "source-injector": {
+      "type": "ricker"
+    },
+    "model-handler": {
+      "type": "synthetic"
+    }
+  },
+  "interpolation": {
+    "type": "none"
+  }
+}

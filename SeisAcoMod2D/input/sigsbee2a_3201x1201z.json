@@ -1,0 +1,35 @@
+"Model" : "comment"
+    "Velocity" : "../../data/sigsbee2a_cp.bin"
+    "Density" : "../../data/sigsbee2a_den.bin"
+
+"Grid points" : "comment"
+    "NX" : "3201"
+    "NZ" : "1201"
+"comment" : "NY=1 2D,    NY>1 3D"
+
+"Grid size" : "comment"
+    "DX" : "7.62"
+    "DZ" : "7.62"
+
+"Time Stepping" : "comment"
+    "Time" : "10"
+    "FD DT" : "0.001"
+    "DATA DT" : "0.001"
+"comment" : "FD DT is samling interval for stable FD"
+"comment" : "DATA DT i sampling interval to record seismogram always >= FD DT"
+
+"Source wavelet" : "comment"
+    "Frequency" : "18"
+
+"Source and Receiver" : "comment"
+    "Read source receiver flag" : "1"
+    "if choice=0, Geometry file" : "NA"
+    "if choice=1, Shot file" : "../../geometry/sigsbee2a_1nsrc_geometry.json"
+"comment" : "Read flag 0=false 1=true"
+
+"Other job parameter" : "comment"
+    "Output Directory" : "../../output"
+    "Free surface" : "0"
+    "Job type New or Restart" : "New"
+    "Order of FD Operator" : "4"
+"comment" : "Free surface flag 0=false 1=true"

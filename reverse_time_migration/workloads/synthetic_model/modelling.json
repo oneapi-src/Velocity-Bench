@@ -1,0 +1,25 @@
+{
+  "modelling-configuration": {
+    "source": {
+      "x": 250,
+      "y": 0,
+      "z": 0
+    },
+    "receiver-start": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "receiver-inc": {
+      "x": 1,
+      "y": 0,
+      "z": 0
+    },
+    "receiver-end": {
+      "x": 500,
+      "y": 1,
+      "z": 1
+    },
+    "simulation-time": 2.5
+  }
+}

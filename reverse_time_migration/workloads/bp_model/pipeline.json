@@ -1,0 +1,10 @@
+{
+  "pipeline": {
+    "agent": {
+      "type": "normal"
+    },
+    "writer": {
+      "type": "normal"
+    }
+  }
+}

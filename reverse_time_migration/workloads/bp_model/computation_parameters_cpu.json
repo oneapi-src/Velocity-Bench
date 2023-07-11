@@ -1,0 +1,25 @@
+{
+  "computation-parameters": {
+    "stencil-order": 16,
+    "boundary-length": 20,
+    "source-frequency": 20,
+    "isotropic-radius": 5,
+    "dt-relax": 0.9,
+    "algorithm": "cpu",
+    "device": "cpu",
+    "cache-blocking": {
+      "block-x": 1,
+      "block-z": 8,
+      "block-y": 1,
+      "cor-block": 256
+    },
+    "window": {
+      "enable": true,
+      "left": 1300,
+      "right": 600,
+      "depth": 0,
+      "front": 0,
+      "back": 0
+    }
+  }
+}

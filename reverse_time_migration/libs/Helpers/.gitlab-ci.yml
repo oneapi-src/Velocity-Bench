@@ -1,0 +1,35 @@
+stages:
+  - compile
+  - check
+  - test
+
+cmake-compile:
+  stage: compile
+  image: amrnasr/ubuntu18-boost1.64-cppcheck
+  tags:
+    - docker
+  script:
+    - ./config.sh -t -e
+    - ./clean_build.sh
+
+cppcheck:
+  stage: check
+  image: amrnasr/ubuntu18-boost1.64-cppcheck
+  allow_failure: true
+  tags:
+    - docker
+  script:
+    - ./config.sh -e
+    - ./clean_build.sh
+    - apt update && apt -y install cppcheck
+    - cppcheck --project=bin/compile_commands.json
+
+ctest:
+  stage: test
+  image: amrnasr/ubuntu18-boost1.64-cppcheck
+  tags:
+    - docker
+  script:
+    - ./config.sh -t
+    - ./clean_build.sh
+    - cd ./bin && ctest

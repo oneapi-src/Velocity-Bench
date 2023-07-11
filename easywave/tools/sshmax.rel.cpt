@@ -1,0 +1,8 @@
+# GMT colour palette table (cpt)
+# for SSH max, logarithmic, relative
+# COLOR_MODEL = RGB
+0.0 0 0 0.67 0.2 1 1 0
+0.2 1 1 0 0.4 1 0 0
+0.4 1 0 0 0.6 0.67 0 0
+0.6 0.67 0 0 0.8 1 0 1
+0.8 1 0 1 1 0.33 0 0.33

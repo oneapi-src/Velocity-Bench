@@ -1,0 +1,1127 @@
+﻿v0.29.0 (2022-12-13)
+~~~~~~~
+* Updated onednn version to the latest one.
+
+v0.29.0-rc1 (2022-12-09)
+~~~~~~~
+* New metal backend for apple systems. This is now the default backend for
+  macos builds.
+* New onnx-dml backend to use DirectML under windows, has better net
+  compatibility than dx12 and is faster than opencl. See the README for use
+  instructions, a separate download of the DirectML dll is required.
+* Full attention policy support in cuda, cudnn, metal, onnx, blas, dnnl, and
+  eigen backends.
+* Partial attention policy support in onednn backend (good enough for T79).
+* Now the onnx backends can use fp16 when running with a network file (not with
+  .onnx model files). This is the default for onnx-cuda and onnx-dml, can be
+  switched on or off with by setting the `fp16` backend option to `true` or
+  `false` respectively.
+* The onednn package comes with a dnnl compiled to allow running on an intel gpu
+  by adding `gpu=0` to the backend options.
+* The default net is now 791556 for most backends except opencl and dx12 that
+  get 753723 (as they lack attention policy support).
+* Support for using pgn book with long lines in training: selfplay can start at
+  a random point in the book.
+* New "simple" time manager.
+* Support for double Fischer random chess (dfrc).
+* Added TC-dependent output to the backendbench assistant.
+* Starting with this version, the check backend compares policy for valid moves
+  after softmax.
+* Some assorted fixes and code cleanups.
+
+v0.29.0-rc0 (2022-04-03)
+~~~~~~~
+* Initial support for attention policy, only cuda backend and partially in
+  blas/dnnl/eigen (good enough for T79).
+* Non multigather (legacy) search code and `--multigather` option are removed.
+* 15b default net is now 753723.
+* The onnx backend now allows selecting gpu to use.
+* Improved error messages for unsupported network files.
+* Some assorted fixes.
+
+v0.28.2 (2021-12-13)
+~~~~~~~
+* No changes from v0.28.1-rc1 as the v0.28.1 release was botched.
+
+v0.28.1 (2021-12-12)
+~~~~~~~
+* No changes from rc1.
+
+v0.28.1-rc1 (2021-12-05)
+~~~~~~~
+* Improved cuda performance for 512 filter networks on Amprere GPUs.
+* Several fixes for the onnx backend.
+* Command line options for network file conversion to/from onnx.
+* Documentation updates.
+* Correctness fixes for rescorer support functions.
+
+v0.28.0 (2021-08-25)
+~~~~~~~
+* Fixed an issue with small third-party nets on the cuda/cudnn backends.
+* Minor tweak to the default task-workers for the cpu packages.
+
+v0.28.0-rc2 (2021-08-20)
+~~~~~~~
+* The cuda backend option multi_stream is now off by default. You should
+  consider setting it to on if you have a recent gpu with a lot of vram.
+* The default time manager is back to "legacy".
+* Updated default parameters.
+* Newer and stronger nets are included in the release packages.
+* Added support for onnx network files and runtime with the "onnx" backend.
+* Several bug and stability fixes.
+
+v0.28.0-rc1 (2021-06-16)
+~~~~~~~
+* Multigather is now made the default (and also improved). Some search settings
+  have changed meaning, so if you have modified values please discard them.
+  Specifically, `max-collision-events`, `max-collision-visits` and
+ `max-out-of-order-evals-factor` have changed default values, but other options
+  also affect the search. Similarly, check that your gui is not caching the old
+  values.
+* Performance improvements for the cuda/cudnn backends.
+* Support for policy focus during training.
+* Larger/stronger 15b default net for all packages except android, blas and dnnl
+  that get a new 10b network.
+* The distributed binaries come with the mimalloc memory allocator for better
+  performance when a large tree has to be destroyed (e.g. after an unexpected
+  move).
+* The `legacy` time manager will use more time for the first move after a long
+  book line.
+* The `--preload` command line flag will initialize the backend and load the
+  network during startup.
+* A 'fen' command was added as a UCI extension to print the current position.
+* Experimental onednn backend for recent intel cpus and gpus.
+
+v0.27.0 (2021-02-21)
+~~~~~~~
+* A better value for the backendbench Clippy threshold.
+
+v0.27.0-rc2 (2021-02-18)
+~~~~~~~
+* Fix additional cases where 'invalid move' could be incorrectly reported.
+* Replace WDL softmax in cudnn backend with same implementation as cuda
+  backend. This fixes some inaccuracy issues that were causing training
+  data to be rejected at a fairly low frequency.
+* Ensure that training data Q/D pairs form valid WDL targets even if there
+  is accumulated drift in calculation.
+* Fix for the calculation of the 'best q is proven' bit in training data.
+* Multiple fixes for timelosses and infinite instamoving in smooth time
+  manager. Smooth time manager now made default after these fixes.
+
+v0.27.0-rc1 (2021-02-06)
+~~~~~~~
+* Fix a bug which meant `position ... moves ...` didn't work if the moves 
+  went off the end of the existing tree. 
+
+v0.27.0-rc0 (2021-02-06)
+~~~~~~~
+* Multigather search inspired by Ceres.
+* V6 training format with additional info for training experiments.
+* Updated default search parameters.
+* A better algorithm for the backendbench assistant.
+* Terminate search early if only 1 move isn't a proven loss.
+* Various build system changes.
+
+v0.26.3 (2020-10-10)
+~~~~~~~
+* Increased maximum value of TempDecayMoves.
+
+v0.26.3-rc2 (2020-10-03)
+~~~~~~~
+* Fix for uninitialized variable that led to crashes with the cudnn backend.
+* Correct windows support for systems with more than 64 threads.
+* A new package is built for the `cuda` backend with cuda 11.1. The old cuda
+  package is renamed to `cudnn`.
+
+v0.26.3-rc1 (2020-09-28)
+~~~~~~~
+* Residual block fusion optimization for cudnn backend, that depends on
+  `custom_winograd=true`. Enabled by default only for networks with up to 384
+  filters in fp16 mode and never in fp32 mode. Default can be overridden with
+  `--backend-opts=res_block_fusing=false` to disable (or `=true` to enable).
+* New experimental cuda backend without cudnn dependency (`cuda-auto`, `cuda`
+  and `cuda-fp16` are available).
+
+v0.26.2 (2020-08-31)
+~~~~~~~
+* No changes from rc1.
+
+v0.26.2-rc1 (2020-08-28)
+~~~~~~~~~~~
+* Repetitions in the search tree are marked as draws, to explore more promising
+  lines. Enabled by default (except in selfplay mode) use
+  `--two-fold-draws=false` to disable.
+* Syzygy tablebase files can now be used in selfplay. Still need to add
+  adjudication support before we can consider using this for training.
+* Default net updated to 703810.
+* Fix for book with CR/LF line endings.
+* Updated Eigen wrap to use new download link.
+
+v0.26.1 (2020-07-15)
+~~~~~~~
+* Fix a bug where invalid openings-pgn settings would result in the book
+  being ignored rather than used.
+* Add support for compressed book files.
+
+v0.26.0 (2020-07-03)
+~~~~~~~
+* No changes from rc1.
+
+v0.26.0-rc1 (2020-06-29)
+~~~~~~~~~~~
+
+* Verbose move stats now includes a line for the root node itself.
+* Added optional `alphazero` time manager type for fixed fraction of 
+  remaining time per move. 
+* The WL score is now tracked with double pecision to improve accuracy
+  during very long search.
+* Fix for a performance bug when playing from tablebase position with
+  tablebases enabled and the PV move was changing frequently.
+* Illegal searchmove restrictions will now be ignored rather than crash.
+* Policy is cleared for terminal losses to encourage better quality MLH
+  estimates by reducing how many visits a move that will not be selected
+  (unless all other options are equally bad) receives.
+* Smart pruning will now cause leela to play immediately once mate score has
+  been declared.
+* Fix an issue where sometimes the pv reported wouldn't match the move that
+  would be selected at that moment.
+* Improvement for logic for when to disable custom_winograd optimization to
+  avoid running out of video ram.
+* `--show-hidden` can now be specified after `--help` and still work.
+* Performance tuning for populating the policy into nodes after nn eval
+  completes.
+* Enable custom optimized SE paths for nets with 384 filters when using the
+  custom_winograd=false path.
+* Updates to zlib/gtest/eigen when included via meson wrap.
+* Added build option to build python bindings to the lc0 engine.
+* Only show the git hash in uci name if not a release tag build.
+* Add `--nps-limit` option to artificially reduce nps to make for easier
+  opponent or whatever other reason you want.
+* Fixed a bug where search tree shape could be affected even when the
+  `--smart-pruning-factor` setting was 0.
+* Changed the search logic to find the lc0.config file if left on the default
+  value.
+* Changed the search logic to find network files in autodiscover mode.
+* Changed the logic to determine the default location for training games
+  generated by selfplay in training mode.
+* Changed the logic to decide where to look for the opencl backend tuning
+  settings file.
+* Android binaries published by appveyor are now stripped.
+* Build can now use system installed eigen if available.
+* When nodes in the tree get proven terminal, parents are updated as if they
+  had always been terminal. This allows for faster convergence on more
+  accurate MLH estimates amongst other details.
+* Removed shortsightedness and logit-q options that have not found a reliable
+  use case.
+* Fixed a bug where m_effect calculated as part of S in verbose move stats was
+  not consistent with the value used in search itself.
+* Added 'pro' mode as an alternative to `--show-hidden` for UCI hosts that do
+  not support command line arguments. Simply rename the lc0 binary to include
+  'pro' in order to enable.
+* `backendbench` now has a `--clippy` option to try and auto suggest which
+  batch size is a good idea.
+* The demux backend now splits the batch into equal sizes based on the number
+  of threads that demux is using rather than number of backends. By default
+  this is no change as usually there is 1 thread per backend. But it allows
+  to more easily use demux against a blas backend sending one chunk per core.
+* Added support for new training input variants canonical_hectoplies and 
+  canonical_hectoplies_armageddon.
+* Fixed a bug where if the network search paths for autodiscover contain files
+  which lc0 cannot open it would error out rather than continuing on to other
+  files.
+* Blas backends no longer have a `blas_cores` option, as it never seemed useful
+  compared to running more threads at a higher level.
+* `--help-md` option removed as it was deemed not very useful.
+* Updated to the latest version of dnnl for the dnnl build.
+* Selfplay mode now supports per color settings in addition to per player
+  settings. Per player settings have higher priority if there is a conflict.
+  This will be used as part of armageddon training.
+* Added a new experimental backend type: `recordreplay`. This allows to
+  record the output of a backend under a particular search and then replay it
+  back again later. Theoretically this lets you simulate a CPU bottlenecked
+  environment but still use a search tree that is a match for what might be a
+  GPU bottlenecked environment. In practice there are a lot of corner cases
+  where replay is not reliable yet.  At a minimum you must disable prefetch.
+* During search the node tree is occasionally compacted to reduce cache misses
+  during the search tree walk. New option `--solid-tree-threshold` can be used
+  to adjust how aggressive this optimization is.  Note that very small values
+  can cause very large growth in ram usage and are not a good idea. The default
+  value is a little conservative, if you have plenty of spare ram it can be
+  good to decrease it a bit.
+* Small performance optimization for windows build with MLH enabled.
+* Meson configuration changed to build with LTO by default. Note that meson
+  does not always configure visual studio project files to apply this
+  correctly on windows.
+* The included net in appveyor builds is now 703350. This network supports MLH
+  although the default MLH parameters are still threshold 1.0 which means it
+  will not trigger without parameter adjustment.
+* New backend option to explicitly override the net details and force MLH
+  disabled. If you weren't going to use MLH anyway, this may give a tiny nps
+  increase.
+* New flag `--show-movesleft` (or `UCI_ShowMovesLeft` for UCI hosts that
+  support it) will cause movesleft (in moves) to be reported in the uci info
+  messages. Only works with networks that have MLH enabled.
+* More sensible default values for MLH are in. Note that threshold is still
+  1.0 by default, so that will still need to be configured to enable it.
+* The `smooth-experimental` time manager has been renamed `smooth` and support
+  added to increase search time whenever the best N does not correspond with
+  the move with best utility estimate. `legacy` remains the default for now
+  as `smooth` has only been tuned for short time controls and evidence suggests
+  it doesn't scale with these defaults.
+* Selfplay mode now supports a logfile parameter just like normal mode.
+* Reinstated the 4 billion visit limit on search to avoid overflowing counters
+  and causing very strange behavior to occur.
+* Performance optimization to make tree walk faster by ensuring that node
+  edges are always sorted by policy. This has some very small side effects to
+  do with tiebreaks in search no longer always being dominated by movegen
+  order.
+* Appveyor built blas and Android binaries now default to minibatch size 1
+  and prefetch 0, which should be much better than the normal GPU optimized
+  defaults. Note this *only* affects Appveyor built binaries.
+* The included client in Windows Appveyor releases is now v27 and is named
+  `lc0-training-client.exe` instead of `client.exe`.
+
+v0.25.1 (2020-04-30)
+~~~~~~~
+
+* Fixed some issues with cudnn backend on the 16xx GTX models and also for 
+  low memory devices with large network files where the new optimizations
+  could result in out of memory errors.
+* Added a workaround for a cutechess issue where reporting depth 0 during
+  instamoves causes it to ignore our info message.
+
+v0.25.0 (2020-04-28)
+~~~~~~~
+
+* Relax strictness for complete standard fens in uci and opening books. Fen
+  must still be standard, but default values will be substituted for sections
+  that are missing.
+* Restore some backwards compatibility in cudnn backends that was lost with
+  the addition of the new convolution implementation. It is also on by default
+  for more scenarios, although still off for fp16 on RTX gpus.
+* Small logic fix for nps smoothing in the new optional experimental time 
+  manager.
+
+v0.25.0-rc2 (2020-04-23)
+~~~~~~~~~~~
+
+* Increased upper limit for maximum collision events.
+* Allow negative values for some of the extended moves left head parameters.
+* Fix a critical bug in training data generation for input type 3.
+* Fix for switching between positions in uci mode that only differ by 50 move
+  rule in initial fen.
+* Some refinements of certainty propagation.
+* Better support for c++17 implementations that are missing charconv.
+* Option to more accurately apply time management for uci hosts using 
+  cuteseal or similar timing techniques.
+* Fix for selfplay mode to allow exactly book length total games.
+* Fix for selfplay opening books with castling moves starting from chess960 fens.
+* Add build option to override nvcc compiler.
+* Improved validity checking for some uci input parameters.
+* Updated the Q to CP conversion formula to better fit recent T60 net outputs to
+  expectations.
+* Add a new experimental time manager.
+* Bug fix for the Q+U in verbose move stats. It is now called S: and contains
+  the total score, including any moves left based effect if applicable.
+* New temperature decay option to allow to delay the start of decay.
+* All temperature options have been hidden by default.
+* New optional cuda backend convolution implementation. Off by default for 
+  cudnn-fp16 until an issue with cublas performance on some gpus is resolved.
+
+v0.25.0-rc1 (2020-04-09)
+~~~~~~~~~~~
+
+* Now requires a c++17 supporting compilation environment to build.
+* Support for Moves Left Head based networks. Includes options to adjust search
+  to favour shorter/longer wins/losses based on the moves left head output.
+* Mate score reporting is now possible, and move selection will prefer shorter
+  mates over longer ones when they are proven.
+* Training now outputs v5 format data. This passes the moves left information
+  back to training. This also includes support for multiple sub formats, 
+  including the existing standard, a new variant which can encode FRC960
+  castling, and also a further extension of that which tries to make training
+  data cannonical, so there aren't multiple positions that are trivially
+  equivalent with different network inputs.
+* Benchmark now includes a suite of 34 positions to test by default instead of
+  just start position.
+* Tensorflow backend works once more, almost just as hard to compile as it used
+  to be though.
+* `--noise` flag is gone, use `--noise-epsilon=0.25` to get the old behavior.
+* Some bug fixes related to drawscore.
+* Selfplay mode now defaults to the same value as match play for 
+  `--root-has-own-cpuct-params` (true).
+* Some advanced time management parameters are now accessed via the new 
+  `--time-manager` parameter instead of individual parameters.
+* Windows build script has been modernized.
+* Separate Eigen backend option for CPU.
+* Random backend no longer requires a network.
+* Random backend supports producing training data of any input format sub type.
+* Integer parameters now give better error messages when given invalid values.
+
+v0.24.1 (2020-03-15)
+~~~~~~~
+
+* Fix issues where logitq was being passed as drawscore and logitq wasn't 
+  passed to some GetQ calls. Causing major performance issues when either 
+  setting was non-default.
+
+v0.24.0 (2020-03-11)
+~~~~~~~
+
+* New parameter `--max-out-of-order-evals-factor` replaces 
+  `--max-out-of-order-evals` that was introduced in v0.24.0-rc3 and provides
+  the factor to multiply the maximum batch size to set maximum number
+  out-of-order evals per batch. The default value of 1.0 keeps the behavior
+  of previous releases.
+* Bug fix for hangs with very early stop command from non-conforming UCI hosts.
+
+v0.24.0-rc3 (2020-03-08)
+~~~~~~~~~~~
+
+* New parameter `--max-out-of-order-evals` to set maximum number out-of-order
+  evals per batch (was equal to the batch size before).
+* It's now possible to embed networks into the binary. It allows easier builds
+  of .apk for Android.
+* New parameter `--smart-pruning-minimum-batches` to only allow smart pruning
+  to stop after at least k batches, preventing insta-moves on slow backends.
+
+v0.24.0-rc2 (2020-03-01)
+~~~~~~~~~~~
+
+* All releases are now bundled with network id591226 (and the file date is old 
+  enough so it has a lower priority than networks that you already may have
+  in your directory).
+* Added a 'backendbench' mode to benchmark NN evaluation performance without
+  search.
+* Android builds are added to the official releases.
+
+v0.24.0-rc1 (2020-02-23)
+~~~~~~~~~~~
+
+* Introduced DirectX12 backend.
+* Optimized Cpuct/FPU parameters are now default.
+* There is now a separate set of CPuct parameters for the root node.
+* Support of running selfplay games from an opening book.
+* It's possible to adjust draw score from 0 to something else.
+* There is a new --max-concurrent-seachers parameter (default is 1) which
+  helps with thread congestion at the beginning of the search.
+* Cache fullness is not reported in UCI info line by default anymore.
+* Removed libproto dependency.
+
+v0.23.3 (2020-02-18)
+~~~~~~~
+
+* Fix a bug in time management which sometimes led to insta-moves in long time
+  control.
+
+v0.23.2 (2019-12-31)
+~~~~~~~
+
+* Fixed a bug where odd length openings had reversed training data results in
+  selfplay.
+* Fixed a bug where zero length training games could be generated due to
+  discard pile containing positions that were already considered end of game.
+* Add cudnn-auto backend.
+
+v0.23.1 (2019-12-03)
+~~~~~~~
+
+* Fixed a bug with Lc0 crashing sometimes during match phase of training game
+  generation.
+* Release packages now include CUDNN version without DLLs bundled.
+
+v0.23.0 (2019-12-01)
+~~~~~~~
+
+* Fixed the order of BLAS options so that Eigen is lower priority, to match
+  assumption in check_opencl patch introduced in v0.23.0-rc2.
+
+v0.23.0-rc2 (2019-11-27)
+~~~~~~~~~~~
+
+* Fixes in nps and time reporting during search.
+* Introduced DNNL BLAS build for modern CPUs in addition to OpenBLAS.
+* Build fixes on MacOS without OpenCL.
+* Fixed smart pruning and KLDGain trying to stop search in `go infinite` mode.
+* OpenCL package now has check_opencl tool to find computation behaves sanely.
+* Fixed a bug in interoperation of shortsighteness and certainty propagation.
+
+v0.23.0-rc1 (2019-11-21)
+~~~~~~~~~~~
+
+* Support for Fischer Random Chess (`UCI_Chess960` option to enable FRC-style
+  castling). Also added support for FRC-compatible weight files, but no training
+  code yet.
+* New option `--logit-q` (UCI: `LogitQ`). Changes subtree selection algorithm a
+  bit, possibly making it stronger (experimental, default off).
+* Lc0 now reports WDL score. To enable it, use `--show-wdl` command-line
+  argument or `UCI_ShowWdl` UCI option.
+* Added "Badgame split" mode during the training. After the engine makes
+  inferior move due to temperature, the game is branched and later the game is
+  replayed from the position of the branch.
+* Added experimental `--short-sightedness` (UCI: `ShortSightedness`) parameter.
+  Treats longer variations as more "drawish".
+* Lc0 can now open Fat Fritz weight files.
+* Time management code refactoring. No functional changes, but will make time
+  management changes easier.
+* Lc0 logo is now printed in red! \o/
+* Command line argument `-v` is now short for `--verbose-move-stats`.
+* Errors in `--backend-opts` parameter syntax are now reported.
+* The most basic version of "certainty propagation" feature (actually without
+  "propagation"). If the engine sees checkmate, it plays it!
+  (before it could play other good move).
+* Benchmark mode no longer supports smart pruning.
+* Various small changes: hidden options to control Dirichlet noise, floating
+  point optimizations, Better error reporting if there is exception in worker
+  thread, better error messages in CUDA backend.
+
+v0.22.0 (2019-08-05)
+~~~~~~~
+
+(no changes)
+
+v0.22.0-rc1 (2019-08-03)
+~~~~~~~~~~~
+
+* Remove softmax calculation from backends and apply it after filtering for
+  illegal moves to ensure spurious outputs on illegal moves don't reduce (or
+  entirely remove) the quality of the policy values on the legal moves.
+* Fix for blas backend allocation bug with small network sizes.
+* The blas backend can be built with eigen - the result is reasonably optimized
+  for the build machine.
+* Other small tweaks piled up in master branch.
+
+
+v0.21.4 (2019-07-28)
+~~~~~~~~~~~~~~~~~~~~
+
+* A fix for crashes that can occur during use of sticky-endgames.
+* Change the false positive value reported when in wdl style resign and display
+  average nodes per move as part of tournament stats in selfplay mode.
+
+v0.21.3 (2019-07-21)
+~~~~~~~
+
+* Fix for potential memory corruption/crash in using small networks or using the
+  wdl head with cuda backends. (#892)
+* Fix for building with newer versions of meson. (#904)
+
+v0.21.2 (2019-06-09)
+~~~~~~~
+
+* Divide by a slightly smaller divisor to truncate to +/-12800. (#880)
+
+v0.21.2-rc3 (2019-06-08)
+~~~~~~~~~~~
+
+* Centipawn conversion (#860)
+
+v0.21.2-rc2 (2019-05-22)
+~~~~~~~~~~~
+
+* Add 320 and 352 channel support for fused SE layer (#855)
+* SE layer fix when not using fused kernel (#852)
+* Fp16 nchw for cudnn-fp16 backend (support GTX 16xx GPUs) (#849)
+
+v0.21.2-rc1 (2019-05-05)
+~~~~~~~~~~~
+
+* Make --sticky-endgames on by default (still off in training) (#844)
+* update download links in README (#842)
+* Recalibrate centipawn formula (#841)
+* Also make parents Terminal if any move is a win or all moves are loss or draw. (#822)
+* Use parent Q as a default score instead of 0 for unvisited pv. (#828)
+* Add stop command to selfplay interactive mode to allow for graceful exit. (#810)
+* Increased hard limit on batch size in opencl backend to 32 (#807)
+
+v0.21.0-rc2 (2019-03-06)
+~~~~~~~~~~~
+
+* Add support for cudnn7.0 (#717)
+* Informative Tournament Stats (#698)
+* Memory leak fix cuda backend (#747)
+* cudnn-fp16 fallback path for unusual se-ratios. (#739)
+* Cudnn 7.4.2 in packaged binary and warning for using old cudnn with new gpu (#741)
+* Move mode specific options to end of help. (#745)
+* LogLiveStats hidden option (#754)
+* Optional markdown support for help output (#769)
+* Improved folding of batch norm into weights and biases - fixes negative gamma bug. (#779)
+
+v0.21.0-rc1 (2019-02-16)
+~~~~~~~~~~~
+
+* Check Syzygy tablebase file sizes for corruption (#690)
+* search for nvcc on the path first (#709)
+* AZ-style policy head support (#712) 
+* Implement V4TrainingData (#722)
+* WDL value head support (#635)
+* Add option for doing kldgain thresholding rather than absolute visit
+  limiting (#721)
+* Easily run latest releases of lc0 and client using NVIDIA docker (#621)
+* Add WDL style resign option. (#724)
+* Add a uniform output option for random backend to support a0 seed data
+  style (#725)
+* Fix c hw switching in cudnn-fp16 mode with convolution policy head.
+  (#729)
+* misc (non-functional) changes to cudnn backend (#731)
+* handle 64 filter SE networks (#624)
+
+v0.20.2 (2019-02-01)
+~~~~~~~~~~~
+
+* Favor winning moves that minimize DTZ to reduce shuffling by assuming
+  repeated position by default (#708)
+* Print cuda and gpu info, warn if mismatches are noticed (#711)
+
+v0.20.2-rc1 (2019-01-27)
+~~~~~~~~~~~
+
+* no terminal multivisits (#683)
+* better fix for issue 651 (#693)
+* Changed output of --help flag to stdout rather than stderr (#687)
+* Movegen speedup via magic bitboards (#640)
+* modify default benchmark setting to run for 10 seconds (#681)
+* Fix incorrect index in OpenCL Winograd output transform (#676)
+* Update OpenCL (#655)
+
+v0.20.1 (2019-01-07)
+~~~~~~~~~~~
+
+* Change to atomic for cache capacity. (#665)
+
+v0.20.1-rc3 (2019-01-07)
+~~~~~~~~~~~
+
+* Remove ffast-math from the default flags (#661)
+
+v0.20.1-rc2 (2019-01-05)
+~~~~~~~~~~~
+
+* Don't use Winograd for 1x1 conv. (#659)
+* Fix issues with pondering and search limits. (#658)
+* Check for zero capacity in cache (#648)
+* fix undefined behavior in DiscoverWeightsFile() (#650)
+* fix fastmath.h undefined behavior and clean it up (#643)
+
+v0.20.1-rc1 (2019-01-01)
+~~~~~~~~~~~
+
+* Simplify movestogo approximator to use median residual time. (#634)
+* Replace time curve logic with movestogo approximator. (#271)
+* Cache best edge to improve PickNodeToExtend performance. (#619)
+* fix building with tensorflow 1.12 (#626)
+* Minor changes to `src/chess` (#606)
+* make uci search parameters the defaults ones (#609)
+* Preallocate nodes in advance of their need to avoid the allocation being
+  behind a mutex. (#613)
+* imrpove meson error when no backends enabled (#614)
+* allow building with the mklml library as an mkl alternative (#612)
+* Only build the history up if we are actually going to extend the position.
+  (#607)
+* fix warning (#604)
+
+v0.20.0 (2019-01-01)
+~~~~~~~~~~~
+
+* no lto builds by default (#625)
+
+v0.20.0-rc2 (2018-12-24)
+~~~~~~~~~~~
+
+* Fix for demux backend to match cuda expected threading model for 
+  computations. (#605)
+
+v0.20.0-rc1 (2018-12-22)
+~~~~~~~~~~~
+
+* Squeeze-and-Excitation Networks are now supported! (lc0.org/se)
+* Older text network files are no longer supported.
+* Various performance fixes (most major being having fast approximate math
+  functions).
+* For systems with multiple GPUs, in addition to "multiplexing" backend
+  we now also have "demux" backend and "roundrobin" backend.
+* Compiler settings tweaks (use VS2017 for windows builds, always have LTO
+  enabled, windows releases have PGO enabled).
+* Benchmark mode has more options now (e.g. movetime) and saner defaults.
+* Added an option to prevent engine to resign too early (used in training).
+* Fixed a bug when number of visits could be too high in collision nodes.
+  The fix is pretty hacky, there will be better fix later.
+* 32-bit version compiles again.
+
+v0.19.1 (2018-12-10)
+~~~~~~~
+
+(no changes relative to v0.19.1-rc2)
+
+v0.19.1-rc2 (2018-12-07)
+~~~~~~~~~~~
+
+* Temperature and FPU related params. (#568)
+* Rework Cpuct related params. (#567)
+
+v0.19.1-rc1 (2018-12-06)
+~~~~~~~~~~~
+
+* Updated cpuct formula from alphazero paper. (#563)
+* remove UpdateFromUciOptions() from EnsureReady() (#558)
+* revert IsSearchActive() and better fix for one of #500 crashes (#555)
+
+v0.19.0 (2018-11-19)
+~~~~~~~
+
+* remove Wait() from EngineController::Stop() (#522)
+
+v0.19.0-rc5 (2018-11-17)
+~~~~~~~~~~~
+
+* OpenCL: replace thread_local with a resource pool. (#516)
+* optional wtime and btime (#515)
+* Make convolve1 work with workgroup size of 128 (#514)
+* adjust average depth calculation for multivisits (#510)
+
+v0.19.0-rc4 (2018-11-12)
+~~~~~~~~~~~
+
+* Microseconds have 6 digits, not 3! (#505)
+* use bestmove_is_sent_ for Search::IsSearchActive() (#502)
+
+v0.19.0-rc3 (2018-11-07)
+~~~~~~~~~~~
+
+* Fix OpenCL tuner always loading the first saved tuning (#491)
+* Do not show warning when ComputeBlocking() takes too much time. (#494)
+* Output microseconds in log rather than milliseconds. (#495)
+* Add benchmark features (#483)
+* Fix EncodePositionForNN test failure (#490)
+
+v0.19.0-rc2 (2018-11-03)
+~~~~~~~~~~~
+
+* Version v0.19.0-rc1 reported it's version as v0.19.0-dev
+  Therefore v0.19.0-rc2 is released with this issue fixed.
+
+v0.19.0-rc1 (2018-11-03)
+~~~~~~~~~~~
+
+* Search algorithm changes
+
+  When visiting terminal nodes and collisions, instead of counting that as one
+  visit, estimate how many subsequent visits will also go to the same node, and
+  do a batch update.
+
+  That should slightly improve nps near terminal nodes and in multithread
+  configurations. Command line parameters that control that:
+
+  --max-collision-events – number of collision events allowed per batch.
+    Default is 32. This parameter is roughly equivalent to
+    --allowed-node-collisions in v0.18.
+  
+  --max-collision-visits – total number of estimated collisions per NN batch.
+    Default is 9999.
+
+* Time management
+
+  Multiple changes have been done to make Leela track used time more precisely
+  (particularly, the moment when to start timer is now much closer to the moment
+  GUIs start timer).
+
+  For smart pruning, Leela's timer only starts when the first batch comes from
+  NN eval. That should help against instamoves, especially on non-even GPUs.
+
+  Also Leela stops the search quicker now when it sees that time is up (it could
+  continue the search for hundreds of milliseconds after that, which caused time
+  trouble if opponent moves very fast).
+
+  Those changes should help a lot in ultra-bullet configurations.
+
+* Better logging
+
+  Much more information is outputted now to the log file. That will allow us to
+  easier diagnose problems if they occur. To have debug file written, add a
+  command line option:
+
+  --logfile=/path/to/logfile
+
+  (or short option "-l /path/to/logfile", or corresponding UCI option "LogFile")
+
+  It's recommended to always have logging on, to make it easier to report bugs
+  when it happens.
+
+* Configuration parameters change
+
+  Large part of parameter handling has been reworked. As the result:
+
+  All UCI parameters have been changed to have more "classical" look.
+    E.g. was "Network weights file path", became "WeightsFile".
+
+  Much more detailed help is shown than before when you run
+    ./lc0 --help
+
+  Some flags have been renamed, e.g.
+    --futile-move-aversion
+    is renamed back to
+    --smart-pruning-factor.
+
+  After setting a parameter (using command line parameter or uci setoption
+    command), uci command "uci" shows updated result. That way you can check the
+    current option values.
+
+  Some command-line and UCI options are hidden now. Use --show-hidden command
+    line parameter to unhide them. E.g.
+    ./lc0 --show-hidden --help
+
+  Also, in selfplay mode the per player configuration format has been changed
+  (although probably noone knew that anyway):
+    Was: ./lc0 selfplay player1: --movetime=14
+    Became: ./lc0 selfplay --player1.movetime=14
+
+* Other
+
+  "go depth X" uci command now causes search to stop when depth information in
+  uci info line reaches X. Not that it makes much sense for it to work this way,
+  but at least it's better than noting.
+
+  Network file size can now be larger than 64MB.
+
+  There is now an experimental flag --ramlimit-mb. The engine tries to estimate
+  how much memory it uses and stops search when tree size (plus cache size)
+  reaches RAM limit. The estimation is very rough. We'll see how it performs and
+  improve estimation later.  
+  In situations when search cannot be stopped (`go infinite` or ponder),
+  `bestmove` is not automatically outputted. Instead, search stops progress and
+  outputs warning.
+  
+  Benchmark mode has been implemented. Run run, use the following command line:
+    ./lc0 benchmark
+  This feature is pretty basic in the current version, but will be expanded later.
+
+  As Leela plays much weaker in positions without history, it now is able to
+  synthesize it and do not blunder in custom FEN positions. There is a
+  --history-fill flag for it. Setting it to "no" disables the feature, setting
+  to "fen_only" (default) enables it for all positions except chess start
+  position, and setting it to "always" enables it even for startpos.
+
+  Instead of output current win estimation as centipawn score approximation,
+  Leela can how show it's raw score. A flag that controls that is --score-type.
+  Possible values:
+    - centipawn (default) – approximate the win rate in centipawns, like Leela
+      always did.
+    - win_percentage – value from 0 to 100.0 which represents expected score in
+      percents.
+    - Q – the same, but scales from -100.0 to 100.0 rather than from 0 to 100.0
+
+v0.18.1 (2018-10-02)
+~~~~~~~
+
+* Fix for falling into threefold repetition in a winning endgame tablebase position.
+
+
+v0.18.0 (2018-09-30)
+~~~~~~~
+
+* No changes from rc2 except the version.
+
+
+v0.18.0-rc2 (2018-09-26)
+~~~~~~~~~~~
+
+* Severe bug fixed: Race condition when out-of-order-eval was enabled (and it
+  was enabled by default)
+
+* Windows 32-bit builds are now possible (CPU only for now)
+
+
+v0.18.0-rc1 (2018-09-24)
+~~~~~~~~~~~
+
+KNOWN BUG!
+
+* We have credible reports that in some rare cases Lc0 crashes!
+  However, we were not able to reproduce it reliably. If you see the crash,
+  please report to devs! What seems to increase crash probability:
+  - Very short move time (milliseconds)
+  - Proximity to a checkmate (happens 1-3 moves before the checkmate)
+
+
+New features:
+
+* Endgame tablebases support! Both WDL and DTZ now.
+
+* Added MultiPv support.
+
+
+Time management changes:
+
+* Introduced --immediate-time-use flag. Yes, yet another time management
+  flag. Posible values are between 0.0 and 1.0. Setting it closer to 
+  1.0 makes Leela use time saved from futile search aversion earlier.
+
+* Some time management parameters were changed:
+  - Slowmover is 1.0 now (was 2.4)
+  - Immediate-time-use is 0.6 now (didn't exist before, so was 0.0)
+
+* Fixed a bug, because of which futile search aversion tolerance was incorrectly
+  applied, which resulted in instamoves.
+
+* Now search stops immediately when it runs out of budgeted time.
+  Should help against timeouts, especially on slow backends (e.g. BLAS).
+
+* Move overhead now is a fixed time, doesn't depend on number of remaining
+  moves.
+
+
+Other:
+
+* Out of order eval is on by default. That brings slight nps improvement.
+
+* Default FPU reduction is 1.2 now (was 0.9)
+
+* Cudnn backend now has max_batch parameter.
+  (can be set for example like this --backend-opts=max_batch=100).
+  This is needed for lower end GPUs that didn't have enough VRAM for a buffer
+  of size 1024. Make sure that this setting is not lower than --minibatch-size.
+
+* Small memory usage optimizations.
+
+* Engine name in UCI response is shorter now. Fritz chess UI should be able
+  to work with Leela now
+
+* Added flag --temp-visit-offset, will allow to offset temperature during
+  training.
+
+* Command line and UCI parameter values are now checked for validity.
+
+* You can now build for older processors that don't support the popcnt
+  instruction by passing -Dpopcnt=false to meson when building.
+
+* 32-bit build is possible now. CPU only and we were only able to build it 
+  in Linux for now, including Raspberry Pi.
+
+* Threading issue which caused crash in heavily multithreaded environment
+  with slow backends was fixed.
+
+
+v0.17.0 (2018-08-27)
+~~~~~~~
+
+No changes from rc2 except the version.
+
+
+v0.17.0-rc2 (2018-08-21)
+~~~~~~~~~~~
+
+* Fixed a bug, that rule50 value was located in wrong place in a training data.
+* OpenCL uses much less VRAM now.
+* Default OpenCL batch size is 16 now (was 1).
+* Default time management related configuration was tweaked:
+  --futile-move-aversion is 1.33 now (was 1.47)
+  --slowmover is 2.4 now (was 2.6)
+
+
+v0.17.0-rc1 (2018-08-19)
+~~~~~~~~~~~
+
+New visible features:
+* Implemented ponder support.
+* Tablebases are supported now (only WDL probe for now).
+  Command line parameter is
+  --syzygy-paths=/path/to/syzygy/
+* Old smart pruning flag is gone. Instead there is
+  --futile-search-aversion flag.
+  --futile-search-aversion=0 is equivalent to old --no-smart-pruning.
+  --futile-search-aversion=1 is equivalent to old --smart-pruning.
+  Now default is 1.47, which means that engine will sometimes decide to
+  stop search earlier even when there is theoretical chance (but not very
+  probable) that best move decision could be changed if allowed to think more.
+* Lc0 now supports configuration files. Options can be listed there instead of
+  command line flags / uci params.
+  Config should be named lc0.config and located in the same directory as lc0.
+  Should list one command line option per line, with '--' in the beginning
+  being optional, for example:
+
+     syzygy-paths=/path/to/syzygy/
+
+* In uci info, "depth" is now average depth rather than full depth
+  (which was 4 all the time).
+  Also, depth values do not include reused tree, only nodes visited during the
+  current search session.
+* --sticky-checkmates experimental flag (default off), supposed to find shorter
+  checkmate sequences.
+* More features in backend "check".
+
+
+Performance optimizations:
+* Release windows executables are built with "whole program optimization".
+* Added --out-of-order-eval flag (default is off).
+  Switching it on makes cached/terminal nodes higher priority, which increases
+  nps.
+* OpenCL backend now supports batches (up to 5x speedup!)
+* Performance optimizations for BLAS backend.
+* Total visited policy (for FPU reduction) is now cached.
+* Values of priors (P) are stored now as 16-bit float rather than 32-bit float,
+  that saves considerable amount of RAM.
+
+
+Bugfixes:
+* Fixed en passant detection bug which caused the position after pawn moving by
+  two squares not counted towards threefold repetition even if en passant was
+  not possible.
+* Fixed the bug which caused --cache-history-length for values 2..7 work the
+  same as --cache-history-length=1.
+  This is fixed, but default is temporarily changed to --cache-history-length=1
+  during play. (For training games, it's 7)
+
+
+Removed features:
+* Backpropagation beta / backpropagation gamma parameters have been removed.
+
+
+Other changes:
+* Release lc0-windows-cuda.zip package now contains NVdia CUDA and cuDNN .dlls.
+
+
+v0.16.0 (2018-07-20)
+~~~~~~~
+
+* Fully switched to official releases! No more https://crem.xyz/lc0/
+* Fixed a bug when pv display and smart pruning didn't sometimes work properly
+  after tree reuse.
+* Format of protobuf network files was changed.
+* Autodiscovery of protobuf based network files works now.
+
+
+lc0-win-20180715-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Support of new format of network files (needed for lc0 launch on main
+  training server)
+* Fixed hang/poor performance in the beginning of search when there are many
+  threads. (Happened on linux only though).
+* Memory footprint is reduced a bit. (~-60 bytes per node)
+
+lc0-win-20180711-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Edge-node separation introduced a bug that smart pruning didn't work. That's
+  fixed.
+* Changed options parsing so that --backend-opts=cudnn-fp16 is now possible.
+* Performance fixes (mostly for slowness introduced by edge-node separation).
+
+lc0-win-20180708-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Mutex contention has been reduced (but locking mutex more rarely).
+  Helps a lot with many threads running. Especially recommended to check with
+  multi-GPU configuration.
+* Memory usage reduced at least 2x (probably more).
+* cudnn backend crashed on large batches (>800) that's fixed.
+  There is still a limit of batch size 1024 though.
+* (not in cudnn build, but for completeness)
+  Fixed NN computation with BLAS backend, it had up to 5% error before that.
+* Default time budgeting params have been changed again! (not by mach this time)
+  --slowmover=1.95
+  --time-curve-peak=26.2
+  --time-curve-left-width=82
+  --time-curve-right-width=74
+
+lc0-win-20180701-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* fp16-based computation for very modern NVidia GPUs!
+  May reduce precision a bit, but should be compensated by nps boost.
+  Enable with --backend=cudnn-fp16 flag
+* V is now not stored in nodes (a bit less RAM used while thinking)
+* (not in cudnn build, but listing for completeness) blas batching support.
+
+lc0-win-20180629-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Default time budgeting parameters have been changed (again!):
+  --slowmover=1.93
+  --time-curve-peak=26
+  --time-curve-left-width=67
+  --time-curve-right-width=76
+* When generating training games, the engine could confuse client by sending
+  corrupted output. That's fixed.
+
+lc0-win-20180624-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Default time budgeting parameters have been changed:
+  --slowmover=2.13  (was 1.8)
+  --time-curve-peak=22.0  (was 41.0)
+  --time-curve-left-width=450.0  (was 1000.0)
+  --time-curve-right-width=30.0  (was 39.5)
+* During training game generation, the engine is able to send resign statistics.
+
+
+lc0-win-20180622-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Time budged allocation has been changed, it allocates more time to early
+  stages of the game.
+  Graphs are here: https://github.com/LeelaChessZero/lc0/pull/59
+  Slowmover value has so be recalibrated, and default value was changed from 2.2 to 1.8.
+* Fixed a race condition in cache prefetch code. Realistically it hardly every
+  occured before though.
+
+lc0-win-20180619-cuda92-cudnn714-00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Fix a bug instroduced in version 20180609 which caused the engine to miss checkmates sometimes.
+
+lc0-win-20180614-cuda92-cudnn714
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* "go searchmoves" uci command is now supported
+* It's possible now to disable tree reuse in training games
+* Few improvements for random backend
+* Lc0 now shows version in uci response
+* Analyzer mode has been removed
+* extra-virtual-loss has been removed
+* Implemented resign (for training games)
+
+lc0-win-20180609-cuda92-cudnn714-01
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* In addition to --backpropagate-gamma, there is also --backpropagate-beta!
+  Default is 1.0.
+
+lc0-win-20180609-cuda92-cudnn714-00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Visible changes:
+* Experimental changes from 20180604 are now default.
+* Memory footprint is reduced by 8 bytes per visible node (+ ~240 bytes in
+  invisible nodes per visible)
+* Introduced --backpropagate-gamma flag.
+  Default is 1.0. There are rumours that reducing it to 0.75 improves play.
+* Extra-virtual-loss parameter has been removed.
+* Quotes in backend-opts parameter were not parsed properly, that's fixed.
+
+
+lc0-win-20180604-cuda92-cudnn714-experimental
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Visible changes:
+* Experimental default settings:
+  cPUCT: 3.4
+  FPU reduction: 0.9
+  policy Softmax: 2.2
+
+* Fix memory leak when GUI doesn't ever issue `isready` uci command.
+
+
+lc0-win-20180602-cuda92-cudnn714-00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Visible changes:
+* cPUCT is now 3.1 by default instead of 1.2 (or what it was before)
+* Fixed Batch normalization epsilon in tensorflow backend (but noone uses tensorflow anyway)
+* Periodically (every 5 seconds) output "uci info" even if bestmove/depth doesn't change.
+* Memory management is redone so that node release happens after "bestmove" and "isready", rather than after "position" uci command.
+  That garbage collection could take tens of milliseconds and chess GUI already started timer at that point.
+  Memory management is always fragile, so fresh crashes and memory leaks are possible.
+
+Invisible changes:
+* Store castlings again as e1g1 and not e1h1. Fixes a bug that tree was not reused after castling.

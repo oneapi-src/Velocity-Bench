@@ -1,0 +1,35 @@
+"Model" : "comment"
+    "Velocity" : "../../data/twolayer_model_cp.bin"
+    "Density" : "../../data/twolayer_model_den.bin"
+
+"Grid points" : "comment"
+    "NX" : "5000"
+    "NZ" : "5000"
+"comment" : "NY=1 2D,    NY>1 3D"
+
+"Grid size" : "comment"
+    "DX" : "15"
+    "DZ" : "10"
+
+"Time Stepping" : "comment"
+    "Time" : "10"
+    "FD DT" : "0.001"
+    "DATA DT" : "0.004"
+"comment" : "FD DT is samling interval for stable FD"
+"comment" : "DATA DT i sampling interval to record seismogram always >= FD DT"
+
+"Source wavelet" : "comment"
+    "Frequency" : "10"
+
+"Source and Receiver" : "comment"
+    "Read source receiver flag" : "1"
+    "if choice=0, Geometry file" : "geom.txt"
+    "if choice=1, Shot file" : "../../geometry/twolayer_64nsrc_geometry.json"
+"comment" : "Read flag 0=false 1=true"
+
+"Other job parameter" : "comment"
+    "Output Directory" : "../../output"
+    "Free surface" : "0"
+    "Job type New or Restart" : "New"
+    "Order of FD Operator" : "4"
+"comment" : "Free surface flag 0=false 1=true"

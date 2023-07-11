@@ -1,0 +1,5 @@
+12000.000000,10.000000,500,0,15.000000,1
+12750.000000,10.000000,500,0,15.000000,1
+
+"sx=mtr    sz=mtr    Number_of_reciever    Near_offset    receiver spacing=mtr    Geometry_type" : "comment"
+"comment" : "geometry = split(1) or endon-left(2) or endon-right(3)"

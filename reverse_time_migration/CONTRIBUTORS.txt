@@ -1,0 +1,19 @@
+# This file contains a list of people who've made non-trivial
+# contribution to the Seismic Toolbox project.
+#
+# People who commit code to the project are encouraged to add their names
+# here.
+#
+# Please keep the list sorted by first names.
+
+Ahmed Ayyad <ahmed.ayyad@brightskiesinc.com>
+Amr Nasr <amr.nasr@brightskiesinc.com>
+Ehab Nasr <ehab.nasr@brightskiesinc.com>
+Karim Mourad <karim.mourad@brightskiesinc.com>
+Marwan Elsafty <marwan.elsafty.ext@brightskiesinc.com>
+Mennatallah Samier <mennatallah.samier@brightskiesinc.com>
+Merna Moawad <merna.moawad@brightskiesinc.com>
+Mohammad Basyouni <mohammad.basyouni@brightskiesinc.com>
+Mohamed El Sherbiny <mohamed.el-sherbiny@brightskiesinc.com>
+Ingy Mounir <ingy.mounir@brightskiesinc.com>
+Zeyad Osama <zeyad.osama.ext@brightskiesinc.com>

@@ -1,0 +1,53 @@
+{
+  "traces": {
+    "min": 601,
+    "max": 610,
+    "sort-type": "CSR",
+    "paths": [
+      "data/iso/shots/shots0601_0800.segy"
+    ]
+  },
+  "models": {
+    "velocity": "data/iso/params/vel_z6.25m_x12.5m_exact.segy",
+    "density": "data/iso/params/density_z6.25m_x12.5m.segy"
+  },
+  "wave": {
+    "physics": "acoustic",
+    "approximation": "isotropic",
+    "equation-order": "second",
+    "grid-sampling": "uniform"
+  },
+  "components": {
+    "boundary-manager": {
+      "type": "none",
+      "properties": {
+        "use-top-layer": false
+      }
+    },
+    "migration-accommodator": {
+      "type": "cross-correlation",
+      "properties": {
+        "compensation": "none"
+      }
+    },
+    "forward-collector": {
+      "type": "three",
+      "properties": {
+        "boundary-saving": false
+      }
+    },
+    "trace-manager": {
+      "type": "segy",
+      "properties": {
+        "shot-stride": 1,
+        "interpolation": "none"
+      }
+    },
+    "source-injector": {
+      "type": "ricker"
+    },
+    "model-handler": {
+      "type": "segy"
+    }
+  }
+}
