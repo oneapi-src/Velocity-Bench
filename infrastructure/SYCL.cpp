@@ -112,9 +112,9 @@ void SYCL::DisplayProperties() //sycl::device const &Device)
 {
     LOG("\t Using SYCL device         : " << m_syclQueue.get_device().get_info<sycl::info::device::name>() << " (Driver version " << m_syclQueue.get_device().get_info<sycl::info::device::driver_version>() << ")");
     LOG("\t Platform                  : " << m_syclQueue.get_device().get_platform().get_info<sycl::info::platform::name>());
-    LOG("\t Vendor                    : " << m_syclQueue.get_device().get_info<sycl::info::device::vendor>());
-    LOG("\t Max compute units         : " << m_syclQueue.get_device().get_info<sycl::info::device::max_compute_units>());
-    LOG("\t Queue type                : " << (m_syclQueue.is_in_order() ? "In order" : "Out of order"));
+    ////LOG("\t Vendor                    : " << m_syclQueue.get_device().get_info<sycl::info::device::vendor>());
+    ////LOG("\t Max compute units         : " << m_syclQueue.get_device().get_info<sycl::info::device::max_compute_units>());
+    ////LOG("\t Queue type                : " << (m_syclQueue.is_in_order() ? "In order" : "Out of order"));
 
     std::vector<std::string> const vLDDPaths(Utility::ExtractLDDPathNameFromProcess({"libOpenCL", "libsycl", "libComputeCpp", "libze"})); //[0] OCL, [1] Intel's SYCL, [2] ComputeCpp SYCL
     if (vLDDPaths.empty()) {
@@ -122,15 +122,15 @@ void SYCL::DisplayProperties() //sycl::device const &Device)
         return;
     }
 
-    LOG("\t Using OpenCL library      : " << (!vLDDPaths[0].empty() ? vLDDPaths[0] : "WARNING! OpenCL library not found!"));
+    ////LOG("\t Using OpenCL library      : " << (!vLDDPaths[0].empty() ? vLDDPaths[0] : "WARNING! OpenCL library not found!"));
    
-    if (!vLDDPaths[1].empty()) { // Implies we are using Intel's DPC++ compiler
-       LOG("\t Using OneAPI SYCL library : " << vLDDPaths[1]);
-       LOG("\t Using Level Zero library  : " << (!vLDDPaths[3].empty() ? vLDDPaths[3] : "WARNING! Level zero library not found! L0 backend may not be available!"));
-    }
+    ////if (!vLDDPaths[1].empty()) { // Implies we are using Intel's DPC++ compiler
+    ////   LOG("\t Using OneAPI SYCL library : " << vLDDPaths[1]);
+    ////   LOG("\t Using Level Zero library  : " << (!vLDDPaths[3].empty() ? vLDDPaths[3] : "WARNING! Level zero library not found! L0 backend may not be available!"));
+    ////}
 
-    if (!vLDDPaths[2].empty())
-       LOG("\t Using ComputeCPP library  : " << vLDDPaths[2]);
+    ////if (!vLDDPaths[2].empty())
+    ////   LOG("\t Using ComputeCPP library  : " << vLDDPaths[2]);
 }
 
 std::chrono::steady_clock::duration SYCL::ConvertKernelTimeToDuration(sycl::event const &Event)

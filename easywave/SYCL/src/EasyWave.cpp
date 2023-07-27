@@ -85,11 +85,11 @@ int main(int argc, char **argv)
 {
     Timer tWallClock("WallClock");
     tWallClock.Start();
-    LOG("Starting SYCL main program. Process ID: " << Utility::GetProcessID());
+    LOG("Starting SYCL main program"); ///. Process ID: " << Utility::GetProcessID());
 
     std::vector<std::string> eWaveFiles(Utility::FileHandler::GetFilesFromDirectory(Utility::FileHandler::GetCurrentDirectory()));
     if (!eWaveFiles.empty()) {
-        LOG("Attempting to clean up previous eWave tsunami files in " << Utility::FileHandler::GetCurrentDirectory());
+        LOG("Attempting to clean up previous eWave tsunami files");  ///in " << Utility::FileHandler::GetCurrentDirectory());
         eWaveFiles.erase(std::remove_if(eWaveFiles.begin(), eWaveFiles.end(), [](std::string const &sPath) { return sPath.rfind("eWave") == std::string::npos; }), eWaveFiles.end());
         size_t const uNumberOfeWaveFiles(eWaveFiles.size());
         size_t const uNumberOfDeletedFiles(Utility::FileHandler::RemoveFiles(eWaveFiles));
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
         if (Par.outProgress) {
             if (lastProgress >= Par.outProgress) {
-                LOG("Model time: " << utlTimeSplitString(Par.time)); //// << " Elapsed: " << tCumulatedComputeTime.GetTimeAsString(Timer::Units::SECONDS));
+                /////LOG("Model time: " << utlTimeSplitString(Par.time)); //// << " Elapsed: " << tCumulatedComputeTime.GetTimeAsString(Timer::Units::SECONDS));
                                                                      /////printf( "Model time = %s,   elapsed: %ld msec\n", utlTimeSplitString(Par.time), elapsed );
                                                                      //
 #ifdef SHOW_GRID
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
         }
 
     } // main loop
-    LOG("Compute loop completed");
+    ////LOG("Compute loop completed");
 
     // clock_gettime(CLOCK_MONOTONIC, &end);
     Log.print("Finishing main loop");
@@ -238,8 +238,8 @@ int main(int argc, char **argv)
 
     LOG("Program successfully completed");
     tWallClock.Stop();
-    LOG("I/O Time            : " << dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
-    LOG("Total Execution Time: " << tWallClock.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    /////LOG("I/O Time            : " << dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    /////LOG("Total Execution Time: " << tWallClock.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
     return 0;
 }
 

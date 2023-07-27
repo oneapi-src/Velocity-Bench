@@ -118,7 +118,7 @@ void CGpuNode::PrintTimingStats()
 int CGpuNode::mallocMem()
 {
     try {
-        LOG("Allocating GPU memory");
+        ////LOG("Allocating GPU memory");
 
         CArrayNode::mallocMem();
 
