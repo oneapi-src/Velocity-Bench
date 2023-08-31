@@ -985,8 +985,8 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
       }
       float dval = 0.5f * (dx * pdx + dy * pdy + ds * pds);
       int maxPts = d_MaxNumPoints;
-      float sc = sycl::pow<float>(2.0f, (float)scale / NUM_SCALES) *
-                 sycl::exp2(pds * factor);
+      float sc =
+          sycl::pow(2.0f, (float)scale / NUM_SCALES) * sycl::exp2(pds * factor);
       if (sc >= lowestScale)
       {
         sycl::atomic<unsigned int>(
