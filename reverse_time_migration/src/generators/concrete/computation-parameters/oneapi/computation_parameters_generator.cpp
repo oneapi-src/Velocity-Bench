@@ -548,8 +548,8 @@ ComputationParameters *generate_parameters(json &map) {
                   << std::endl;
         sycl::device const SelectedDevice(sycl::default_selector_v);
         sycl::property_list const propList{sycl::property::queue::in_order{}
-#ifdef USE_AMDHIP_BACKEND
-        , sycl::ext::oneapi::property::queue::discard_events{} // There is a performance bug in the AMDHIP backend (JIRA TICKET: OFNAAO-52)
+#ifdef USE_AMD_BACKEND
+        , sycl::ext::oneapi::property::queue::discard_events{} 
 #endif
         };
 
