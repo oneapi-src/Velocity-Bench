@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 
   // data validation
   auto dataVerficationTimer_start = std::chrono::steady_clock::now();
-  Utility::RunDataVerification(thresh, matchPercentage);
+  int data_verification_flag = Utility::RunDataVerification(thresh, matchPercentage);
   auto dataVerficationTimer_stop = std::chrono::steady_clock::now();
   dataVerificationTime = std::chrono::duration<float, std::micro>(dataVerficationTimer_stop - dataVerficationTimer_start).count();
   // // Print out and store summary data
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
   std::cout << "Total workload time = " << totalProgramTime / 1000 << " ms"
             << "\n"
             << std::endl;
-  return 0;
+  return data_verification_flag;
 }
 
 void MatchAll(SiftData &siftData1, SiftData &siftData2, float *homography)

@@ -64,7 +64,8 @@ make -sj
 
 mkdir build && cd build
 
-CXX=hipcc cmake ../
+CXX=hipcc cmake ../ -DROCM_PATH=/path/to/rocm 
+For e.g CXX=hipcc cmake ../ -DROCM_PATH/opt/rocm-5.4.3
 
 make -sj
 

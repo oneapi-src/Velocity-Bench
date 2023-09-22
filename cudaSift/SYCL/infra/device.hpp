@@ -149,6 +149,7 @@ namespace infra
     size_t _max_nd_range_size[3];
   };
 
+  /// infra device extension
   class device_ext : public sycl::device
   {
   public:
@@ -497,7 +498,7 @@ namespace infra
   };
 
   /// Util function to get the defualt queue of current device in
-  /// device manager.
+  /// infra device manager.
   static inline sycl::queue &get_default_queue()
   {
     return dev_mgr::instance().current_device().default_queue();
@@ -516,7 +517,7 @@ namespace infra
   }
 
   /// Util function to get the context of the default queue of current
-  /// device in device manager.
+  /// device in infra device manager.
   static inline sycl::context get_default_context()
   {
     return infra::get_current_device().get_context();
@@ -528,6 +529,6 @@ namespace infra
     return dev_mgr::instance().cpu_device();
   }
 
-}
+} // namespace infra
 
-#endif
+#endif // __INFRA_DEVICE_HPP__

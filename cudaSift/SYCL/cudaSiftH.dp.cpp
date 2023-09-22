@@ -422,7 +422,10 @@ double ScaleDown(CudaImage &res, CudaImage &src, float variance, sycl::queue &q_
 
                                      cgh.parallel_for(
                                          sycl::nd_range<3>(blocks * threads, threads),
-                                         [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(32)]]
+                                         [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                             [[intel::reqd_sub_group_size(32)]]
+#endif
                                          {                                           
                                            ScaleDown(res_data_ct1, src_data_ct1, src_width, src_pitch, src_height,
                                                      res_pitch, item_ct1, d_ScaleDownKernel_ptr_ct1,
@@ -465,7 +468,10 @@ double ScaleUp(CudaImage &res, CudaImage &src, sycl::queue &q_ct, float &totTime
                                      auto res_pitch = res.pitch;
                                      cgh.parallel_for(
                                          sycl::nd_range<3>(blocks * threads, threads),
-                                         [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(32)]]
+                                         [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                             [[intel::reqd_sub_group_size(32)]]
+#endif
                                          {                                           
                                            ScaleUp(res_data_ct1, src_data_ct1, src_width, src_pitch, src_height,
                                                    res_pitch, item_ct1);
@@ -518,7 +524,11 @@ double ComputeOrientations(CudaImage &src, SiftData &siftData, int octave, sycl:
 
                 cgh.parallel_for(
                     sycl::nd_range<3>(blocks * threads, threads),
-                    [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]] {
+                    [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                        [[intel::reqd_sub_group_size(32)]]
+#endif
+                    {
                       ComputeOrientationsCONSTNew(
                           src_data_ct1, src_width, src_pitch, src_height, siftData_data_ct1,
                           octave, item_ct1, *d_MaxNumPoints_ptr_ct1, d_PointCounter_ptr_ct1,
@@ -563,16 +573,17 @@ double ExtractSiftDescriptors(float *texObj, int pitch, SiftData &siftData, floa
                                      auto siftData_data_ct1 = siftData.d_data;
 
                                      cgh.parallel_for(
-                                         sycl::nd_range<3>(blocks * threads, threads), [=
-                                     ](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(
-                                                                                           32)]] {
-                                           ExtractSiftDescriptorsCONSTNew(                                              
+                                         sycl::nd_range<3>(blocks * threads, threads), [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                          [[intel::reqd_sub_group_size(32)]]
+#endif
+                                         { 
+                                               ExtractSiftDescriptorsCONSTNew(
                                                texObj, pitch,
                                                siftData_data_ct1, subsampling, octave, item_ct1,
                                                *d_MaxNumPoints_ptr_ct1, d_PointCounter_ptr_ct1,
                                                gauss_acc_ct1.get_pointer(), buffer_acc_ct1.get_pointer(),
-                                               sums_acc_ct1.get_pointer());
-                                         }); })
+                                               sums_acc_ct1.get_pointer()); }); })
       .wait();
 
 #ifdef DEVICE_TIMER
@@ -597,7 +608,10 @@ double RescalePositions(SiftData &siftData, float scale, sycl::queue &q_ct, floa
                                      auto sifData_numPts = siftData.numPts;
                                      cgh.parallel_for(
                                          sycl::nd_range<3>(blocks * threads, threads),
-                                         [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(32)]]
+                                         [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                             [[intel::reqd_sub_group_size(32)]]
+#endif
                                          {
                                            RescalePositions(siftData_data_ct1, sifData_numPts, scale, item_ct1);
                                          }); })
@@ -662,9 +676,11 @@ double LowPass(CudaImage &res, CudaImage &src, float scale, sycl::queue &q_ct, f
                                          xrows_acc_ct1(sycl::range<2>(16, 32), cgh);
                                      cgh.parallel_for(
                                          sycl::nd_range<3>(blocks * threads, threads), [=](sycl::nd_item<3> item_ct1)
-                                         [[intel::reqd_sub_group_size(32)]]
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                          [[intel::reqd_sub_group_size(32)]]
+#endif
                                          { LowPassBlockOld(src_data_ct1, res_data_ct1, width, pitch, height, item_ct1,
-                                                        d_LowPassKernel_ptr_ct1, xrows_acc_ct1); }); })
+                                                           d_LowPassKernel_ptr_ct1, xrows_acc_ct1); }); })
         .wait();
 #ifdef DEVICE_TIMER
     auto stop_kernel = std::chrono::steady_clock::now();
@@ -732,7 +748,11 @@ double LaplaceMulti(CudaImage &baseImage, CudaImage *results, int octave, sycl::
         float *baseImage_data_ct1 = baseImage.d_data;
         cgh.parallel_for(
             sycl::nd_range<3>(blocks * threads, threads),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]] {
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
+            {
               LaplaceMultiMem(baseImage_data_ct1, results_d_data_ct1,
                               width, pitch, height, octave, item_ct1,
                               d_LaplaceKernel_ptr_ct1,
@@ -785,15 +805,15 @@ double FindPointsMulti(CudaImage *sources, SiftData &siftData, float thresh, flo
                                      auto siftData_data_ct1 = siftData.d_data;
 
                                      cgh.parallel_for(
-                                         sycl::nd_range<3>(blocks * threads, threads), [=
-                                     ](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
-                                         {                                           
-                                           FindPointsMultiNew(sources_d_data_ct0, siftData_data_ct1, w, p, h,
+                                         sycl::nd_range<3>(blocks * threads, threads), [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                          [[intel::reqd_sub_group_size(32)]]
+#endif
+                                         { FindPointsMultiNew(sources_d_data_ct0, siftData_data_ct1, w, p, h,
                                                               subsampling, lowestScale, thresh, factor,
                                                               edgeLimit, octave, item_ct1,
                                                               *d_MaxNumPoints_ptr_ct1, d_PointCounter_ptr_ct1,
-                                                              points_acc_ct1.get_pointer());
-                                         }); });
+                                                              points_acc_ct1.get_pointer()); }); });
   event_FindPointsMulti.wait();
 #ifdef DEVICE_TIMER
   auto stop_kernel = std::chrono::steady_clock::now();

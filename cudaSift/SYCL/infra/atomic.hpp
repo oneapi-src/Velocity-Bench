@@ -313,5 +313,5 @@ namespace infra
         fail);
   }
 
-}
-#endif
+} // namespace infra
+#endif // __INFRA_ATOMIC_HPP__

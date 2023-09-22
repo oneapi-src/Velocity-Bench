@@ -25,7 +25,7 @@
 
 namespace Utility
 {
-    void RunDataVerification(const int thresh, const float matchPercentage);
+    int RunDataVerification(const int thresh, const float matchPercentage);
 
 }
 #endif // UTILITY_H
