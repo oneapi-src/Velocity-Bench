@@ -37,18 +37,17 @@ void SeismicModelHandler::PreprocessModel() {
   // the wave equation.
   OneAPIBackend::GetInstance()->GetDeviceQueue()->submit(
       [&](sycl::handler &cgh) {
-        auto global_range = range<3>(nx, ny, nz);
-        auto local_range = range<3>(1, 1, 1);
-        auto global_nd_range = nd_range<3>(global_range, local_range);
+        auto global_range = range<2>(nx, nz);
+        auto local_range = range<2>(1, 1);
+        auto global_nd_range = nd_range<2>(global_range, local_range);
         float *vel_device = mpGridBox->Get(PARM | GB_VEL)->GetNativePointer();
 
         cgh.parallel_for(
-            global_nd_range, [=](sycl::nd_item<3> it) {
+            global_nd_range, [=](sycl::nd_item<2> it) {
               int x = it.get_global_id(0);
-              int y = it.get_global_id(1);
-              int z = it.get_global_id(2);
-              float value = vel_device[y * nz * nx + z * nx + x];
-              vel_device[y * nz * nx + z * nx + x] =
+              int z = it.get_global_id(1);
+              float value = vel_device[z * nx + x];
+              vel_device[z * nx + x] =
                   value * value * dt2;
             });
       });
@@ -78,17 +77,16 @@ void SeismicModelHandler::SetupWindow() {
       end_y = mpGridBox->GetLogicalWindowSize(Y_AXIS) - offset;
     }
     OneAPIBackend::GetInstance()->GetDeviceQueue()->submit([&](sycl::handler &cgh) {
-      auto global_range = range<3>(end_x - start_x, end_y - start_y, end_z - start_z);
-      auto local_range = range<3>(1, 1, 1);
-      auto global_nd_range = nd_range<3>(global_range, local_range);
+      auto global_range = range<2>(end_x - start_x, end_z - start_z);
+      auto local_range = range<2>(1, 1);
+      auto global_nd_range = nd_range<2>(global_range, local_range);
       float *vel = mpGridBox->Get(PARM | GB_VEL)->GetNativePointer();
       float *w_vel = mpGridBox->Get(PARM | WIND | GB_VEL)->GetNativePointer();
-      cgh.parallel_for(global_nd_range, [=](sycl::nd_item<3> it) {
+      cgh.parallel_for(global_nd_range, [=](sycl::nd_item<2> it) {
         int x = it.get_global_id(0) + start_x;
-        int y = it.get_global_id(1) + start_y;
-        int z = it.get_global_id(2) + start_z;
-        uint offset_window = y * wnx * wnz + z * wnx + x;
-        uint offset_full = (y + sy) * nx * nz + (z + sz) * nx + x + sx;
+        int z = it.get_global_id(1) + start_z;
+        uint offset_window = z * wnx + x;
+        uint offset_full = (sy) * nx * nz + (z + sz) * nx + x + sx;
         w_vel[offset_window] = vel[offset_full];
       });
     });

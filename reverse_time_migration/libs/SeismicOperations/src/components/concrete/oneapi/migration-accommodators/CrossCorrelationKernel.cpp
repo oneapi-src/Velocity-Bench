@@ -63,27 +63,26 @@ void CrossCorrelationKernel::Correlation(GridBox *apGridBox) {
     if (_IS_2D) {
         y_offset = 0;
     }
-
+    
     float *source = apGridBox->Get(WAVE | GB_PRSS | CURR | DIR_Z)->GetNativePointer();
     float *receiver = mpGridBox->Get(WAVE | GB_PRSS | CURR | DIR_Z)->GetNativePointer();
 
     OneAPIBackend::GetInstance()->GetDeviceQueue()->submit([&](handler &cgh) {
 
-        auto global_range = range<3>(compute_ny, compute_nz, compute_nx);
-        auto local_range = range<3>(block_y, block_z, block_x);
-        auto starting_offset = id<3>(y_offset, half_length, half_length);
-        auto global_nd_range = nd_range<3>(global_range,
+        auto global_range = range<2>(compute_nz, compute_nx);
+        auto local_range = range<2>(block_z, block_x);
+        auto starting_offset = id<2>(half_length, half_length);
+        auto global_nd_range = nd_range<2>(global_range,
                                            local_range);
                                            ///starting_offset);
 
         float *output_buffer = mpShotCorrelation->GetNativePointer();
         float *src_buffer = mpSourceIllumination->GetNativePointer();
         float *dest_buffer = mpReceiverIllumination->GetNativePointer();
-        cgh.parallel_for(global_nd_range, [=](nd_item<3> it)  {
+        cgh.parallel_for(global_nd_range, [=](nd_item<2> it)  {
 
-            int idx = (it.get_global_id(0) * wnz * wnx) + (starting_offset[0] * wnx * wnz) +
-                      (it.get_global_id(1) * wnx      ) + (starting_offset[1] * wnx) +
-                      it.get_global_id(2)               +  starting_offset[2];
+            int idx = (it.get_global_id(0) * wnx      ) + (starting_offset[0] * wnx) +
+                      it.get_global_id(1)               +  starting_offset[1];
 
             output_buffer[idx] += source[idx] * receiver[idx];
 
@@ -111,7 +110,9 @@ void CrossCorrelationKernel::Stack() {
 
     size_t sizeTotal = nx * nz * ny;
     OneAPIBackend::GetInstance()->GetDeviceQueue()->submit([&](handler &cgh) {
-        auto global_range = range<3>(orig_x, orig_z, orig_y);
+        auto global_range = range<2>(orig_z, orig_x); 
+        auto local_range  = sycl::range<2>(1, 1);
+        auto global_nd_range = sycl::nd_range<2>(global_range, local_range);
         int wsx = mpGridBox->GetWindowStart(X_AXIS);
         int wsz = mpGridBox->GetWindowStart(Z_AXIS);
         int wsy = mpGridBox->GetWindowStart(Y_AXIS);
@@ -123,16 +124,16 @@ void CrossCorrelationKernel::Stack() {
         float *cor_rcv = mpReceiverIllumination->GetNativePointer();
         if (mCompensationType == NO_COMPENSATION) {
             cgh.parallel_for(
-                    global_range, [=](id<3> idx) {
-                        uint offset_window = idx[0] + idx[1] * wnx + idx[2] * wnx * wnz;
-                        uint offset = idx[0] + idx[1] * nx + idx[2] * nx * nz;
+                    global_nd_range, [=](sycl::nd_item<2> it) {
+                        uint offset_window = it.get_global_id(0) * wnx + it.get_global_id(1); 
+                        uint offset = it.get_global_id(0) * nx + it.get_global_id(1); 
                         stack_buf[offset] += cor_buf[offset_window];
                     });
         } else {
             cgh.parallel_for(
-                    global_range, [=](id<3> idx) {
-                        uint offset_window = idx[0] + idx[1] * wnx + idx[2] * wnx * wnz;
-                        uint offset = idx[0] + idx[1] * nx + idx[2] * nx * nz;
+                    global_nd_range, [=](sycl::id<2> idx) {
+                        uint offset_window = idx[0] + idx[1] * wnx;
+                        uint offset = idx[0] + idx[1] * nx;
                         stack_buf[offset] += cor_buf[offset_window];
                         stack_src[offset] += cor_src[offset_window];
                         stack_rcv[offset] += cor_rcv[offset_window];
