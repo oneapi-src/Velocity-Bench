@@ -27,7 +27,7 @@ endif ()
 target_compile_definitions(openCV-vis PUBLIC $<$<BOOL:${USE_OpenCV}>:USE_OpenCV>)
 
 if (USE_OpenCV)
-    if ( (${USE_INTEL} STREQUAL "YES") AND (${USE_NVIDIA_BACKEND} STREQUAL "NO") AND (${USE_AMDHIP_BACKEND} STREQUAL "") )
+    if ( (${USE_INTEL} STREQUAL "YES") AND (${USE_NVIDIA_BACKEND} STREQUAL "NO") AND (${USE_AMD_BACKEND} STREQUAL "") )
         target_link_libraries(openCV-vis ${OpenCV_LIBS} "-no-ipo")
 
     else ()
