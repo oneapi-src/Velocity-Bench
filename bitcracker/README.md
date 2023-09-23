@@ -2,14 +2,6 @@
 
 BitCracker is the first open source password cracking tool for storage devices (original CUDA source code is from [here](https://github.com/e-ago/bitcracker)).
 
-## Cloning
-
-To clone
-
-```
-git clone https://github.com/oneapi-src/Velocity-Bench.git
-```
-
 ## Supported versions
 
 - CUDA: The original code was obtained from [here](https://github.com/e-ago/bitcracker)
