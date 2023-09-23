@@ -38,7 +38,7 @@ set(HIP_LIBRARIES     "${ROCM_PATH}/lib"       ${HIP_LIBRARIES})
 # CMAKE_CXX_FLAGS
 if("${CMAKE_CXX_FLAGS}" STREQUAL "")
     message(STATUS "Using DEFAULT compilation flags for the application")
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -O3 -std=c++17 -ffast-math ")
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -O3 -std=c++17 -ffast-math -D__HIP_PLATFORM_AMD__ ")
 else()
     message(STATUS "OVERRIDING compilation flags")
 endif()
