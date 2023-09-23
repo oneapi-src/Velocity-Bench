@@ -8,9 +8,6 @@ BitCracker is the first open source password cracking tool for storage devices (
 - SYCL: The CUDA code was migrated using Intel DPCT, and then the resulting code was modified to remove the dpct headers.
 - HIP: Created from CUDA version using hipify-perl script.
 
-# Current Version:
-- Initial release of the workload
-
 # Build Instructions
 
 ## To build for SYCL
