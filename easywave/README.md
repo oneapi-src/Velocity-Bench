@@ -31,7 +31,7 @@ To compile the SYCL code on NVIDIA GPUs, please use the following:
 
 To compile the SYCL code on AMD GPUs, please use the following:
 
-`-DUSE_AMD_BACKEND=gfx90a` for MI250 or `-DUSE_AMD_BACKEND=gfx908` for MI100
+`-DUSE_AMD_BACKEND=ON -DUSE_AMD_ARCH={gfx90a|gfx908}` for MI250 and MI100 respectively
 
 ## CUDA:
 
