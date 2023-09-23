@@ -17,9 +17,10 @@
 #include "vector"
 #include "chrono"
 #include <cstring>
-
-#define CPP_MODULE "MAIN"
 #include "linearprobing.h"
+
+// #define DEBUG_TIME
+#define CPP_MODULE "MAIN"
 
 #define TIMER_START() time_start = std::chrono::steady_clock::now();
 #define TIMER_END()                                                                         \
@@ -27,11 +28,7 @@
     time_total  = std::chrono::duration<double, std::milli>(time_end - time_start).count();
 #define TIMER_PRINT(name) std::cout << name <<": " << time_total / 1e3 << " s\n";
 
-// #ifndef DEBUG_TIME
-// #define DEBUG_TIME
-// #endif
-
-#ifdef DEBUGTIME
+#ifdef DEBUG_TIME
 #define START_TIMER() start_time = std::chrono::steady_clock::now();
 #define STOP_TIMER()                                                                        \
     stop_time = std::chrono::steady_clock::now();                                           \
@@ -132,8 +129,6 @@ int main(int argc, char* argv[])
     std::chrono::steady_clock::time_point time_end;
     double time_total = 0.0;
 
-    TIMER_START()
-
     try {
 
     // To recreate the same random numbers across runs of the program, set seed to a specific
@@ -148,25 +143,30 @@ int main(int argc, char* argv[])
     // for (uint32_t n = 0; n < NUM_LOOPS; ++n) {
         // printf("Initializing keyvalue pairs with random numbers...\n");
 
-        std::vector<KeyValue> insert_kvs = generate_random_keyvalues(rnd, kNumKeyValues);
-        std::vector<KeyValue> lookup_kvs = shuffle_keyvalues(rnd, insert_kvs, kNumKeyValues / 2);
-        std::vector<KeyValue> delete_kvs = shuffle_keyvalues(rnd, insert_kvs, kNumKeyValues / 2);
-
-        // Begin test
-        // printf("Testing insertion/deletion of %d/%d elements into GPU hash table...\n",
-            // (uint32_t)insert_kvs.size(), (uint32_t)delete_kvs.size());
-
 #ifdef DEBUG_TIME
         std::chrono::steady_clock::time_point start_time;
         std::chrono::steady_clock::time_point stop_time;
         double duration = 0.0;
         double tot_time = 0.0;
 
+        START_TIMER();
+#endif
+        std::vector<KeyValue> insert_kvs = generate_random_keyvalues(rnd, kNumKeyValues);
+        std::vector<KeyValue> lookup_kvs = shuffle_keyvalues(rnd, insert_kvs, kNumKeyValues / 2);
+        std::vector<KeyValue> delete_kvs = shuffle_keyvalues(rnd, insert_kvs, kNumKeyValues / 2);
+
+#ifdef DEBUG_TIME
+STOP_TIMER();
+PRINT_TIMER("generate_hashtable ");
+#endif
+
+        TIMER_START()
+
+#ifdef DEBUG_TIME
 START_TIMER();
 #endif
         checkCUDA(hipSetDevice(0));
 
-        // Time timer = start_timer();
 #ifdef DEBUG_TIME
 STOP_TIMER();
 PRINT_TIMER("init               ");
