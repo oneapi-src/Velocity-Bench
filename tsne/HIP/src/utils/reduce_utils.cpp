@@ -57,6 +57,7 @@ thrust::device_vector<float> tsnecuda::utils::ReduceAlpha(
                 thrust::raw_pointer_cast(d_matrix.data()), N,
                 thrust::raw_pointer_cast(ones.data()), 1, &kBeta,
                 thrust::raw_pointer_cast(means.data()), 1));
+        GpuErrorCheck(hipDeviceSynchronize());
         return means;
     } else if (axis == 1) {
         thrust::device_vector<float> ones(M, 1.f);
@@ -67,6 +68,7 @@ thrust::device_vector<float> tsnecuda::utils::ReduceAlpha(
                 thrust::raw_pointer_cast(d_matrix.data()), N,
                 thrust::raw_pointer_cast(ones.data()), 1, &kBeta,
                 thrust::raw_pointer_cast(means.data()), 1));
+        GpuErrorCheck(hipDeviceSynchronize());
         return means;
     } else {
         throw std::runtime_error("Axis must be 0 or 1.");

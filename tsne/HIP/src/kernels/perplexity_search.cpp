@@ -154,12 +154,12 @@ void tsnecuda::SearchPerplexity(
 
         // compute entropy of current row
         row_sum = tsnecuda::utils::ReduceSum(handle, pij, num_neighbors, num_points, 0);
-        GpuErrorCheck(hipDeviceSynchronize());
+        // GpuErrorCheck(hipDeviceSynchronize());
 
         // compute negative entropy
         thrust::transform(pij.begin(), pij.end(), entropy.begin(), tsnecuda::utils::FunctionalEntropy());
         neg_entropy = tsnecuda::utils::ReduceAlpha(handle, entropy, num_neighbors, num_points, -1.0f, 0);
-        GpuErrorCheck(hipDeviceSynchronize());
+        // GpuErrorCheck(hipDeviceSynchronize());
 
         // binary search for beta
         hipLaunchKernelGGL(PerplexitySearchKernel, NBLOCKS2, BLOCKSIZE2, 0, 0, 
