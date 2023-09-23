@@ -309,6 +309,7 @@ void DFT2D1gpu(float* din, thrust::complex<float>* dout, int num_rows, int num_c
     thrust::complex<float> sum, twiddle;
     angle = -2.0f * PI * fdividef((float)i, (float)num_cols);
     sum = 0.0f;
+#pragma unroll
     for (int k = 0; k < num_cols; ++k) {
         // sincosf(angle * k, &sinf, &cosf);
         // twiddle = thrust::complex<float>(cosf, sinf);
@@ -333,6 +334,7 @@ void DFT2D2gpu(thrust::complex<float>* din, thrust::complex<float>* dout, int nu
     thrust::complex<float> sum, twiddle;
     angle = -2.0f * PI * fdividef((float)i, (float)num_cols);
     sum = 0.0f;
+#pragma unroll
     for (int k = 0; k < num_cols; ++k) {
         // sincosf(angle * k, &sinf, &cosf);
         // twiddle = thrust::complex<float>(cosf, sinf);
@@ -357,6 +359,7 @@ void iDFT2D1gpu(thrust::complex<float>* din, thrust::complex<float>* dout, int n
     thrust::complex<float> sum, twiddle;
     angle = 2.0f * PI * fdividef((float)i, (float)num_cols);
     sum = 0.0f;
+#pragma unroll
     for (int k = 0; k < num_cols; ++k) {
         // sincosf(angle * k, &sinf, &cosf);
         // twiddle = thrust::complex<float>(cosf, sinf);
@@ -385,6 +388,7 @@ void iDFT2D2gpu(thrust::complex<float>* din, float* dout, int num_rows, int num_
     thrust::complex<float> twiddle;
     angle = 2.0f * PI * fdividef((float)i, (float)num_cols);
     sum = 0.0f;
+#pragma unroll
     for (int k = 0; k < num_cols; ++k) {
         // sincosf(angle * k, &sinf, &cosf);
         // twiddle = thrust::complex<float>(cosf, sinf);
