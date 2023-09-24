@@ -2,14 +2,8 @@
 
 ## Description
 This workload implements the widely used sobel filter edge detection algorithim in CUDA and SYCL. This is a widely used
-algorithm in computer vision and image based machine learning domain, including autonomous driving.  
+algorithm in computer vision and image based machine learning domain, including autonomous driving.
 
-## Cloning
-To clone, do
-
-```
-git clone https://github.com/oneapi-src/Velocity-Bench.git
-```
 ## Downlod and extract data:
 sobel_filter (now) has a large image input which can be downloaded from [here](unavailable - we are working on providing the link).
 After download, extract and copy image silverfalls_32Kx32K.png into the res folder. In can also be copied to some other location in which case the -i flag when running the workload needs to be updated. Note because of the large input image, an ENV variable OPENCV_IO_MAX_IMAGE_PIXELS='1677721600' needs to be in PATH when running the workload. Run instructions below have been udpated for this. Because of the use of large input image, scaling it up (e.g. -f 16) is not needed anymore.
