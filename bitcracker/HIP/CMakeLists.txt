@@ -16,7 +16,7 @@
  # SPDX-License-Identifier: GPL-2.0-only
  #
 
- cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 
 project(bitcracker LANGUAGES CXX)
 
