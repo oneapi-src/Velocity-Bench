@@ -2,13 +2,6 @@
 
 Parallel 2D Acoustic Finite Difference Seismic Modelling using the Staggered Grid. The original CUDA source code is from [here](https://github.com/richaras/SeisAcoMod2D). For SYCL version, the CUDA code was migrated using Intel DPCT, and then the resulting code was modified to remove the dpct headers.
 
-## Cloning
-
-To clone, do
-
-```
-git clone https://github.com/oneapi-src/Velocity-Bench.git
-```
 # Build Instructions
 
 ## Downlod and extract data:
