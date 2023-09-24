@@ -89,6 +89,8 @@ else()
     set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
 endif()
 
+message(STATUS "CXX Compilation flags set to: ${CMAKE_CXX_FLAGS}")
+
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/../common/main.cpp
     ${CMAKE_SOURCE_DIR}/../common/json_parser.cpp
