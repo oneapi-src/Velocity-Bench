@@ -28,7 +28,7 @@ SYCL_EXTERNAL __attribute__((always_inline)) void fluxUpdate(KernelData data, sy
 SYCL_EXTERNAL __attribute__((always_inline)) void fluxBoundary(KernelData data, sycl::nd_item<1> item_ct1);
 SYCL_EXTERNAL __attribute__((always_inline)) void gridExtend(KernelData data, sycl::nd_item<1> item_ct1);
 
-#ifdef USE_AMDHIP_BACKEND
+#ifdef USE_AMD_BACKEND
 #include "ewCudaKernels.cpp"
 #endif // llvm-amd backend has a bug
 

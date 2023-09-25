@@ -44,6 +44,26 @@ set(SOURCES
 )
 include_directories(${CMAKE_SOURCE_DIR}/../common ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/../../infrastructure)
 
+### NVCC RELATED FLAGS START HERE 
+set(NVCC_WL_CXX_FLAGS       "")
+set(NVCC_DEF_CXX_FLAGS      "-O3 ")         # For NVCC 
+set(NVCC_DEF_COMBINED_FLAGS "${NVCC_WL_CXX_FLAGS} ${NVCC_DEF_CXX_FLAGS}")
+### END OF NVCC RELATED FLAGS
+
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "Using DEFAULT compilation flags")
+    set(CMAKE_CXX_FLAGS "${NVCC_DEF_COMBINED_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS ${NVCC_WL_CXX_FLAGS})
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+endif()
+
+
 if(ENABLE_KERNEL_PROFILING)
     message(STATUS "Enabling kernel profiling")
     add_compile_options(-DENABLE_KERNEL_PROFILING)
