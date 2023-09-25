@@ -342,6 +342,7 @@ __global__ void OutputTransform_kernel(int N, int C, int se_K, T* output,
     // First fully-connected layer for SE
     if (k < se_K) {
       S = 0;
+      #pragma unroll
       for (int i = 0; i < C; i++) {
         S += shared_data[i] * float(readw1(i, k));
       }

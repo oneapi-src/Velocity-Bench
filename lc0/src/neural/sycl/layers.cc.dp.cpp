@@ -270,12 +270,12 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   cublasHandle_t handle = cuBlasContextManager::getcuBlasHandle_t();
   //ReportCUBLASErrors(cublasCreate(&handle)); 
 
-  sycl_queue_.submit([&](sycl::handler &cgh) {
+ sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
         cublasSetStream(handle, cudaStreamHandle);  
 
         ReportCUBLASErrors(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, numFc1Out_,
@@ -294,9 +294,9 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+        auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);  
 
         hipblasSgemm(handle, HIPBLAS_OP_T, HIPBLAS_OP_N, numFc1Out_,
@@ -330,9 +330,9 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
         cublasSetStream(handle, cudaStreamHandle);  
 
         ReportCUBLASErrors(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, 2 * C, N,
@@ -349,9 +349,9 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+        auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);  
 
         hipblasSgemm(handle, HIPBLAS_OP_T, HIPBLAS_OP_N, 2 * C, N,
@@ -593,9 +593,9 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
   cublasHandle_t handle = cuBlasContextManager::getcuBlasHandle_t();
   sycl_queue_.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
         cublasSetStream(handle, cudaStreamHandle);    
 
 
@@ -612,9 +612,9 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
   hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
   sycl_queue_.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+        auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);    
 
 
@@ -964,8 +964,8 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
     #ifdef USE_CUBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+        cgh.host_task([=](sycl::interop_handle ih) {
+            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
             cublasSetStream(handle, cudaStreamHandle);   
 
           ReportCUBLASErrors(cublasGemmStridedBatchedEx(
@@ -981,8 +981,8 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
     #elifdef USE_HIPBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
-            auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+        cgh.host_task([=](sycl::interop_handle ih) {
+            auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
             hipblasSetStream(handle, hipStreamHandle);   
 
           hipblasGemmStridedBatchedEx(
@@ -1019,10 +1019,10 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
   else {
 
     #ifdef USE_CUBLAS
-     sycl_queue_.submit([&](sycl::handler &cgh) {
+    sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+        cgh.host_task([=](sycl::interop_handle ih) {
+            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
             cublasSetStream(handle, cudaStreamHandle); 
 
           // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
@@ -1037,8 +1037,8 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
      #elifdef USE_HIPBLAS
      sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
-            auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+        cgh.host_task([=](sycl::interop_handle ih) {
+            auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
             hipblasSetStream(handle, hipStreamHandle); 
 
           // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
@@ -1264,11 +1264,11 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
 
    //  printf("use_gemm_ex_\n");
     #ifdef USE_CUBLAS
-    sycl_queue_.submit([&](sycl::handler &cgh) {
+     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
          cublasSetStream(handle, cudaStreamHandle);
 
 
@@ -1282,11 +1282,11 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         });   
     });
     #elifdef USE_HIPBLAS
-    sycl_queue_.submit([&](sycl::handler &cgh) {
+     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
          hipblasSetStream(handle, hipStreamHandle);
 
 
@@ -1328,9 +1328,9 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
     #ifdef USE_CUBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue_);
+         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
          cublasSetStream(handle, cudaStreamHandle);
     
         // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
@@ -1343,11 +1343,11 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         });
     });
     #elifdef USE_HIPBLAS
-    sycl_queue_.submit([&](sycl::handler &cgh) {
+     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue_);
+         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
          hipblasSetStream(handle, hipStreamHandle);
     
         // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
@@ -1850,11 +1850,11 @@ static void cublasXgemm(transpose_type transa,
 
     
 
-    sycl_queue.submit([&](sycl::handler &cgh) {
+     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {  
+        cgh.host_task([=](sycl::interop_handle ih) {  
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue);
         cublasSetStream(handle, cudaStreamHandle);  
 
         ReportCUBLASErrors(cublasSgemm(handle, transa, transb, m, n, k, &alpha,
@@ -1872,9 +1872,9 @@ static void cublasXgemm(transpose_type transa,
 
     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {  
+        cgh.host_task([=](sycl::interop_handle ih) {  
 
-        auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue);
+        auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue);
         hipblasSetStream(handle, hipStreamHandle);  
 
         hipblasSgemm(handle, transa, transb, m, n, k, &alpha, (const float*)A, lda, (const float*)B, ldb, &beta, (float*)C, ldc);
@@ -1939,9 +1939,9 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
     
     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
     
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(sycl_queue);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue);
         cublasSetStream(handle, cudaStreamHandle);    
     
         ReportCUBLASErrors(cublasGemmStridedBatchedEx(
@@ -1956,13 +1956,13 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
 
     
     #elifdef USE_HIPBLAS
-    hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
+     hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
 
      sycl_queue.submit([&](sycl::handler &cgh) {
 
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
     
-        auto hipStreamHandle = sycl::get_native<sycl::backend::hip>(sycl_queue);
+        auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue);
         hipblasSetStream(handle, hipStreamHandle);    
     
         hipblasGemmStridedBatchedEx(
