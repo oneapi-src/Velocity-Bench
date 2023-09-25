@@ -59,7 +59,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "EnergySpectrum.hh"
 
 using std::pow;
-using sycl::log10;
 
 #if defined(HAVE_SYCL)
 extern sycl::queue sycl_device_queue; // global variable for device queue
@@ -111,7 +110,7 @@ public:
       for (int ii = 0; ii < nGroups; ++ii)
       {
          double energy = (energies[ii] + energies[ii + 1]) / 2.0;
-         _crossSection[ii] = sycl::pow<double>(10, polynomial(log10(energy)));
+         _crossSection[ii] = sycl::pow(10.0, (double)polynomial(sycl::log10(energy)));
       }
 
       // Find the normalization value for the polynomial.  This is the
@@ -398,7 +397,7 @@ public:
       for (int ii = 0; ii < nGroups; ++ii)
       {
          double energy = (energies[ii] + energies[ii + 1]) / 2.0;
-         _crossSection[ii] = sycl::pow<double>(10, polynomial(log10(energy)));
+         _crossSection[ii] = sycl::pow(10.0, (double)polynomial(sycl::log10(energy)));
       }
 
       // Find the normalization value for the polynomial.  This is the
