@@ -128,7 +128,7 @@ class App {
     Option *help_all_ptr_{nullptr};
 
     /// This is the formatter for help printing. Default provided. INHERITABLE (same pointer)
-    std::shared_ptr<FormatterBase> formatter_{new Formatter()};
+    ///std::shared_ptr<FormatterBase> formatter_{new Formatter()};
 
     /// The error message printing function INHERITABLE
     std::function<std::string(const App *, const Error &e)> failure_message_ = FailureMessage::simple;
@@ -204,7 +204,7 @@ class App {
     Option *config_ptr_{nullptr};
 
     /// This is the formatter for help printing. Default provided. INHERITABLE (same pointer)
-    std::shared_ptr<Config> config_formatter_{new ConfigINI()};
+    ///std::shared_ptr<Config> config_formatter_{new ConfigINI()};
 
     ///@}
 
@@ -233,8 +233,8 @@ class App {
             allow_windows_style_options_ = parent_->allow_windows_style_options_;
             group_ = parent_->group_;
             footer_ = parent_->footer_;
-            formatter_ = parent_->formatter_;
-            config_formatter_ = parent_->config_formatter_;
+            ///formatter_ = parent_->formatter_;
+            ///config_formatter_ = parent_->config_formatter_;
             require_subcommand_max_ = parent_->require_subcommand_max_;
         }
     }
@@ -319,22 +319,22 @@ class App {
     }
 
     /// Set the help formatter
-    App *formatter(std::shared_ptr<FormatterBase> fmt) {
-        formatter_ = fmt;
-        return this;
-    }
+    ///App *formatter(std::shared_ptr<FormatterBase> fmt) {
+    ///    formatter_ = fmt;
+    ///    return this;
+    ///}
 
     /// Set the help formatter
-    App *formatter_fn(std::function<std::string(const App *, std::string, AppFormatMode)> fmt) {
-        formatter_ = std::make_shared<FormatterLambda>(fmt);
-        return this;
-    }
+    ///App *formatter_fn(std::function<std::string(const App *, std::string, AppFormatMode)> fmt) {
+    ///    formatter_ = std::make_shared<FormatterLambda>(fmt);
+    ///    return this;
+    ///}
 
     /// Set the config formatter
-    App *config_formatter(std::shared_ptr<Config> fmt) {
-        config_formatter_ = fmt;
-        return this;
-    }
+    ///App *config_formatter(std::shared_ptr<Config> fmt) {
+    ///    config_formatter_ = fmt;
+    ///    return this;
+    ///}
 
     /// Check to see if this subcommand was parsed, true only if received on command line.
     bool parsed() const { return parsed_ > 0; }
@@ -1367,9 +1367,9 @@ class App {
 
     /// Produce a string that could be read in as a config of the current values of the App. Set default_also to
     /// include default arguments. Prefix will add a string to the beginning of each option.
-    std::string config_to_str(bool default_also = false, bool write_description = false) const {
-        return config_formatter_->to_config(this, default_also, write_description, "");
-    }
+    ///std::string config_to_str(bool default_also = false, bool write_description = false) const {
+    ///    return config_formatter_->to_config(this, default_also, write_description, "");
+    ///}
 
     /// Makes a help message, using the currently configured formatter
     /// Will only do one subcommand at a time
@@ -1383,8 +1383,8 @@ class App {
         auto selected_subcommands = get_subcommands();
         if(!selected_subcommands.empty())
             return selected_subcommands.at(0)->help(prev, mode);
-        else
-            return formatter_->make_help(this, prev, mode);
+///        else
+///            return formatter_->make_help(this, prev, mode);
     }
 
     ///@}
@@ -1392,10 +1392,10 @@ class App {
     ///@{
 
     /// Access the formatter
-    std::shared_ptr<FormatterBase> get_formatter() const { return formatter_; }
+    ///std::shared_ptr<FormatterBase> get_formatter() const { return formatter_; }
 
     /// Access the config formatter
-    std::shared_ptr<Config> get_config_formatter() const { return config_formatter_; }
+    ///std::shared_ptr<Config> get_config_formatter() const { return config_formatter_; }
 
     /// Get the app or subcommand description
     std::string get_description() const { return description_; }
@@ -1624,24 +1624,24 @@ class App {
     // The parse function is now broken into several parts, and part of process
 
     /// Read and process an ini file (main app only)
-    void _process_ini() {
-        // Process an INI file
-        if(config_ptr_ != nullptr) {
-            if(*config_ptr_) {
-                config_ptr_->run_callback();
-                config_required_ = true;
-            }
-            if(!config_name_.empty()) {
-                try {
-                    std::vector<ConfigItem> values = config_formatter_->from_file(config_name_);
-                    _parse_config(values);
-                } catch(const FileError &) {
-                    if(config_required_)
-                        throw;
-                }
-            }
-        }
-    }
+    ///void _process_ini() {
+    ///    // Process an INI file
+    ///    if(config_ptr_ != nullptr) {
+    ///        if(*config_ptr_) {
+    ///            config_ptr_->run_callback();
+    ///            config_required_ = true;
+    ///        }
+    ///        if(!config_name_.empty()) {
+    ///            try {
+    ///                std::vector<ConfigItem> values = config_formatter_->from_file(config_name_);
+    ///                _parse_config(values);
+    ///            } catch(const FileError &) {
+    ///                if(config_required_)
+    ///                    throw;
+    ///            }
+    ///        }
+    ///    }
+    ///}
 
     /// Get envname options if not yet passed. Runs on *all* subcommands.
     void _process_env() {
@@ -1751,8 +1751,8 @@ class App {
 
     /// Process callbacks and such.
     void _process() {
-        _process_ini();
-        _process_env();
+        ///_process_ini();
+        ///_process_env();
         _process_callbacks();
         _process_help_flags();
         _process_requirements();
@@ -1835,7 +1835,7 @@ class App {
         if(op->empty()) {
             // Flag parsing
             if(op->get_type_size() == 0) {
-                op->set_results(config_formatter_->to_flag(item));
+                ///op->set_results(config_formatter_->to_flag(item));
             } else {
                 op->set_results(item.inputs);
                 op->run_callback();
