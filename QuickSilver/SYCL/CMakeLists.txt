@@ -51,20 +51,11 @@ project(qs LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# SET(CMAKE_BUILD_TYPE "Debug")
-# SET(CMAKE_BUILD_TYPE "Release")
-# set(CMAKE_VERBOSE_MAKEFILE on)
 option(ENABLE_KERNEL_PROFILING "Build using kernel profiling" OFF)
 option(GPU_AOT "Build AOT for Intel GPU" OFF)
 option(USE_NVIDIA_BACKEND "Build for NVIDIA backend" OFF)
 option(USE_AMDHIP_BACKEND "Build for AMD HIP backend" OFF)
 option(USE_SM "Specifies which streaming multiprocessor architecture to use" OFF)
-
-# set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -std=c++11 -O0 -Wall -g -lpthread -ggdb -pg")
-# set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -fsycl -Wall -g -lpthread -ggdb -pg -std=c++11")
-# set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -fsycl -Wall -std=c++11")
-set(CMAKE_CXX_FLAGS_DEBUG ${CXXFLAGS} "-fsycl -Wall -O1 -Wextra -pg")
-set(CMAKE_CXX_FLAGS_RELEASE ${CXXFLAGS} "-fsycl -Wall -O3 -Wextra -ffp-contract=fast")
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/src/
@@ -121,25 +112,37 @@ if(DEBUG)
     add_definitions(-DDEBUG)
 endif()
 
-if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("-- NOTE: setting build_type to release")
-    SET(CMAKE_BUILD_TYPE "Release")
-else()
-    message("-- NOTE: setting build_type to debug")
-    SET(CMAKE_BUILD_TYPE "Debug")
-endif()
+set(DEF_INTEL_WL_CXX_FLAGS  " -DRUN_ON_GPU=1 -DHAVE_SYCL=1 ")
+set(DEF_NVIDIA_WL_CXX_FLAGS " -DHAVE_SYCL=1 ")
+set(DEF_AMD_WL_CXX_FLAGS    " -DUNIFIED_HOST=1 -DHAVE_SYCL=1 ")
 
-set(USE_DEFAULT_FLAGS ON)
-set(INTEL_GPU_CXX_FLAGS " -O2 -std=c++17 -DRUN_ON_GPU=1 -DHAVE_SYCL=1")
-set(NVIDIA_GPU_CXX_FLAGS " -O3 -fsycl -DHAVE_SYCL")
-set(AMD_GPU_CXX_FLAGS " -O0 -fsycl -DUNIFIED_HOST=1 -DHAVE_SYCL")
+set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O3 -fsycl -ffast-math ")
+set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl -ffast-math ")
+set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl -ffast-math ")
 
-if("${CMAKE_CXX_FLAGS}" STREQUAL "")
-    message(STATUS "Using DEFAULT compilation flags for the application")
-    string(APPEND CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}") # Default flags for NV backend
-else()
-    message(STATUS "OVERRIDING compilation flags")
-    set(USE_DEFAULT_FLAGS OFF)
+
+# -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
+# -DOVERRIDE_GENERAL_CXX_FLAGS=" -blah -blah " overrides the general flags only (and not the workload specific flags)
+# passing in both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS is not allowed, in order to prevent ambiguity
+
+#set(USE_DEFAULT_FLAGS OFF)
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "Using DEFAULT compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${DEF_INTEL_GENERAL_CXX_FLAGS}   ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${DEF_NVIDIA_GENERAL_CXX_FLAGS}  ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${DEF_AMD_GENERAL_CXX_FLAGS}     ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${CMAKE_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${CMAKE_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${CMAKE_CXX_FLAGS}")
 endif()
 
 if(GPU_AOT)
@@ -152,21 +155,19 @@ if(GPU_AOT)
     endif()
 elseif(USE_NVIDIA_BACKEND)
     message(STATUS "Enabling NVIDIA backend")
-
-    if(USE_DEFAULT_FLAGS)
-        set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}") # Default flags for NV backend
-    endif()
-
-    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_${USE_SM} ") # -O3 will be used, even though -O2 was set earlier
+    set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_${USE_SM} ")
 elseif(USE_AMDHIP_BACKEND)
     message(STATUS "Enabling AMD HIP backend for ${USE_AMDHIP_BACKEND} AMD architecture")
-
-    if(USE_DEFAULT_FLAGS)
-        set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}")
-    endif()
-
+    set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}")
     string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=${USE_AMDHIP_BACKEND}  ")
+else()
+    # JIT case
+    message(STATUS "Enabling INTEL backend")
+    set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
 endif()
+
+message(STATUS "CXX Compilation flags set to: ${CMAKE_CXX_FLAGS}")
 
 add_executable(qs ${SRC_LIST})
 target_link_libraries(qs sycl stdc++ stdc++fs)
