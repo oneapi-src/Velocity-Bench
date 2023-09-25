@@ -45,7 +45,7 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.80)
 project(qs LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -146,6 +146,8 @@ elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
 endif()
 
 if(GPU_AOT)
+    message(STATUS "Enabling INTEL backend")
+    set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
     if((${GPU_AOT} STREQUAL "pvc") OR(${GPU_AOT} STREQUAL "PVC"))
         message(STATUS "Enabling Intel GPU AOT compilation for ${GPU_AOT}")
         string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=spir64_gen -Xs \"-device 0x0bd5 -revision_id 0x2f\" -Xs \"-options -ze-opt-large-register-file\" ")
