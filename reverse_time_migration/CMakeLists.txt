@@ -29,29 +29,59 @@ option(USE_DPC                  "Use DPC++ technology"                     OFF)
 option(USE_CUDA                 "Use CUDA"                                 OFF)
 option(USE_HIP                  "Use AMD"                                  OFF)
 
-option(USE_INTEL_CPU            "Build AOT for Intel CPU"                   OFF)
 option(GPU_AOT                  "Build AOT for Intel GPU"                   OFF)
 option(USE_NVIDIA_BACKEND       "Use DPC++ technology with NVIDIA backend"  OFF)
-option(USE_AMDHIP_BACKEND       "Use DPC++ technology with AMD HIP backend" OFF)
+option(USE_AMD_BACKEND          "Use DPC++ technology with AMD HIP backend" OFF)
 option(ENABLE_GPU_TIMINGS       "Show GPU timings at end of execution"      OFF)
 
-set(USE_DEFAULT_FLAGS ON)
-set(INTEL_GPU_CXX_FLAGS  "-O3 -fsycl " )
-set(NVIDIA_GPU_CXX_FLAGS "-O3 -fsycl " ) # For DPC++ NVIDIA_BACKEND
-set(AMD_GPU_CXX_FLAGS    "-O3 -fsycl " )
-set(NVCC_GPU_CXX_FLAGS   "-O3 ")         # For NVCC 
-set(ROCM_CXX_FLAGS       "-O3 ")         # For AMDHIP
+### SYCL RELATED FLAGS START HERE
+set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O2 -fsycl -ffast-math ")
+set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl -ffast-math ")
+set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl -ffast-math ")
 
+set(DEF_INTEL_WL_CXX_FLAGS  " ")
+set(DEF_NVIDIA_WL_CXX_FLAGS " ")
+set(DEF_AMD_WL_CXX_FLAGS    " ")
+
+set(DEF_INTEL_CXX_FLAGS  "${DEF_INTEL_GENERAL_CXX_FLAGS}  ${DEF_INTEL_WL_CXX_FLAGS}")
+set(DEF_NVIDIA_CXX_FLAGS "${DEF_NVIDIA_GENERAL_CXX_FLAGS} ${DEFT_NVIDIA_WL_CXX_FLAGS}")
+set(DEF_AMD_CXX_FLAGS    "${DEF_AMD_GENERAL_CXX_FLAGS}    ${DEF_AMD_WL_CXX_FLAGS}")
+
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "Using DEFAULT compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${DEF_INTEL_GENERAL_CXX_FLAGS}   ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${DEF_NVIDIA_GENERAL_CXX_FLAGS}  ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${DEF_AMD_GENERAL_CXX_FLAGS}     ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${CMAKE_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${CMAKE_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${CMAKE_CXX_FLAGS}")
+endif()
+#END OF SYCL RELATED FLAGS
+
+
+### NVCC RELATED FLAGS START HERE 
+set(NVCC_WL_CXX_FLAGS       "")
+set(NVCC_DEF_CXX_FLAGS      "-O3 ")         # For NVCC 
+set(NVCC_DEF_COMBINED_FLAGS "${NVCC_WL_CXX_FLAGS} ${NVCC_DEF_CXX_FLAGS}")
+### END OF NVCC RELATED FLAGS
+
+
+### ROCM RELATED FLAGS START HERE
+set(ROCM_WL_CXX_FLAGS       "")
+set(ROCM_DEF_CXX_FLAGS       "-O3 -D__HIP_PLATFORM_AMD__ ")        
+set(ROCM_DEF_COMBINED_FLAGS "${ROCM_WL_CXX_FLAGS} ${ROCM_DEF_CXX_FLAGS}")
+### END OF ROCM RELATED FLAGS
 
 message(STATUS "Use DPC++ ${USE_DPC} and Use CUDA ${USE_CUDA} and Use HIP ${USE_HIP}")
-
-if("${CMAKE_CXX_FLAGS}" STREQUAL "")
-    message(STATUS "Using DEFAULT compilation flags for the application")
-    string(APPEND CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}") # Default flags for NV backend
-else()
-    message(STATUS "OVERRIDING compilation flags")
-    set(USE_DEFAULT_FLAGS OFF)
-endif()
 
 if(ENABLE_GPU_TIMINGS)
     message(STATUS "GPU Timings will be displayed")
@@ -63,7 +93,9 @@ if (NOT USE_DPC AND NOT USE_CUDA AND NOT USE_HIP)
 elseif (USE_DPC AND USE_CUDA AND USE_HIP OR USE_DPC AND USE_CUDA OR USE_CUDA AND USE_HIP)
     message(FATAL_ERROR "Please specify only one technology using the config.sh script")
 elseif (USE_DPC)
+    message(STATUS "Compiling for DPC++")
     if(GPU_AOT) 
+        set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}") # Default flags for Intel backend
         if( (${GPU_AOT} STREQUAL "pvc") OR (${GPU_AOT} STREQUAL "PVC") )
             message(STATUS "Enabling Intel GPU AOT compilation for ${GPU_AOT}")
             string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=spir64_gen -Xs \"-device 0x0bd5 -revision_id 0x2f\" ") 
@@ -71,32 +103,54 @@ elseif (USE_DPC)
             message(STATUS "Using custom AOT compilation flag ${GPU_AOT}")
             string(APPEND CMAKE_CXX_FLAGS " ${GPU_AOT} ") # User should be aware of advanced AOT compilation flags
         endif()
-    elseif(USE_INTEL_CPU)
-        message(STATUS "Compiling for Intel CPU")
-        string(APPEND CMAKE_CXX_FLAGS "  -ffast-math -mprefer-vector-width=512 -mfma -fsycl-targets=spir64_x86_64--linux \"-device avx512\" ")
     elseif(USE_NVIDIA_BACKEND)    
         message(STATUS "Enabling NVIDIA backend")
-        if(USE_DEFAULT_FLAGS)
-            set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}") # Default flags for NV backend
-        endif()
-        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvptx64-nvidia-cuda ") # -O3 will be used, even though -O2 was set earlier 
+        set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}")
+        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvptx64-nvidia-cuda ") 
         if(USE_SM)
             message(STATUS "Building for SM_${USE_SM} architecture")
             string(APPEND CMAKE_CXX_FLAGS " -Xsycl-target-backend --cuda-gpu-arch=sm_${USE_SM}")
         endif()
-    elseif(USE_AMDHIP_BACKEND)
-        message(STATUS "Enabling AMD HIP backend for ${USE_HIP_BACKEND} AMD architecture")
-        if(USE_DEFAULT_FLAGS)
-            set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}")
+    elseif(USE_AMD_BACKEND)
+        if ("${USE_AMD_ARCH}" STREQUAL "")
+            message(FATAL_ERROR "Must specify AMD arch, e.g., -DUSE_AMD_ARCH=gfx90a")
         endif()
-        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=${USE_AMDHIP_BACKEND}  ")
-        add_compile_options(-DUSE_AMDHIP_BACKEND)
+        message(STATUS "Enabling AMD backend for ${USE_AMD_ARCH} AMD architecture")
+        set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}")
+        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=${USE_AMD_ARCH}  ")
+        add_compile_options(-DUSE_AMD_BACKEND)
+    else()
+        message(STATUS "Enabling INTEL backend")
+        set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}") # Default flags for Intel backend
     endif()
 elseif (USE_CUDA)
-    set(CMAKE_CXX_FLAGS "${NVCC_GPU_CXX_FLAGS}")
+    message(STATUS "Compiling for NVCC")
+    if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+    elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "Using DEFAULT compilation flags")
+        set(CMAKE_CXX_FLAGS "${NVCC_DEF_COMBINED_FLAGS}")
+    elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "OVERRIDING GENERAL compilation flags")
+        set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+        string(APPEND CMAKE_CXX_FLAGS ${NVCC_WL_CXX_FLAGS})
+    elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+    endif()
     add_compile_options(-DENABLE_CUDA_LOGGING)
 elseif (USE_HIP)
-    set(CMAKE_CXX_FLAGS "${ROCM_CXX_FLAGS}")
+    if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+    elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "Using DEFAULT compilation flags")
+        set(CMAKE_CXX_FLAGS "${ROCM_DEF_COMBINED_FLAGS}")
+    elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "OVERRIDING GENERAL compilation flags")
+        set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+        string(APPEND CMAKE_CXX_FLAGS ${ROCM_WL_CXX_FLAGS})
+    elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+        message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+    endif()
     add_compile_options(-DENABLE_HIP_LOGGING)
 endif ()
 
@@ -224,8 +278,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/SeismicOperations)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/Thoth)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-message(STATUS "Compilation flags set to: ${CMAKE_CXX_FLAGS}")
-#message(STATUS "Flags : ${CMAKE_CXX_FLAGS}")
 ##############################################################################
 # EXECUTABLES
 ##############################################################################
@@ -264,3 +316,6 @@ if (BUILD_TESTS)
             COMMAND seismic-toolbox-tests
             )
 endif ()
+
+
+message(STATUS "Compilation flags set to: ${CMAKE_CXX_FLAGS}")

@@ -36,14 +36,14 @@ make -j ### Engine binary is only needed
 Note: Be sure that `-DUSE_DPC=ON`, `-DUSE_NVIDIA_BACKEND=YES`, `-DUSE_OpenCV=ON` are set. Other flags should be `OFF`
 To compile for 8.0 or 9.0 compute capability, please use `-DUSE_SM=80` or `-DUSE_SM=90` respectively
 
-## To build on AMDHIP-BACKEND:
+## To build on AMD-BACKEND:
 
 ```
-CC=/path/to/intel/llvm/clang CXX=/path/to/intel/llvm/clang++ cmake -DCMAKE_BUILD_TYPE=NOMODE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_DPC=ON -DUSE_NVIDIA_BACKEND=OFF -DUSE_AMDHIP_BACKEND=SPECIFY_AMD_GPU_ARCHITECTURE_HERE -DGPU_AOT= -DUSE_CUDA=OFF -DUSE_SM= -DUSE_OpenCV=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF -DDATA_PATH=data -DWRITE_PATH=results -DUSE_INTEL= -DCOMPRESSION=NO -DCOMPRESSION_PATH=. -DUSE_MPI=OFF -H. -B./bin
+CC=/path/to/intel/llvm/clang CXX=/path/to/intel/llvm/clang++ cmake -DCMAKE_BUILD_TYPE=NOMODE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_DPC=ON -DUSE_NVIDIA_BACKEND=OFF -DUSE_AMD_BACKEND=SPECIFY_AMD_GPU_ARCHITECTURE_HERE -DGPU_AOT= -DUSE_CUDA=OFF -DUSE_SM= -DUSE_OpenCV=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF -DDATA_PATH=data -DWRITE_PATH=results -DUSE_INTEL= -DCOMPRESSION=NO -DCOMPRESSION_PATH=. -DUSE_MPI=OFF -H. -B./bin
 cd bin
 make Engine -j ### Engine binary is only needed
 ```
-Note: Be sure that `-DUSE_DPC=ON`, `-DUSE_AMDHIP_BACKEND=[SPECIFY AMD GPU ARCHITECTURE HERE]`, `-DUSE_OpenCV=ON` are set. The AMD gpu architecture we tested are `gfx900` (Vega-FE) and `gfx908` (MI100)
+Note: Be sure that `-DUSE_DPC=ON`, `-DUSE_AMD_BACKEND=[SPECIFY AMD GPU ARCHITECTURE HERE]`, `-DUSE_OpenCV=ON` are set. The AMD gpu architecture we tested are `gfx900` (Vega-FE) and `gfx908` (MI100)
 
 ## Build for NVCC Compiler:
 
