@@ -130,7 +130,7 @@ option('USE_SM',
 
 option('GPU_AOT',
        type: 'array',
-       value: ['-fsycl-targets=spir64_gen', '-Xs', '-device 0x0bd5 -revision_id 3 -options -ze-opt-large-register-file'],
+       value: [],
        description: 'AOT setting for Intel devices')
 
 option('openblas',

@@ -24,7 +24,7 @@ These instructions are for running and benchmarking the lc0 workload. For the or
 ### SYCL with L0 backend.
 1. Source Oneapi.<br/>
 2. After sourceing Oneapi build lc0.<br/> 
-    `CC=icpx CXX=icpx ./buildSycl.sh -DUSE_L0_BACKEND=true "-DGPU_AOT=['-fsycl-targets=spir64_gen', '-Xs', '-device 0x0bd5 -revision_id 0x2f -options -ze-opt-large-register-file']"`<br/>
+    `CC=icpx CXX=icpx ./buildSycl.sh -DUSE_L0_BACKEND=true`<br/>
 3. Run the benchmark.<br/>
     `./lc0_sycl benchmark -b sycl`<br/>
     
