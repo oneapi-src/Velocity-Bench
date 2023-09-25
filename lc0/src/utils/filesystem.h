@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <time.h>
 #include <string>
 #include <vector>

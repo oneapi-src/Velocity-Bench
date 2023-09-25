@@ -30,6 +30,7 @@
 // Creating a new version should be performed using scripts/bumpversion.py.
 
 #include <string>
+#include <cstdint>
 #include "version.inc"
 #include "build_id.h"
 
