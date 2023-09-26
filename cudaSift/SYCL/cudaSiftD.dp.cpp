@@ -67,7 +67,7 @@ void ScaleDownDenseShift(float *d_Result, float *d_Data, int width, int pitch, i
         k2 * ShiftDown(v, 2, item_ct1);
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   const int xs = item_ct1.get_group(2) * W2 + tx;
   const int ys = item_ct1.get_group(1) * H2 + ty;
   if (tx < W2 && ty < H2 && xs < (width / 2) && ys < (height / 2))
@@ -98,14 +98,14 @@ void ScaleDownDense(float *d_Result, float *d_Data, int width, int pitch, int he
   if (xp < (width + 4) && yp < (height + 4))
     irows[BW * ty + tx] = d_Data[yl * pitch + xl];
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (yp < (height + 4) && tx < W2)
   {
     float *ptr = &irows[BW * ty + 2 * tx];
     brows[W2 * ty + tx] = k0 * (ptr[0] + ptr[4]) + k1 * (ptr[1] + ptr[3]) + k2 * ptr[2];
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   const int xs = item_ct1.get_group(2) * W2 + tx;
   const int ys = item_ct1.get_group(1) * H2 + ty;
   if (tx < W2 && ty < H2 && xs < (width / 2) && ys < (height / 2))
@@ -142,19 +142,21 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
     yWrite[tx] = (yStart + tx - 4) / 2 * newpitch;
   }
 
-  // item_ct1.barrier();
+  
   item_ct1.barrier(sycl::access::fence_space::local_space);
   int xRead = xStart + tx - 2;
   xRead = (xRead < 0 ? 0 : xRead);
   xRead = (xRead >= width ? width - 1 : xRead);
 
   int maxtx = sycl::min(dx2, (int)(width / 2 - xStart / 2));
+  
+  #pragma unroll
   for (int dy = 0; dy < SCALEDOWN_H + 4; dy += 5)
   {
     {
       inrow[tx] = d_Data[yRead[dy + 0] + xRead];
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tx < maxtx)
       {
@@ -163,14 +165,14 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
           d_Result[yWrite[dy + 0] + xWrite] = k2 * brow[tx2] + k0 * (brow[tx0] + brow[tx4]) + k1 * (brow[tx1] + brow[tx3]);
       }
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     if (dy < (SCALEDOWN_H + 3))
     {
       inrow[tx] = d_Data[yRead[dy + 1] + xRead];
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tx < maxtx)
       {
         brow[tx0] = k0 * (inrow[2 * tx] + inrow[2 * tx + 4]) + k1 * (inrow[2 * tx + 1] + inrow[2 * tx + 3]) + k2 * inrow[2 * tx + 2];
@@ -178,14 +180,14 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
           d_Result[yWrite[dy + 1] + xWrite] = k2 * brow[tx3] + k0 * (brow[tx1] + brow[tx0]) + k1 * (brow[tx2] + brow[tx4]);
       }
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     if (dy < (SCALEDOWN_H + 2))
     {
       inrow[tx] = d_Data[yRead[dy + 2] + xRead];
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tx < maxtx)
       {
@@ -194,14 +196,14 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
           d_Result[yWrite[dy + 2] + xWrite] = k2 * brow[tx4] + k0 * (brow[tx2] + brow[tx1]) + k1 * (brow[tx3] + brow[tx0]);
       }
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     if (dy < (SCALEDOWN_H + 1))
     {
       inrow[tx] = d_Data[yRead[dy + 3] + xRead];
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tx < maxtx)
       {
         brow[tx2] = k0 * (inrow[2 * tx] + inrow[2 * tx + 4]) + k1 * (inrow[2 * tx + 1] + inrow[2 * tx + 3]) + k2 * inrow[2 * tx + 2];
@@ -209,14 +211,14 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
           d_Result[yWrite[dy + 3] + xWrite] = k2 * brow[tx0] + k0 * (brow[tx3] + brow[tx2]) + k1 * (brow[tx4] + brow[tx1]);
       }
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     if (dy < SCALEDOWN_H)
     {
       inrow[tx] = d_Data[yRead[dy + 4] + xRead];
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       if (tx < dx2 && xWrite < width / 2)
       {
         brow[tx3] = k0 * (inrow[2 * tx] + inrow[2 * tx + 4]) + k1 * (inrow[2 * tx + 1] + inrow[2 * tx + 3]) + k2 * inrow[2 * tx + 2];
@@ -224,7 +226,7 @@ void ScaleDown(float *d_Result, float *d_Data, int width, int pitch, int height,
           d_Result[yWrite[dy + 4] + xWrite] = k2 * brow[tx1] + k0 * (brow[tx4] + brow[tx3]) + k1 * (brow[tx0] + brow[tx2]);
       }
 
-      // item_ct1.barrier();
+      
       item_ct1.barrier(sycl::access::fence_space::local_space);
     }
   }
@@ -287,13 +289,14 @@ void ExtractSiftDescriptorsCONSTNew(
   int totPts =
       sycl::min(d_PointCounter[2 * octave + 1], (unsigned int)d_MaxNumPoints);
 
+#pragma unroll
   for (int bx = item_ct1.get_group(2) + fstPts; bx < totPts;
        bx += item_ct1.get_group_range(2))
   {
 
     buffer[idx] = 0.0f;
 
-    // item_ct1.barrier();
+    
     item_ct1.barrier(sycl::access::fence_space::local_space);
 
     // Compute angles and gradients
@@ -304,6 +307,7 @@ void ExtractSiftDescriptorsCONSTNew(
     float ssina = scale * sina;
     float scosa = scale * cosa;
 
+#pragma unroll
     for (int y = ty; y < 16; y += 8)
     {
       float xpos = d_sift[bx].xpos + (tx - 7.5f) * scosa - (y - 7.5f) * ssina + 0.5f;
@@ -384,25 +388,29 @@ void ExtractSiftDescriptorsCONSTNew(
         }
       }
     }
-    // item_ct1.barrier();
+    
     item_ct1.barrier(sycl::access::fence_space::local_space);
 
     // Normalize twice and suppress peaks first time
     float sum = buffer[idx] * buffer[idx];
+
+    #pragma unroll
     for (int i = 16; i > 0; i /= 2)
       sum += ShiftDown(sum, i, item_ct1);
     if ((idx & 31) == 0)
       sums[idx / 32] = sum;
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     float tsum1 = sums[0] + sums[1] + sums[2] + sums[3];
     tsum1 = sycl::min((float)(buffer[idx] * sycl::rsqrt(tsum1)), 0.2f);
 
     sum = tsum1 * tsum1;
+
+    #pragma unroll
     for (int i = 16; i > 0; i /= 2)
       sum += ShiftDown(sum, i, item_ct1);
     if ((idx & 31) == 0)
       sums[idx / 32] = sum;
-    // item_ct1.barrier();
+    
     item_ct1.barrier(sycl::access::fence_space::local_space);
 
     float tsum2 = sums[0] + sums[1] + sums[2] + sums[3];
@@ -414,7 +422,7 @@ void ExtractSiftDescriptorsCONSTNew(
       d_sift[bx].ypos *= subsampling;
       d_sift[bx].scale *= subsampling;
     }
-    // item_ct1.barrier();
+    
     item_ct1.barrier(sycl::access::fence_space::local_space);
   }
 }
@@ -431,7 +439,7 @@ void ExtractSiftDescriptor(rawImg_data texObj,
   if (ty == 0)
     gauss[tx] = sycl::exp(-(tx - 7.5f) * (tx - 7.5f) / 128.0f);
   buffer[idx] = 0.0f;
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
 
   // Compute angles and gradients
   float theta = 2.0f * 3.1415f / 360.0f * d_sift[bx].orientation;
@@ -441,6 +449,7 @@ void ExtractSiftDescriptor(rawImg_data texObj,
   float ssina = scale * sina;
   float scosa = scale * cosa;
 
+#pragma unroll
   for (int y = ty; y < 16; y += 8)
   {
     float xpos = d_sift[bx].xpos + (tx - 7.5f) * scosa - (y - 7.5f) * ssina + 0.5f;
@@ -508,26 +517,30 @@ void ExtractSiftDescriptor(rawImg_data texObj,
     }
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
 
   // Normalize twice and suppress peaks first time
   float sum = buffer[idx] * buffer[idx];
+
+  #pragma unroll
   for (int i = 16; i > 0; i /= 2)
     sum += ShiftDown(sum, i, item_ct1);
   if ((idx & 31) == 0)
     sums[idx / 32] = sum;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   float tsum1 = sums[0] + sums[1] + sums[2] + sums[3];
   tsum1 = sycl::min((float)(buffer[idx] * sycl::rsqrt(tsum1)), 0.2f);
 
   sum = tsum1 * tsum1;
+
+  #pragma unroll
   for (int i = 16; i > 0; i /= 2)
     sum += ShiftDown(sum, i, item_ct1);
   if ((idx & 31) == 0)
     sums[idx / 32] = sum;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
 
   float tsum2 = sums[0] + sums[1] + sums[2] + sums[3];
   float *desc = d_sift[bx].data;
@@ -539,7 +552,7 @@ void ExtractSiftDescriptor(rawImg_data texObj,
     d_sift[bx].scale *= subsampling;
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
 }
 
 void RescalePositions(SiftPoint *d_sift, int numPts, float scale,
@@ -573,11 +586,15 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
       sycl::min(d_PointCounter[2 * octave - 1], (unsigned int)d_MaxNumPoints);
   int totPts =
       sycl::min(d_PointCounter[2 * octave + 0], (unsigned int)d_MaxNumPoints);
+
+  #pragma unroll
   for (int bx = item_ct1.get_group(2) + fstPts; bx < totPts;
        bx += item_ct1.get_group_range(2))
   {
 
     float sc = d_Sift[bx].scale;
+
+    #pragma unroll
     for (int i = tx; i < 2 * LEN; i += item_ct1.get_local_range().get(2))
       hist[i] = 0.0f;
     float xp = d_Sift[bx].xpos;
@@ -586,6 +603,8 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
     int yi = (int)yp;
     float xf = xp - xi;
     float yf = yp - yi;
+
+    #pragma unroll
     for (int i = tx; i < WID * WID; i += item_ct1.get_local_range().get(2))
     {
       int y = i / WID;
@@ -607,6 +626,8 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
       gaussy[tx] = sycl::exp(i2sigma2 * (tx - RAD - yf) * (tx - RAD - yf));
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
+
+    #pragma unroll
     for (int i = tx; i < (WID - 4) * WID;
          i += item_ct1.get_local_range().get(2))
     {
@@ -617,6 +638,8 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
                   fac[0] * (img[y - 2][x] + img[y + 2][x]);
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
+
+    #pragma unroll
     for (int i = tx; i < (WID - 4) * (WID - 4);
          i += item_ct1.get_local_range().get(2))
     {
@@ -628,6 +651,8 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
                   fac[0] * (tmp[y][x - 2] + tmp[y][x + 2]);
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
+
+    #pragma unroll
     for (int i = tx; i < (WID - 6) * (WID - 6);
          i += item_ct1.get_local_range().get(2))
     {
@@ -665,6 +690,8 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
       float maxval2 = 0.0;
       int i1 = -1;
       int i2 = -1;
+
+      #pragma unroll
       for (int i = 0; i < LEN; i++)
       {
         float v = hist[i];
@@ -727,6 +754,8 @@ void ComputeOrientationsCONST(rawImg_data texObj,
       sycl::min(d_PointCounter[2 * octave - 1], (unsigned int)d_MaxNumPoints);
   int totPts =
       sycl::min(d_PointCounter[2 * octave + 0], (unsigned int)d_MaxNumPoints);
+
+  #pragma unroll
   for (int bx = item_ct1.get_group(2) + fstPts; bx < totPts;
        bx += item_ct1.get_group_range(2))
   {
@@ -778,6 +807,8 @@ void ComputeOrientationsCONST(rawImg_data texObj,
       float maxval2 = 0.0;
       int i1 = -1;
       int i2 = -1;
+
+      #pragma unroll
       for (int i = 0; i < 32; i++)
       {
         float v = hist[i];
@@ -855,6 +886,8 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
       sycl::min((unsigned int)(height - MINMAX_H * item_ct1.get_group(1)),
                 (unsigned int)(MINMAX_H));
   float maxv = 0.0f;
+
+  #pragma unroll
   for (int y = 0; y < yloops; y++)
   {
     int ypos = MINMAX_H * item_ct1.get_group(1) + y;
@@ -872,6 +905,8 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
   // if (tx==0) printf("XXX2\n");
 
   int ptbits = 0;
+
+  #pragma unroll
   for (int y = 0; y < yloops; y++)
   {
 
@@ -925,6 +960,8 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
 
   unsigned int totbits = sycl::popcount(ptbits);
   unsigned int numbits = totbits;
+
+  #pragma unroll
   for (int d = 1; d < 32; d <<= 1)
   {
     unsigned int num = ShiftUp(totbits, d, item_ct1);
@@ -932,6 +969,8 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
       totbits += num;
   }
   int pos = totbits - numbits;
+
+  #pragma unroll
   for (int y = 0; y < yloops; y++)
   {
     int ypos = MINMAX_H * item_ct1.get_group(1) + y;
@@ -985,7 +1024,7 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
       }
       float dval = 0.5f * (dx * pdx + dy * pdy + ds * pds);
       int maxPts = d_MaxNumPoints;
-      float sc = sycl::pow<float>(2.0f, (float)scale / NUM_SCALES) *
+      float sc = sycl::pow(2.0f, (float)scale / NUM_SCALES) *
                  sycl::exp2(pds * factor);
       if (sc >= lowestScale)
       {
@@ -1021,10 +1060,13 @@ void LaplaceMultiMem(float *d_Image, float *d_Result, int width, int pitch, int 
 
   if (xp < (width + 2 * LAPLACE_R))
   {
+    #pragma unroll
     for (int i = 0; i <= 2 * LAPLACE_R; i++)
       temp[i] = data[sycl::max(0, sycl::min((int)(yp + i - LAPLACE_R),
                                             (int)(height - 1))) *
                      pitch];
+    
+    #pragma unroll
     for (int scale = 0; scale < LAPLACE_S; scale++)
     {
       float *buf = buff + (LAPLACE_W + 2 * LAPLACE_R) * scale;
@@ -1037,10 +1079,9 @@ void LaplaceMultiMem(float *d_Image, float *d_Result, int width, int pitch, int 
 
       float sum = kern[scale][0] * temp[LAPLACE_R];
 
-      // #pragma unroll
+      #pragma unroll
       for (int j = 1; j <= LAPLACE_R; j++)
-        sum += kern[scale][j] * (temp[LAPLACE_R - j] + temp[LAPLACE_R + j]);
-      // sum += kern_temp[scale * LAPLACE_S + j] * (temp[LAPLACE_R - j] + temp[LAPLACE_R + j]);
+        sum += kern[scale][j] * (temp[LAPLACE_R - j] + temp[LAPLACE_R + j]);      
       buf[tx] = sum;
     }
   }
@@ -1049,195 +1090,25 @@ void LaplaceMultiMem(float *d_Image, float *d_Result, int width, int pitch, int 
   if (tx < LAPLACE_W && xp < (width + 2 * LAPLACE_R))
   {
     int scale = 0;
-    float oldRes = kern[scale][0] * buff[tx + LAPLACE_R];
-    // float oldRes = kern_temp[scale * LAPLACE_S + 0] * buff[tx + LAPLACE_R];
+    float oldRes = kern[scale][0] * buff[tx + LAPLACE_R];    
 
-    // #pragma unroll
+    #pragma unroll
     for (int j = 1; j <= LAPLACE_R; j++)
-      oldRes += kern[scale][j] * (buff[tx + LAPLACE_R - j] + buff[tx + LAPLACE_R + j]);
-    // oldRes += kern_temp[scale * LAPLACE_S + j] * (buff[tx + LAPLACE_R - j] + buff[tx + LAPLACE_R + j]);
+      oldRes += kern[scale][j] * (buff[tx + LAPLACE_R - j] + buff[tx + LAPLACE_R + j]);    
+
+    #pragma unroll
     for (int scale = 1; scale < LAPLACE_S; scale++)
     {
       float *buf = buff + (LAPLACE_W + 2 * LAPLACE_R) * scale;
-      float res = kern[scale][0] * buf[tx + LAPLACE_R];
-      // float res = kern_temp[scale * LAPLACE_S + 0] * buf[tx + LAPLACE_R];
+      float res = kern[scale][0] * buf[tx + LAPLACE_R];      
 
-      // #pragma unroll
+      #pragma unroll
       for (int j = 1; j <= LAPLACE_R; j++)
-        res += kern[scale][j] * (buf[tx + LAPLACE_R - j] + buf[tx + LAPLACE_R + j]);
-      // res += kern_temp[scale * LAPLACE_S + j] * (buf[tx + LAPLACE_R - j] + buf[tx + LAPLACE_R + j]);
+        res += kern[scale][j] * (buf[tx + LAPLACE_R - j] + buf[tx + LAPLACE_R + j]);      
       d_Result[(scale - 1) * height * pitch + yp * pitch + xp] = res - oldRes;
       oldRes = res;
     }
   }
-}
-
-void LaplaceMultiMemWide(float *d_Image, float *d_Result, int width, int pitch, int height, int octave,
-                         sycl::nd_item<3> item_ct1, float *d_LaplaceKernel,
-                         float *buff)
-{
-
-  const int tx = item_ct1.get_local_id(2);
-  const int xp = item_ct1.get_group(2) * LAPLACE_W + tx;
-  const int xp4 = item_ct1.get_group(2) * LAPLACE_W + 4 * tx;
-  const int yp = item_ct1.get_group(1);
-  float kern[LAPLACE_S][LAPLACE_R + 1];
-  float *data =
-      d_Image + sycl::max(sycl::min((int)(xp - 4), (int)(width - 1)), 0);
-  float temp[9];
-  if (xp < (width + 2 * LAPLACE_R))
-  {
-    for (int i = 0; i < 4; i++)
-      temp[i] =
-          data[sycl::max(0, sycl::min((int)(yp + i - 4), (int)(height - 1))) *
-               pitch];
-    for (int i = 4; i < 8 + 1; i++)
-      temp[i] = data[sycl::min((int)(yp + i - 4), (int)(height - 1)) * pitch];
-    for (int scale = 0; scale < LAPLACE_S; scale++)
-    {
-      float *kernel = d_LaplaceKernel + octave * 12 * 16 + scale * 16;
-      for (int i = 0; i <= LAPLACE_R; i++)
-        kern[scale][i] = kernel[LAPLACE_R - i];
-      float *buf = buff + (LAPLACE_W + 2 * LAPLACE_R) * scale;
-      buf[tx] = kern[scale][4] * temp[4] +
-                kern[scale][3] * (temp[3] + temp[5]) + kern[scale][2] * (temp[2] + temp[6]) +
-                kern[scale][1] * (temp[1] + temp[7]) + kern[scale][0] * (temp[0] + temp[8]);
-    }
-  }
-
-  item_ct1.barrier();
-  if (tx < LAPLACE_W / 4 && xp4 < width)
-  {
-    sycl::float4 b0 = reinterpret_cast<sycl::float4 *>(buff)[tx + 0];
-    sycl::float4 b1 = reinterpret_cast<sycl::float4 *>(buff)[tx + 1];
-    sycl::float4 b2 = reinterpret_cast<sycl::float4 *>(buff)[tx + 2];
-    sycl::float4 old4, new4, dif4;
-    old4.x() = kern[0][4] * b1.x() + kern[0][3] * (b0.w() + b1.y()) +
-               kern[0][2] * (b0.z() + b1.z()) + kern[0][1] * (b0.y() + b1.w()) +
-               kern[0][0] * (b0.x() + b2.x());
-    old4.y() = kern[0][4] * b1.y() + kern[0][3] * (b1.x() + b1.z()) +
-               kern[0][2] * (b0.w() + b1.w()) + kern[0][1] * (b0.z() + b2.x()) +
-               kern[0][0] * (b0.y() + b2.y());
-    old4.z() = kern[0][4] * b1.z() + kern[0][3] * (b1.y() + b1.w()) +
-               kern[0][2] * (b1.x() + b2.x()) + kern[0][1] * (b0.w() + b2.y()) +
-               kern[0][0] * (b0.z() + b2.z());
-    old4.w() = kern[0][4] * b1.w() + kern[0][3] * (b1.z() + b2.x()) +
-               kern[0][2] * (b1.y() + b2.y()) + kern[0][1] * (b1.x() + b2.z()) +
-               kern[0][0] * (b0.w() + b2.w());
-    for (int scale = 1; scale < LAPLACE_S; scale++)
-    {
-      float *buf = buff + (LAPLACE_W + 2 * LAPLACE_R) * scale;
-      sycl::float4 b0 = reinterpret_cast<sycl::float4 *>(buf)[tx + 0];
-      sycl::float4 b1 = reinterpret_cast<sycl::float4 *>(buf)[tx + 1];
-      sycl::float4 b2 = reinterpret_cast<sycl::float4 *>(buf)[tx + 2];
-      new4.x() = kern[scale][4] * b1.x() + kern[scale][3] * (b0.w() + b1.y()) +
-                 kern[scale][2] * (b0.z() + b1.z()) +
-                 kern[scale][1] * (b0.y() + b1.w()) +
-                 kern[scale][0] * (b0.x() + b2.x());
-      new4.y() = kern[scale][4] * b1.y() + kern[scale][3] * (b1.x() + b1.z()) +
-                 kern[scale][2] * (b0.w() + b1.w()) +
-                 kern[scale][1] * (b0.z() + b2.x()) +
-                 kern[scale][0] * (b0.y() + b2.y());
-      new4.z() = kern[scale][4] * b1.z() + kern[scale][3] * (b1.y() + b1.w()) +
-                 kern[scale][2] * (b1.x() + b2.x()) +
-                 kern[scale][1] * (b0.w() + b2.y()) +
-                 kern[scale][0] * (b0.z() + b2.z());
-      new4.w() = kern[scale][4] * b1.w() + kern[scale][3] * (b1.z() + b2.x()) +
-                 kern[scale][2] * (b1.y() + b2.y()) +
-                 kern[scale][1] * (b1.x() + b2.z()) +
-                 kern[scale][0] * (b0.w() + b2.w());
-      dif4.x() = new4.x() - old4.x();
-      dif4.y() = new4.y() - old4.y();
-      dif4.z() = new4.z() - old4.z();
-      dif4.w() = new4.w() - old4.w();
-      reinterpret_cast<sycl::float4 *>(
-          &d_Result[(scale - 1) * height * pitch + yp * pitch + xp4])[0] = dif4;
-      old4 = new4;
-    }
-  }
-}
-
-void LaplaceMultiMemTest(float *d_Image, float *d_Result, int width, int pitch, int height, int octave,
-                         sycl::nd_item<3> item_ct1, float *d_LaplaceKernel,
-                         float *data1, float *data2)
-{
-
-  const int tx = item_ct1.get_local_id(2);
-  const int xp = item_ct1.get_group(2) * LAPLACE_W + tx;
-  const int yp = LAPLACE_H * item_ct1.get_group(1);
-  const int scale = item_ct1.get_local_id(1);
-  float *kernel = d_LaplaceKernel + octave * 12 * 16 + scale * 16;
-  float *sdata1 = data1 + (LAPLACE_W + 2 * LAPLACE_R) * scale;
-  float *data =
-      d_Image + sycl::max(sycl::min((int)(xp - 4), (int)(width - 1)), 0);
-  int h = height - 1;
-  float temp[8 + LAPLACE_H], kern[LAPLACE_R + 1];
-  for (int i = 0; i < 4; i++)
-    temp[i] = data[sycl::max(0, sycl::min((int)(yp + i - 4), h)) * pitch];
-  for (int i = 4; i < 8 + LAPLACE_H; i++)
-    temp[i] = data[sycl::min((int)(yp + i - 4), h) * pitch];
-  for (int i = 0; i <= LAPLACE_R; i++)
-    kern[i] = kernel[LAPLACE_R - i];
-  for (int j = 0; j < LAPLACE_H; j++)
-  {
-    sdata1[tx] = kern[4] * temp[4 + j] +
-                 kern[3] * (temp[3 + j] + temp[5 + j]) + kern[2] * (temp[2 + j] + temp[6 + j]) +
-                 kern[1] * (temp[1 + j] + temp[7 + j]) + kern[0] * (temp[0 + j] + temp[8 + j]);
-
-    item_ct1.barrier();
-    float *sdata2 = data2 + LAPLACE_W * scale;
-    if (tx < LAPLACE_W)
-    {
-      sdata2[tx] = kern[4] * sdata1[tx + 4] +
-                   kern[3] * (sdata1[tx + 3] + sdata1[tx + 5]) + kern[2] * (sdata1[tx + 2] + sdata1[tx + 6]) +
-                   kern[1] * (sdata1[tx + 1] + sdata1[tx + 7]) + kern[0] * (sdata1[tx + 0] + sdata1[tx + 8]);
-    }
-
-    item_ct1.barrier();
-    if (tx < LAPLACE_W && scale < LAPLACE_S - 1 && xp < width && (yp + j) < height)
-      d_Result[scale * height * pitch + (yp + j) * pitch + xp] = sdata2[tx] - sdata2[tx + LAPLACE_W];
-  }
-}
-
-void LaplaceMultiMemOld(float *d_Image, float *d_Result, int width, int pitch, int height, int octave,
-                        sycl::nd_item<3> item_ct1, float *d_LaplaceKernel,
-                        float *data1, float *data2)
-{
-
-  const int tx = item_ct1.get_local_id(2);
-  const int xp = item_ct1.get_group(2) * LAPLACE_W + tx;
-  const int yp = item_ct1.get_group(1);
-  const int scale = item_ct1.get_local_id(1);
-  float *kernel = d_LaplaceKernel + octave * 12 * 16 + scale * 16;
-  float *sdata1 = data1 + (LAPLACE_W + 2 * LAPLACE_R) * scale;
-  float *data =
-      d_Image + sycl::max(sycl::min((int)(xp - 4), (int)(width - 1)), 0);
-  int h = height - 1;
-  sdata1[tx] =
-      kernel[0] * data[sycl::min(yp, h) * pitch] +
-      kernel[1] * (data[sycl::max(0, sycl::min((int)(yp - 1), h)) * pitch] +
-                   data[sycl::min((int)(yp + 1), h) * pitch]) +
-      kernel[2] * (data[sycl::max(0, sycl::min((int)(yp - 2), h)) * pitch] +
-                   data[sycl::min((int)(yp + 2), h) * pitch]) +
-      kernel[3] * (data[sycl::max(0, sycl::min((int)(yp - 3), h)) * pitch] +
-                   data[sycl::min((int)(yp + 3), h) * pitch]) +
-      kernel[4] * (data[sycl::max(0, sycl::min((int)(yp - 4), h)) * pitch] +
-                   data[sycl::min((int)(yp + 4), h) * pitch]);
-
-  item_ct1.barrier();
-  float *sdata2 = data2 + LAPLACE_W * scale;
-  if (tx < LAPLACE_W)
-  {
-    sdata2[tx] = kernel[0] * sdata1[tx + 4] +
-                 kernel[1] * (sdata1[tx + 3] + sdata1[tx + 5]) +
-                 kernel[2] * (sdata1[tx + 2] + sdata1[tx + 6]) +
-                 kernel[3] * (sdata1[tx + 1] + sdata1[tx + 7]) +
-                 kernel[4] * (sdata1[tx + 0] + sdata1[tx + 8]);
-  }
-
-  item_ct1.barrier();
-  if (tx < LAPLACE_W && scale < LAPLACE_S - 1 && xp < width)
-    d_Result[scale * height * pitch + yp * pitch + xp] = sdata2[tx] - sdata2[tx + LAPLACE_W];
 }
 
 void LowPass(float *d_Image, float *d_Result, int width, int pitch, int height,
@@ -1265,7 +1136,7 @@ void LowPass(float *d_Image, float *d_Result, int width, int pitch, int height,
         kernel[0] * (data[sycl::max(0, sycl::min((int)(yp - 4), h)) * pitch] +
                      data[sycl::min((int)(yp + 4), h) * pitch]);
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (tx < LOWPASS_W && xp < width && yp < height)
     d_Result[yp * pitch + xp] = kernel[4] * buff[tx + 4] +
                                 kernel[3] * (buff[tx + 3] + buff[tx + 5]) + kernel[2] * (buff[tx + 2] + buff[tx + 6]) +
@@ -1284,6 +1155,8 @@ void LowPassBlockOld(float *d_Image, float *d_Result, int width, int pitch, int 
   const int N = 16;
   float *k = d_LowPassKernel;
   int xl = sycl::max(sycl::min((int)(xp - 4), (int)(width - 1)), 0);
+
+  #pragma unroll
   for (int l = -8; l <= LOWPASS_H; l += 4)
   {
     if (l < LOWPASS_H)
@@ -1307,9 +1180,7 @@ void LowPassBlockOld(float *d_Image, float *d_Result, int width, int pitch, int 
                                     k[1] * (xrows[(l - 3 + ty) % N][tx] + xrows[(l + 3 + ty) % N][tx]) +
                                     k[0] * (xrows[(l - 4 + ty) % N][tx] + xrows[(l + 4 + ty) % N][tx]);
     }
-    if (l >= 0)
-
-      // item_ct1.barrier();
+    if (l >= 0)      
       item_ct1.barrier(sycl::access::fence_space::local_space);
   }
 }
@@ -1326,7 +1197,8 @@ void LowPassBlock(float *d_Image, float *d_Result, int width, int pitch, int hei
   const int N = 16;
   float *k = d_LowPassKernel;
   int xl = sycl::max(sycl::min((int)(xp - 4), (int)(width - 1)), 0);
-  // #pragma unroll
+  
+  #pragma unroll
   for (int l = -8; l < 4; l += 4)
   {
     int ly = l + ty;
@@ -1341,7 +1213,8 @@ void LowPassBlock(float *d_Image, float *d_Result, int width, int pitch, int hei
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  // #pragma unroll
+  
+  #pragma unroll
   for (int l = 4; l < LOWPASS_H; l += 4)
   {
     int ly = l + ty;

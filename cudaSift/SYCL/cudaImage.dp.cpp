@@ -75,12 +75,9 @@ CudaImage::CudaImage() : width(0), height(0), pitch(0), d_data(NULL), h_data(NUL
 CudaImage::~CudaImage()
 {
   if (d_internalAlloc && d_data != NULL)
-    try
-    {
+    try{
       safeCall((sycl::free(d_data, infra::get_default_queue()), 0));
-    }
-    catch (std::exception const &e)
-    {
+    } catch (std::exception const &e) {
       std::cerr << e.what() << '\n';
     }
   d_data = NULL;
