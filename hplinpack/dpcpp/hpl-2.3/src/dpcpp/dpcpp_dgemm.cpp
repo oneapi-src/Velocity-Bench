@@ -316,15 +316,15 @@ if ((M==0)||(K==0)||(N==0))
     mQueue.submit([&](sycl::handler &h){
 
                 h.host_task([=](sycl::interop_handle ih) {
-                      cuCtxSetCurrent(ih.get_native_context<sycl::backend::cuda>());
-                      cublasSetStream(handle, ih.get_native_queue<sycl::backend::cuda>());
+                      cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+                      cublasSetStream(handle, ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 		      
 		      CHECK_ERROR(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K, &ALPHA, A_buffer, LDA, B_buffer, LDB, &BETA, C_buffer, LDC));
               cudaDeviceSynchronize ();	
 		});
 	}).wait_and_throw();
     #elif USE_HIPBLAS
-        hipblasHandle_t handle;
+       hipblasHandle_t handle;
         hipblasCreate(&handle);
 
 
@@ -425,13 +425,13 @@ void dpcpp_dtrsm
 	mQueue.submit([&](sycl::handler &h){
 
                 h.host_task([=](sycl::interop_handle ih) {
-                      cuCtxSetCurrent(ih.get_native_context<sycl::backend::cuda>());
-                      cublasSetStream(handle, ih.get_native_queue<sycl::backend::cuda>());
+                      cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+                      cublasSetStream(handle, ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 		      
 		      CHECK_ERROR(cublasDtrsm(handle,CUBLAS_SIDE_LEFT,CUBLAS_FILL_MODE_LOWER,CUBLAS_OP_N,CUBLAS_DIAG_UNIT,M,N,&ALPHA,A_buffer,LDA,B_buffer,LDB));
               cudaDeviceSynchronize();	
 		});
-	}).wait_and_throw();	
+	}).wait_and_throw();		
     #elif USE_HIPBLAS
     hipblasHandle_t handle;
         hipblasCreate(&handle); 
