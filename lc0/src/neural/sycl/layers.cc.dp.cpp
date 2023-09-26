@@ -270,7 +270,7 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   cublasHandle_t handle = cuBlasContextManager::getcuBlasHandle_t();
   //ReportCUBLASErrors(cublasCreate(&handle)); 
 
- sycl_queue_.submit([&](sycl::handler &cgh) {
+  sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
         cgh.host_task([=](sycl::interop_handle ih) {
@@ -417,9 +417,9 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
     q_ct1->submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(*q_ct1);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
         cublasSetStream(handle, cudaStreamHandle);  
     
         ReportCUBLASErrors(cublasHgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, numFc1Out_,
@@ -439,9 +439,9 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
     q_ct1->submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(*q_ct1);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
         cublasSetStream(handle, cudaStreamHandle);   
     
         // 3. Second fully connected layer.
@@ -556,9 +556,9 @@ void FCLayer<float>::LoadWeights(float* cpuWeight, float* cpuBias,
 
 //   q_ct1->submit([&](sycl::handler &cgh) {
         
-//         cgh.interop_task([=](sycl::interop_handler ih) {
+//         cgh.host_task([=](sycl::interop_handle ih) {
 
-//         auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(*q_ct1);
+//         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
 //         cublasSetStream(handle, cudaStreamHandle);    
   
 //         ReportCUBLASErrors(cublasHgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, num_outputs,
@@ -918,9 +918,9 @@ void FusedWinogradConvSELayer<DataType>::LoadSEWeights(float* w1, float* b1,
   
 //   q_ct1->submit([&](sycl::handler &cgh) {
 //         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-//         cgh.interop_task([=](sycl::interop_handler ih) {
+//         cgh.host_task([=](sycl::interop_handle ih) {
   
-//          auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(q_ct1);
+//          auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
 //          cublasSetStream(handle, cudaStreamHandle);
 
 //          ReportCUBLASErrors(cublasGemmStridedBatchedEx(
@@ -1019,7 +1019,7 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
   else {
 
     #ifdef USE_CUBLAS
-    sycl_queue_.submit([&](sycl::handler &cgh) {
+     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
             auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
@@ -1218,9 +1218,9 @@ template <typename DataType> void Conv1Layer<DataType>::LoadWeights(float* pfilt
  
 //   q_ct1->submit([&](sycl::handler &cgh) {
 //         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-//         cgh.interop_task([=](sycl::interop_handler ih) {
+//         cgh.host_task([=](sycl::interop_handle ih) {
   
-//          auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(q_ct1);
+//          auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
 //          cublasSetStream(handle, cudaStreamHandle);
 
 
@@ -1264,7 +1264,7 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
 
    //  printf("use_gemm_ex_\n");
     #ifdef USE_CUBLAS
-     sycl_queue_.submit([&](sycl::handler &cgh) {
+    sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
   
@@ -1282,7 +1282,7 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         });   
     });
     #elifdef USE_HIPBLAS
-     sycl_queue_.submit([&](sycl::handler &cgh) {
+    sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
   
@@ -1343,7 +1343,7 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         });
     });
     #elifdef USE_HIPBLAS
-     sycl_queue_.submit([&](sycl::handler &cgh) {
+    sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
   
@@ -1831,9 +1831,9 @@ static void cublasXgemm(transpose_type transa,
 
     q_ct1.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(q_ct1);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
         cublasSetStream(handle, cudaStreamHandle);    
 
 
@@ -1850,7 +1850,7 @@ static void cublasXgemm(transpose_type transa,
 
     
 
-     sycl_queue.submit([&](sycl::handler &cgh) {
+    sycl_queue.submit([&](sycl::handler &cgh) {
         
         cgh.host_task([=](sycl::interop_handle ih) {  
 
@@ -1919,9 +1919,9 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
     
     q_ct1.submit([&](sycl::handler &cgh) {
         
-        cgh.interop_task([=](sycl::interop_handler ih) {
+        cgh.host_task([=](sycl::interop_handle ih) {
     
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(q_ct1);
+        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
         cublasSetStream(handle, cudaStreamHandle);    
 
         ReportCUBLASErrors(cublasGemmStridedBatchedEx(
@@ -1956,7 +1956,7 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
 
     
     #elifdef USE_HIPBLAS
-     hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
+    hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
 
      sycl_queue.submit([&](sycl::handler &cgh) {
 
