@@ -94,11 +94,10 @@ class LangHandle {
                 memCpyD2H(devPtr, hostPtr, size, needToSynchronize);
             } else if(memcpyType == D2D) {
                 memCpyD2D(devPtr, hostPtr, size, needToSynchronize);
-            }
-            assertDevApiInvar(hipMemcpy(devPtr, hostPtr, size, hipMemcpyHostToDevice));
-            if(needToSynchronize) {
-                assertDevApiInvar(hipDeviceSynchronize());
-            }
+            } else {
+	        throw std::runtime_error("Unknown or unsupported MemcpyType");
+	    }
+
         }
 
         void memCpyH2D(float* devPtr, const float* hostPtr, size_t size, bool needToSynchronize) {
