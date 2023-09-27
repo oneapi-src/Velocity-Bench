@@ -1102,7 +1102,11 @@ double attack(
             cgh.depends_on(e1);
             cgh.parallel_for(
                 sycl::nd_range<1>(in_range, wg_size),
-                [=](sycl::nd_item<1> item) [[intel::reqd_sub_group_size(16)]] {
+                [=](sycl::nd_item<1> item)
+            #if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(16)]]
+            #endif
+                {
                     decrypt_vmk_with_mac(
                         num_read_pswd,
                         d_found,
