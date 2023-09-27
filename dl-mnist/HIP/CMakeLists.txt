@@ -28,7 +28,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -Wall -O3 -Wextra")
+set(DEF_WL_CXX_FLAGS           " -D__HIP_PLATFORM_AMD__ ")
+set(DEF_GENERAL_CXX_FLAGS      " -Wall -O3 -Wextra ")
+set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
 
 option(DEVICE_TIMER            "Build using Device Timer" OFF)
 
@@ -79,13 +81,23 @@ include_directories(
     ${HIP_PATH}/../hsa/include
     ${HIP_PATH}/../miopen/include/miopen)
 
+# -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
+# -DOVERRIDE_GENERAL_CXX_FLAGS=" -blah -blah " overrides the general flags only (and not the workload specific flags)
+# passing in both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS is not allowed, in order to prevent ambiguity
 
-    if("${CMAKE_CXX_FLAGS}" STREQUAL "")
-    message(STATUS "Using DEFAULT CXX compilation flags for the application")
-    string(APPEND CMAKE_CXX_FLAGS " -O2")
-else()
-    message(STATUS "OVERRIDING CXX compilation flags")
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "Using DEFAULT compilation flags")
+    set(CMAKE_CXX_FLAGS "${DEF_COMBINED_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS ${DEF_WL_CXX_FLAGS})
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
 endif()
+
 
 add_compile_options(-DRUN_ON_GPU)
 add_compile_options(-DKERNEL_USE_PROFILE)
