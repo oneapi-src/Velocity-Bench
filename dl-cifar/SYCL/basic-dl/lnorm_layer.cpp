@@ -57,9 +57,9 @@ void LNormLayer::doFw() {
     float *d_output = d_output_;
 
     langHandle_->getSyclQueue()->submit([&](sycl::handler& h) {
-        h.parallel_for(sycl::range{static_cast<size_t>(gridSize), static_cast<size_t>(blockSize)},  [=](sycl::id<2> idx) {
+        h.parallel_for(sycl::nd_range<1>{sycl::range<1>(static_cast<size_t>(gridSize*blockSize)), sycl::range<1>(static_cast<size_t>(blockSize))},  [=](sycl::nd_item<1> idx) {
 
-            int offset = (idx[0]*128+idx[1]) * embSize;
+            int offset = (idx.get_global_linear_id()) * embSize;
 
             float epsilon = 0.0000001;
             if(offset < batchSize * noOfEmbs * embSize) {
@@ -100,9 +100,9 @@ void LNormLayer::doBw() {
     float *d_d_input = d_d_input_;
 
     langHandle_->getSyclQueue()->submit([&](sycl::handler& h) {
-        h.parallel_for(sycl::range{static_cast<size_t>(gridSize), static_cast<size_t>(blockSize)},  [=](sycl::id<2> idx) {
+        h.parallel_for(sycl::nd_range<1>{sycl::range<1>(static_cast<size_t>(gridSize*blockSize)), sycl::range<1>(static_cast<size_t>(blockSize))},  [=](sycl::nd_item<1> idx) {
 
-            int offset = (idx[0]*128+idx[1]) * embSize;
+            int offset = (idx.get_global_linear_id()) * embSize;
 
             float epsilon = 0.0000001;
             if(offset < batchSize * noOfEmbs * embSize) {
