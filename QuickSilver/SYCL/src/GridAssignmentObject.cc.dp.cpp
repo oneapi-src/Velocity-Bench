@@ -41,7 +41,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 using std::queue;
 using std::vector;
-using sycl::floor;
 using sycl::max;
 using sycl::min;
 
@@ -88,9 +87,9 @@ GridAssignmentObject::GridAssignmentObject(const vector<MC_Vector> &centers)
 
    double x = _centers.size() / centersPerCell / (lx * ly * lz);
    x = pow(x, 1.0 / 3.0);
-   _nx = max(1., floor(x * lx));
-   _ny = max(1., floor(x * ly));
-   _nz = max(1., floor(x * lz));
+   _nx = max(1., sycl::floor(x * lx));
+   _ny = max(1., sycl::floor(x * ly));
+   _nz = max(1., sycl::floor(x * lz));
    _dx = lx / _nx;
    _dy = ly / _ny;
    _dz = lz / _nz;
