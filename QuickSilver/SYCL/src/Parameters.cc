@@ -318,7 +318,7 @@ namespace
          if (!in.good())
          {
             std::cerr << "ERROR : Input file '" << filename << "' does not exist " << std::endl;
-            exit(-1);
+            return;
          }
          string line;
          getline(in, line);

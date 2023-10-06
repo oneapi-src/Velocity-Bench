@@ -45,6 +45,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <sycl/sycl.hpp>
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "utils.hh"
 #include "Parameters.hh"
 #include "utilsMpi.hh"
@@ -109,6 +111,12 @@ int main(int argc, char **argv)
     printBanner(GIT_VERS, GIT_HASH);
     std::cout << "Loading params" << std::endl;
     Parameters params = getParameters(argc, argv);
+    const string &filename = params.simulationParams.inputFile;
+    ifstream inp_file(filename.c_str());
+    if (!inp_file.good())
+    {
+        return -1;
+    }
     std::cout << "Finished loading params" << std::endl;
     printParameters(params, cout);
     std::cout << "setting GPU" << std::endl;
