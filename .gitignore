@@ -1,0 +1,66 @@
+# Created by https://www.gitignore.io/api/c++
+
+### C++ ###
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+/*/*/*/qs
+
+# Vim swap
+*.swp
+
+# This is a comment
+# Ignore target at the top level
+/build/
+/Build/
+/bin/
+/Bin/
+# Ignore child project's targets as well
+/*/build/
+/*/Build/
+/*/bin/
+/*/Bin/
+
+# And any grandchildren ...
+/*/*/build/
+/*/*/Build/
+/*/*/bin/
+/*/*/Bin/
+
+# Or you can do:
+*build*/
+*Build*/
+*bin*/
+*Bin*/
+
+# which matches 'target' in any sub folder
+*.syntastic_cpp_config
