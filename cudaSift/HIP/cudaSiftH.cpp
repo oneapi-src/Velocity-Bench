@@ -552,7 +552,7 @@ double LowPass(CudaImage &res, CudaImage &src, float scale, float &totTime)
 #ifdef DEVICE_TIMER
   auto start_kernel = std::chrono::steady_clock::now();
 #endif
-  hipLaunchKernelGGL(LowPassBlockOld, blocks, threads, 0, 0, src.d_data, res.d_data, width, pitch, height);
+  hipLaunchKernelGGL(LowPassBlock, blocks, threads, 0, 0, src.d_data, res.d_data, width, pitch, height);
   hipDeviceSynchronize();
 
 #ifdef DEVICE_TIMER
