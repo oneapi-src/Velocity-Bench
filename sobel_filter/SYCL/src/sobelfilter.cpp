@@ -81,15 +81,18 @@ void computeGradient(
     unsigned char* output,
     int rows,
     int cols,
-    sycl::nd_item<1> item)
+    sycl::nd_item<3> item)
 {
     float gradientx[3][3] = {{-1.f,  0.f,  1.f}, {-2.f, 0.f, 2.f}, {-1.f, 0.f, 1.f}}; 
     float gradienty[3][3] = {{-1.f, -2.f, -1.f}, { 0.f, 0.f, 0.f}, { 1.f, 2.f, 1.f}};
 
     float gradient_x, gradient_y;
 
-    int index = item.get_global_id(0) + cols + 1;
+    int row = item.get_group(1) * item.get_local_range(1) + item.get_local_id(1);
+    int col = item.get_group(2) * item.get_local_range(2) + item.get_local_id(2);
+    if (row >= rows - 2 || col >= cols - 2) return;
 
+    int index = row * cols + col + cols + 1;
     int index_row_above = index - cols;
     int index_row_below = index + cols;
 
@@ -224,9 +227,13 @@ int main(int argc, const char* argv[])
 #endif
 
         //Step 3 Gradient strength and direction
+        constexpr int blockDim_x = 64;
+        constexpr int blockDim_y = 2;
+        sycl::range block(1, blockDim_y, blockDim_x);
+        sycl::range grid(1, (rows - 2 + blockDim_y - 1) / blockDim_y, (cols - 2 + blockDim_x - 1) / blockDim_x);
         qsf.parallel_for(
-            sycl::nd_range<1>(((rows * cols) / BLOCK_SIZE) * BLOCK_SIZE, BLOCK_SIZE),
-            [=](sycl::nd_item<1> item) {
+            sycl::nd_range<3>(grid * block, block),
+            [=](sycl::nd_item<3> item) {
                 computeGradient(d_input, d_gradient, rows, cols, item);
             }
         );
