@@ -94,8 +94,11 @@ void computeGradient(
 
     float gradient_x, gradient_y;
 
-    int index = blockDim.x * blockIdx.x + threadIdx.x + cols + 1;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= rows - 2 || col >= cols - 2) return;
 
+    int index = row * cols + col + cols + 1;
     int index_row_above = index - cols;
     int index_row_below = index + cols;
 
@@ -228,7 +231,11 @@ int main(int argc, const char* argv[])
 #endif
 
         //Step 3 Gradient strength and direction
-        computeGradient<<<(rows * cols) / BLOCK_SIZE, BLOCK_SIZE>>>(d_input, d_gradient, rows, cols);
+        constexpr int blockDim_x = 64;
+        constexpr int blockDim_y = 2;
+        dim3 block(blockDim_x, blockDim_y);
+        dim3 grid((cols - 2 + blockDim_x - 1) / blockDim_x, (rows - 2 + blockDim_y - 1) / blockDim_y);
+        computeGradient<<<grid, block>>>(d_input, d_gradient, rows, cols);
         CUDA_CHECK( cudaDeviceSynchronize() );
 
 #ifdef DEBUG_TIME
