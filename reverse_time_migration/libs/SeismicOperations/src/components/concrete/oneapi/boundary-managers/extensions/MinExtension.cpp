@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 
 using namespace sycl;
 using namespace std;
