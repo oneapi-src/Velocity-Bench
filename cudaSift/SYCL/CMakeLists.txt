@@ -89,7 +89,6 @@ endif()
 
 # Use either default or user defined CXX flags
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags
-set(USE_DEFAULT_FLAGS ON)
 
 set(DEF_INTEL_WL_CXX_FLAGS  " ")
 set(DEF_NVIDIA_WL_CXX_FLAGS " ")
