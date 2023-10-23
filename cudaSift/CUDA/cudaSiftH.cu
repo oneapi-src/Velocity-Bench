@@ -502,7 +502,7 @@ double LowPass(CudaImage &res, CudaImage &src, float scale, float &totTime)
 #ifdef DEVICE_TIMER
   auto start_kernel = std::chrono::steady_clock::now();
 #endif
-  LowPassBlockOld<<<blocks, threads>>>(src.d_data, res.d_data, width, pitch, height);
+  LowPassBlock<<<blocks, threads>>>(src.d_data, res.d_data, width, pitch, height);
   safeCall(cudaDeviceSynchronize());
 #ifdef DEVICE_TIMER
   auto stop_kernel = std::chrono::steady_clock::now();

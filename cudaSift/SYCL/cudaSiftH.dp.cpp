@@ -679,7 +679,7 @@ double LowPass(CudaImage &res, CudaImage &src, float scale, sycl::queue &q_ct, f
 #if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
                                           [[intel::reqd_sub_group_size(32)]]
 #endif
-                                         { LowPassBlockOld(src_data_ct1, res_data_ct1, width, pitch, height, item_ct1,
+                                         { LowPassBlock(src_data_ct1, res_data_ct1, width, pitch, height, item_ct1,
                                                            d_LowPassKernel_ptr_ct1, xrows_acc_ct1); }); })
         .wait();
 #ifdef DEVICE_TIMER
