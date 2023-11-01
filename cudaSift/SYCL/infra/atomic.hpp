@@ -1,25 +1,9 @@
 //==---- atomic.hpp -------------------------------*- C++ -*----------------==//
-// Copyright (C) 2023 Intel Corporation
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom
-// the Software is furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-// OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-// OR OTHER DEALINGS IN THE SOFTWARE.
-
-// SPDX-License-Identifier: MIT
+//
+// Copyright (C) 2018 - 2021 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef __INFRA_ATOMIC_HPP__
@@ -36,15 +20,14 @@ namespace infra
   /// \param operand The value to add to the value at \p addr.
   /// \param memoryOrder The memory ordering used.
   /// \returns The value at the \p addr before the call.
-  template <typename T, sycl::access::address_space addressSpace =
-                            sycl::access::address_space::global_space>
-  inline T atomic_fetch_add(
-      T *addr, T operand,
-      sycl::memory_order memoryOrder = sycl::memory_order::relaxed)
+  template <typename T, sycl::access::address_space addressSpace = sycl::access::address_space::global_space,
+            sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+            sycl::memory_scope memoryScope = sycl::memory_scope::device>
+  inline T atomic_fetch_add(T *addr, T operand)
   {
-    sycl::atomic<T, addressSpace> obj(
-        (sycl::multi_ptr<T, addressSpace>(addr)));
-    return sycl::atomic_fetch_add(obj, operand, memoryOrder);
+    auto atm =
+        sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+    return atm.fetch_add(operand);
   }
 
   /// Atomically add the value operand to the value at the addr and assign the
@@ -59,25 +42,41 @@ namespace infra
       float *addr, float operand,
       sycl::memory_order memoryOrder = sycl::memory_order::relaxed)
   {
-    static_assert(sizeof(float) == sizeof(int), "Mismatched type size");
+    /*    static_assert(sizeof(float) == sizeof(int), "Mismatched type size");
 
-    sycl::atomic<int, addressSpace> obj(
-        (sycl::multi_ptr<int, addressSpace>(reinterpret_cast<int *>(addr))));
+        sycl::atomic<int, addressSpace> obj(
+            (sycl::multi_ptr<int, addressSpace>(reinterpret_cast<int *>(addr))));
 
-    int old_value;
-    float old_float_value;
+        int old_value;
+        float old_float_value;
 
-    do
+        do
+        {
+          old_value = obj.load(memoryOrder);
+          old_float_value = *reinterpret_cast<const float *>(&old_value);
+          const float new_float_value = old_float_value + operand;
+          const int new_value = *reinterpret_cast<const int *>(&new_float_value);
+          if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
+            break;
+        } while (true);
+
+        return old_float_value;*/
+    switch (memoryOrder)
     {
-      old_value = obj.load(memoryOrder);
-      old_float_value = *reinterpret_cast<const float *>(&old_value);
-      const float new_float_value = old_float_value + operand;
-      const int new_value = *reinterpret_cast<const int *>(&new_float_value);
-      if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
-        break;
-    } while (true);
-
-    return old_float_value;
+    case sycl::memory_order::relaxed:
+      return atomic_fetch_add<float, addressSpace, sycl::memory_order::relaxed,
+                              sycl::memory_scope::device>(addr, operand);
+    case sycl::memory_order::acq_rel:
+      return atomic_fetch_add<float, addressSpace, sycl::memory_order::acq_rel,
+                              sycl::memory_scope::device>(addr, operand);
+    case sycl::memory_order::seq_cst:
+      return atomic_fetch_add<float, addressSpace, sycl::memory_order::seq_cst,
+                              sycl::memory_scope::device>(addr, operand);
+    default:
+      assert(false && "Invalid memory_order for atomics. Valid memory_order for "
+                      "atomics are: sycl::memory_order::relaxed, "
+                      "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+    }
   }
 
   /// Atomically add the value operand to the value at the addr and assign the
@@ -91,30 +90,46 @@ namespace infra
   inline double atomic_fetch_add(
       double *addr, double operand,
       sycl::memory_order memoryOrder = sycl::memory_order::relaxed)
-  {
-    static_assert(sizeof(double) == sizeof(unsigned long long int),
-                  "Mismatched type size");
+  { /*
+     static_assert(sizeof(double) == sizeof(unsigned long long int),
+                   "Mismatched type size");
 
-    sycl::atomic<unsigned long long int, addressSpace> obj(
-        (sycl::multi_ptr<unsigned long long int, addressSpace>(
-            reinterpret_cast<unsigned long long int *>(addr))));
+     sycl::atomic<unsigned long long int, addressSpace> obj(
+         (sycl::multi_ptr<unsigned long long int, addressSpace>(
+             reinterpret_cast<unsigned long long int *>(addr))));
 
-    unsigned long long int old_value;
-    double old_double_value;
+     unsigned long long int old_value;
+     double old_double_value;
 
-    do
+     do
+     {
+       old_value = obj.load(memoryOrder);
+       old_double_value = *reinterpret_cast<const double *>(&old_value);
+       const double new_double_value = old_double_value + operand;
+       const unsigned long long int new_value =
+           *reinterpret_cast<const unsigned long long int *>(&new_double_value);
+
+       if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
+         break;
+     } while (true);
+
+     return old_double_value;*/
+    switch (memoryOrder)
     {
-      old_value = obj.load(memoryOrder);
-      old_double_value = *reinterpret_cast<const double *>(&old_value);
-      const double new_double_value = old_double_value + operand;
-      const unsigned long long int new_value =
-          *reinterpret_cast<const unsigned long long int *>(&new_double_value);
-
-      if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
-        break;
-    } while (true);
-
-    return old_double_value;
+    case sycl::memory_order::relaxed:
+      return atomic_fetch_add<double, addressSpace, sycl::memory_order::relaxed,
+                              sycl::memory_scope::device>(addr, operand);
+    case sycl::memory_order::acq_rel:
+      return atomic_fetch_add<double, addressSpace, sycl::memory_order::acq_rel,
+                              sycl::memory_scope::device>(addr, operand);
+    case sycl::memory_order::seq_cst:
+      return atomic_fetch_add<double, addressSpace, sycl::memory_order::seq_cst,
+                              sycl::memory_scope::device>(addr, operand);
+    default:
+      assert(false && "Invalid memory_order for atomics. Valid memory_order for "
+                      "atomics are: sycl::memory_order::relaxed, "
+                      "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+    }
   }
 
   /// Atomically subtract the value operand from the value at the addr and assign
@@ -242,14 +257,14 @@ namespace infra
         if (obj.compare_exchange_strong(old, 0, memoryOrder, memoryOrder))
           break;
       }
-      else
-      {
-        old = obj.fetch_add(1);
+      //   else
+      // {
+      // old = obj.fetch_add(1);
+      //  break;
+      // }
+      else if (obj.compare_exchange_strong(old, old + 1, memoryOrder,
+                                           memoryOrder))
         break;
-      }
-      // else if (obj.compare_exchange_strong(old, old + 1, memoryOrder,
-      //                                      memoryOrder))
-      // break;
     }
     return old;
   }
