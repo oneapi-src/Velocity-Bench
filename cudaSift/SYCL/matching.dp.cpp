@@ -34,10 +34,8 @@ void memcopyKernel(float *src, float *dst, size_t src_pitch, size_t dst_pitch, i
   char *d_src = (char *)src;
   char *d_dst = (char *)dst;
 
-#pragma unroll
   for (int i = 0; i < numPts; ++i)
   {
-#pragma unroll
     for (int j = 0; j < width; ++j)
     {
       d_dst[j] = d_src[j];
@@ -64,8 +62,6 @@ void MatchSiftPoints(SiftPoint *sift1, SiftPoint *sift2, float *corrData, int nu
   item_ct1.barrier(sycl::access::fence_space::local_space);
   float sum = 0.0f;
   if (p2 < numPts2)
-
-#pragma unroll
     for (int j = 0; j < 8; j++)
       sum += siftPoint[16 * j + tx] * ptr2[16 * j + tx];
   sums[i] = sum;
@@ -102,21 +98,19 @@ void MatchSiftPoints2(SiftPoint *sift1, SiftPoint *sift2, float *corrData, int n
                       (unsigned int)(item_ct1.get_group(1) * 16 + ty))]
           .data;
 
-#pragma unroll
   for (int i = 0; i < 8; i++)
   {
     siftPoints1[128 * ty + 16 * i + tx] = ptr1[16 * i + tx];
     siftPoints2[128 * ty + 16 * i + tx] = ptr2[16 * i + tx];
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
+
   const int p1 = item_ct1.get_group(2) * 16 + ty;
   const int p2 = item_ct1.get_group(1) * 16 + tx;
   const float *pt1 = &siftPoints1[ty * 128];
   const float *pt2 = &siftPoints2[tx * 128];
   float sum = 0.0f;
 
-#pragma unroll
   for (int i = 0; i < 128; i++)
   {
     int itx = (i + tx) & 127; // avoid bank conflicts
@@ -141,10 +135,7 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
   maxScor2[idx] = -1.0f;
   maxIndex[idx] = -1;
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   float *corrs = &corrData[p1 * corrWidth];
-
-#pragma unroll
   for (int i = tx; i < corrWidth; i += 16)
   {
     float val = corrs[i];
@@ -158,9 +149,6 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
       maxScor2[idx] = val;
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
-
-#pragma unroll
   for (int len = 8; len > 0; len /= 2)
   {
     if (tx < 8)
@@ -180,7 +168,6 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
         maxScor2[idx] = va2;
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   if (tx == 0)
   {
@@ -192,6 +179,7 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
   }
 }
 
+// Version based on suggestion by Nicholas Lin
 void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
                   sycl::nd_item<3> item_ct1, int *maxIndex)
 {
@@ -203,8 +191,6 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
 
   maxIndex[idx] = 0;
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
-
   float *corrs = NULL;
   if (p1 < numPts1)
   {
@@ -229,7 +215,6 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
     }
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (p1 < numPts1)
   {
     for (int len = 8; len > 0; len /= 2)
@@ -251,7 +236,6 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
           corrs[tx + 16] = va2;
       }
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
     }
     if (tx == 0)
     {
@@ -285,13 +269,11 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     maxIndex[idx] = 0;
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   const float *pt1 = sift1[p1].data;
   for (int i = idx; i < 128; i += FMC2W * FMC2H)
     siftPoint[i] = pt1[i];
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   for (int p2 = ty; p2 < numPts2; p2 += FMC2H)
   {
     const float *pt2 = sift2[p2].data;
@@ -314,7 +296,6 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   for (int len = FMC2H / 2; len > 0; len /= 2)
   {
     if (ty == 0 && tx < len)
@@ -335,7 +316,6 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   if (ty == 0 && tx == 0)
   {
@@ -366,7 +346,6 @@ void FindMaxCorr4(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     siftPoint[128 * ty + j] = pt1[j];
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   for (int p2 = 0; p2 < numPts2; p2++)
   {
     const float *pt2 = sift2[p2].data;
@@ -389,7 +368,6 @@ void FindMaxCorr4(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (tx == 0)
   {
     sift1[p1].score = maxScore[ty];
@@ -422,13 +400,9 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   int tx = item_ct1.get_local_id(2);
   int ty = item_ct1.get_local_id(1);
   int bp1 = M7W * item_ct1.get_group(2);
-
-#pragma unroll
   for (int j = ty; j < M7W; j += M7H / M7R)
   {
     int p1 = sycl::min((int)(bp1 + j), (int)(numPts1 - 1));
-
-#pragma unroll
     for (int d = tx; d < NDIM / 4; d += M7W)
     {
       buffer1[(j * NDIM / 4 + (d + j) % (NDIM / 4))] = ((sycl::float4 *)&sift1[p1].data)[d];
@@ -438,8 +412,6 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   float max_score[NRX];
   float sec_score[NRX];
   int index[NRX];
-
-#pragma unroll
   for (int i = 0; i < NRX; i++)
   {
     max_score[i] = 0.0f;
@@ -449,15 +421,11 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   int idx = ty * M7W + tx;
   int ix = idx % (M7W / NRX);
   int iy = idx / (M7W / NRX);
-
-#pragma unroll
   for (int bp2 = 0; bp2 < numPts2 - M7H + 1; bp2 += M7H)
   {
-#pragma unroll
     for (int j = ty; j < M7H; j += M7H / M7R)
     {
       int p2 = sycl::min((int)(bp2 + j), (int)(numPts2 - 1));
-#pragma unroll
       for (int d = tx; d < NDIM / 4; d += M7W)
         buffer2[j * NDIM / 4 + d] = ((sycl::float4 *)&sift2[p2].data)[d];
     }
@@ -467,26 +435,19 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     if (idx < M7W * M7H / M7R / NRX)
     {
       float score[M7R][NRX];
-
-#pragma unroll
       for (int dy = 0; dy < M7R; dy++)
-#pragma unroll
         for (int i = 0; i < NRX; i++)
           score[dy][i] = 0.0f;
-
-#pragma unroll
       for (int d = 0; d < NDIM / 4; d++)
       {
         sycl::float4 v1[NRX];
-#pragma unroll
         for (int i = 0; i < NRX; i++)
           v1[i] = buffer1[((M7W / NRX) * i + ix) * NDIM / 4 + (d + (M7W / NRX) * i + ix) % (NDIM / 4)];
-
-#pragma unroll
+        // v1[i] = buffer2[0];
         for (int dy = 0; dy < M7R; dy++)
         {
           sycl::float4 v2 = buffer2[(M7R * iy + dy) * (NDIM / 4) + d];
-#pragma unroll
+          // sycl::float4 v2 = sycl::float4(0.0f);
           for (int i = 0; i < NRX; i++)
           {
             score[dy][i] += v1[i].x() * v2.x();
@@ -496,11 +457,8 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
           }
         }
       }
-
-#pragma unroll
       for (int dy = 0; dy < M7R; dy++)
       {
-#pragma unroll
         for (int i = 0; i < NRX; i++)
         {
           if (score[dy][i] > max_score[i])
@@ -524,7 +482,6 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   int *indices = (int *)&scores2[M7W * M7H / M7R];
   if (idx < M7W * M7H / M7R / NRX)
   {
-#pragma unroll
     for (int i = 0; i < NRX; i++)
     {
       scores1[iy * M7W + (M7W / NRX) * i + ix] = max_score[i];
@@ -540,8 +497,6 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     float max_score = scores1[tx];
     float sec_score = scores2[tx];
     int index = indices[tx];
-
-#pragma unroll
     for (int y = 0; y < M7H / M7R; y++)
       if (index != indices[y * M7W + tx])
       {
@@ -555,6 +510,7 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
           sec_score = scores1[y * M7W + tx];
       }
     sift1[bp1 + tx].score = max_score;
+    // sift1[bp1 + tx].score = max_score[0];
     sift1[bp1 + tx].match = index;
     sift1[bp1 + tx].match_xpos = sift2[index].xpos;
     sift1[bp1 + tx].match_ypos = sift2[index].ypos;
@@ -617,8 +573,6 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         siftParts2[(i + 0) * FMC_BH + idx] = pts2[0 + i];
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
-
     int b = FMC_BD / 2;
     for (int d = FMC_BD / 2; d < 32; d += FMC_BD / 2)
     {
@@ -647,9 +601,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
           }
         }
       }
-
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
     }
 
     b ^= FMC_BD / 2;
@@ -672,15 +624,12 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
-
     float *blksums = (float *)siftParts1;
     for (int iy = 0; iy < FMC_TH; iy++)
       for (int ix = 0; ix < FMC_TW; ix++)
         blksums[(ty * FMC_TH + iy) * FMC_BW + (tx * FMC_TW + ix)] = sums[iy * FMC_TW + ix];
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     if (idx < FMC_BW)
     {
       for (int j = 0; j < FMC_BH; j++)
@@ -700,7 +649,6 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * FMC_BW + idx),
                            (unsigned int)(numPts1 - 1));
@@ -709,7 +657,6 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       ;
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (idx < FMC_BW)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -727,7 +674,6 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (idx == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -775,10 +721,7 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       if (idx < FMC_BH)
         for (int i = 0; i < FMC_BD; i++)
           siftParts2[i * FMC_BH + idx] = pts2[d + i];
-
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
-
       for (int i = 0; i < FMC_BD; i++)
       {
         sycl::float4 v1[FMC_TW];
@@ -798,7 +741,6 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
 
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
     }
     // float *blksums = (float*)siftParts1;
     for (int iy = 0; iy < FMC_TH; iy++)
@@ -806,7 +748,6 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         blksums[(ty * FMC_TH + iy) * FMC_BW + (tx * FMC_TW + ix)] = sums[iy * FMC_TW + ix];
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     if (idx < FMC_BW)
     {
       for (int j = 0; j < FMC_BH; j++)
@@ -826,7 +767,6 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * FMC_BW + idx),
                            (unsigned int)(numPts1 - 1));
@@ -835,7 +775,6 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       ;
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (idx < FMC_BW)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -853,7 +792,6 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (idx == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -887,14 +825,12 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         sum[l] = 0.0f;
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     for (int i = 0; i < 2; i++)
     {
       pts1[17 * tx + ty] = p1l4[i * 16 + tx];
       pts2[16 * ty + tx] = p2l4[i * 16 + tx];
 
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
       if (ty < (16 / NUM))
       {
 #pragma unroll
@@ -914,7 +850,6 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
 
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
     }
     float *sums = siftParts1;
     if (ty < (16 / NUM))
@@ -922,7 +857,6 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         sums[16 * (ty + l * (16 / NUM)) + tx] = sum[l];
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     if (ty == 0)
     {
       for (int j = 0; j < 16; j++)
@@ -942,7 +876,6 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
                            (unsigned int)(numPts1 - 1));
@@ -951,7 +884,6 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       ;
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (ty == 0)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -969,7 +901,6 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   }
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -1000,7 +931,6 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         reinterpret_cast<sycl::float4 *>(pt2l)[tx];
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     for (int i = 0; i < 16; i++)
     {
       sycl::float4 part2 =
@@ -1017,7 +947,6 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     if (ty == 0 && tx < 16)
     {
       for (int j = 0; j < 16; j++)
@@ -1037,14 +966,12 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
 
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   if (tx == 0 && ty == 0)
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
 
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (ty == 0 && tx < 16)
   {
     const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
@@ -1063,7 +990,6 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -1094,16 +1020,13 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       siftParts1[17 * tx + ty] = pt1l[i * 16 + tx]; // load and transpose
       siftParts2[17 * tx + ty] = pt2l[i * 16 + tx];
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
       for (int j = 0; j < 16; j++)
         sum += siftParts1[17 * j + tx] * siftParts2[17 * j + ty];
       item_ct1.barrier(sycl::access::fence_space::local_space);
-      ;
     }
     float *sums = siftParts1;
     sums[16 * ty + tx] = sum;
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
     if (ty == 0)
     {
       for (int j = 0; j < 16; j++)
@@ -1122,7 +1045,6 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
                            (unsigned int)(numPts1 - 1));
@@ -1130,7 +1052,6 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (ty == 0)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -1147,7 +1068,6 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
   item_ct1.barrier(sycl::access::fence_space::local_space);
-  ;
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -1260,8 +1180,6 @@ void ComputeHomographies(float *coord, int *randPts, float *homo,
   const int idx = item_ct1.get_local_range().get(2) * bx + tx;
   const int numLoops =
       item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2);
-
-#pragma unroll
   for (int i = 0; i < 4; i++)
   {
     int pt = randPts[i * numLoops + idx];
@@ -1288,8 +1206,6 @@ void ComputeHomographies(float *coord, int *randPts, float *homo,
   }
   InvertMatrix<8>(a, ia);
   item_ct1.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
   for (int j = 0; j < 8; j++)
   {
     float sum = 0.0f;
@@ -1318,13 +1234,9 @@ void TestHomographies(float *d_coord, float *d_homo,
     homo[tx * 8 + ty] = d_homo[idx + ty * numLoops];
   item_ct1.barrier(sycl::access::fence_space::local_space);
   float a[8];
-
-#pragma unroll
   for (int i = 0; i < 8; i++)
     a[i] = homo[ty * 8 + i];
   int cnt = 0;
-
-#pragma unroll
   for (int i = tx; i < numPts; i += TESTHOMO_TESTS)
   {
     float x1 = d_coord[i + 0 * numPts];
@@ -1350,7 +1262,6 @@ void TestHomographies(float *d_coord, float *d_homo,
       cnts[kty + tx] += cnts[kty + tx + len];
     len /= 2;
     item_ct1.barrier(sycl::access::fence_space::local_space);
-    ;
   }
   if (tx < TESTHOMO_LOOPS && ty == 0)
     d_counts[idx] = cnts[TESTHOMO_TESTS * tx];
@@ -1898,7 +1809,8 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                                            buffer1_acc_ct1(sycl::range<1>(1024 /*M7W*NDIM/4*/), cgh);                                          
                                        sycl::accessor<sycl::float4, 1, sycl::access_mode::read_write,
                                                       sycl::access::target::local>
-                                            buffer2_acc_ct1(sycl::range<1>(1024 /*M7H*NDIM/4*/), cgh);
+                                            buffer2_acc_ct1(sycl::range<1>(1024 /*M7H*NDIM/4*/), cgh);                                          
+
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
                                                         [=](sycl::nd_item<3> item_ct1)
 #if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)

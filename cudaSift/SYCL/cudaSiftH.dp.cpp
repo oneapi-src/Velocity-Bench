@@ -168,6 +168,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
 #endif
     q_ct.memcpy(&siftData.numPts, &d_PointCounterAddr[2 * numOctaves], sizeof(int));
     q_ct.wait();
+    siftData.numPts/=2;
 #ifdef DEVICE_TIMER
     auto stop_memcpy2 = std::chrono::steady_clock::now();
     totTime += std::chrono::duration<float, std::micro>(stop_memcpy2 - start_memcpy2).count();
@@ -203,6 +204,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
                           sizeof(int)),
               0));
     q_ct.wait();
+    siftData.numPts/=2;
 #ifdef DEVICE_TIMER
     auto stop_memcpy4 = std::chrono::steady_clock::now();
     totTime += std::chrono::duration<float, std::micro>(stop_memcpy4 - start_memcpy4).count();
