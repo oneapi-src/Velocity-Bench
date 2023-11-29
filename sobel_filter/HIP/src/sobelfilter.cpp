@@ -122,7 +122,8 @@ void computeGradient(
                     (gradienty[2][1] * input[index_row_below])        +
                     (gradienty[2][2] * input[index_row_below + 1]);
 
-    output[index] = sqrtf(powf(gradient_x, 2.f) + powf(gradient_y, 2.f));
+    // output[index] = sqrtf(powf(gradient_x, 2.f) + powf(gradient_y, 2.f));
+    output[index] = sqrtf(gradient_x * gradient_x + gradient_y * gradient_y);
 }
 
 int main(int argc, const char* argv[])
