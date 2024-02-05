@@ -14,6 +14,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <cstring>
 #include <chrono>
 
 #define TIMER_START() time_start = std::chrono::steady_clock::now();
@@ -68,6 +69,14 @@ typedef struct Job
     int adj, geomflag, fdop, frsf;
     char jbtype[8], shotfile[224], geomfile[224], logfile[224];    
     char jobname[256], tmppath[512];
+    Job() {
+        memset(jbtype, 0, 8);
+        memset(shotfile, 0, 224);
+        memset(geomfile, 0, 224);
+        memset(logfile, 0, 224);
+        memset(jobname, 0, 256);
+        memset(tmppath, 0, 512);
+    }
 }job_t;
 
 typedef struct Workload
