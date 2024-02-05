@@ -37,6 +37,7 @@
  * 
  */
 
+#include <complex>
 #include <sycl/sycl.hpp>
 #include "include/utils/debug_utils.h"
 

@@ -358,17 +358,18 @@ void iDFT2D1gpu(std::complex<float>* din, std::complex<float>* dout, int num_row
     angle = 2.0f * PI * ((float)i / (float)num_cols);
     sum = 0.0f;
 #pragma unroll
-    for (int k = 0; k < num_cols; ++k) {
+    for (int k = 0; k < num_cols/2 + 1; ++k) {
         // sinf = sycl::sin(angle * k);
         // cosf = sycl::cos(angle * k);
         // sinf = sycl::sincos(angle * k, sycl::make_ptr<float, sycl::access::address_space::private_space>(&cosf));
         // twiddle = std::complex<float>(cosf, sinf);
         TWIDDLE();
-        if (k < (num_cols/2+1)) {
-            sum = sum + din[j * (num_cols/2+1) + k] * twiddle;
-        } else {
-            sum = sum + std::conj(din[((num_rows-j)%num_rows) * (num_cols/2+1) + ((num_cols-k)%num_cols)]) * twiddle;
-        }
+        sum = sum + din[j * (num_cols/2+1) + k] * twiddle;
+    }
+#pragma unroll
+    for (int k = num_cols/2 + 1; k < num_cols; ++k) {
+        TWIDDLE();
+        sum = sum + std::conj(din[((num_rows-j)%num_rows) * (num_cols/2+1) + ((num_cols-k)%num_cols)]) * twiddle;
     }
 
     dout[i * num_rows + j] = sum;
