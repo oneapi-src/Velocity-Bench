@@ -72,6 +72,7 @@ set(SOURCES
 include_directories(
   ${CMAKE_SOURCE_DIR}/../common/
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${HIP_INCLUDE_DIRS}
 )
 
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
@@ -97,12 +98,5 @@ if(DEVICE_TIMER)
   add_compile_options(-DDEVICE_TIMER)
 endif()
 
-set(HIP_SEPARABLE_COMPILATION ON)
-set(MY_TARGET_NAME ${PROJECT_NAME})
-set(MY_HIPCC_OPTIONS)
-set(MY_NVCC_OPTIONS)
-set(CMAKE_HIP_ARCHITECTURES OFF)
-
-set_source_files_properties(${cuda_sources} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
-hip_add_executable(${MY_TARGET_NAME} ${SOURCES} ${MY_HIPCC_OPTIONS} NVCC_OPTIONS ${MY_NVCC_OPTIONS})
+add_executable(cudasift ${SOURCES})
 target_link_libraries(cudasift stdc++ stdc++fs ${OpenCV_LIBS})

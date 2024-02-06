@@ -332,17 +332,17 @@ void ExtractSiftDescriptorsCONSTNew(
         if (y >= 2)
         { // Upper left
           float grad2 = iverf * grad1;
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p1, iangf * grad2);
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p2, angf * grad2);
         }
         if (y <= 13)
         { // Lower left
           float grad2 = verf * grad1;
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p1 + 32, iangf * grad2);
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p2 + 32, angf * grad2);
         }
       }
@@ -352,17 +352,17 @@ void ExtractSiftDescriptorsCONSTNew(
         if (y >= 2)
         { // Upper right
           float grad2 = iverf * grad1;
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p1 + 8, iangf * grad2);
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p2 + 8, angf * grad2);
         }
         if (y <= 13)
         { // Lower right
           float grad2 = verf * grad1;
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p1 + 40, iangf * grad2);
-          infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+          infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
               buffer + p2 + 40, angf * grad2);
         }
       }
@@ -452,17 +452,17 @@ void ExtractSiftDescriptor(rawImg_data texObj,
       if (y >= 2)
       { // Upper left
         float grad2 = iverf * grad1;
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p1, iangf * grad2);
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p2, angf * grad2);
       }
       if (y <= 13)
       { // Lower left
         float grad2 = verf * grad1;
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p1 + 32, iangf * grad2);
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p2 + 32, angf * grad2);
       }
     }
@@ -472,17 +472,17 @@ void ExtractSiftDescriptor(rawImg_data texObj,
       if (y >= 2)
       { // Upper right
         float grad2 = iverf * grad1;
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p1 + 8, iangf * grad2);
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p2 + 8, angf * grad2);
       }
       if (y <= 13)
       { // Lower right
         float grad2 = verf * grad1;
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p1 + 40, iangf * grad2);
-        infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+        infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
             buffer + p2 + 40, angf * grad2);
       }
     }
@@ -621,7 +621,7 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
           (int)((LEN / 2) * sycl::atan2(dy, dx) / 3.1416f + (LEN / 2) + 0.5f) %
           LEN;
       float grad = sycl::sqrt(dx * dx + dy * dy);
-      infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+      infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
           &hist[LEN + bin], grad * gaussx[x] * gaussy[y]);
     }
     item_ct1.barrier(sycl::access::fence_space::local_space);
@@ -673,11 +673,12 @@ void ComputeOrientationsCONSTNew(float *image, int w, int p, int h, SiftPoint *d
         float val1 = hist[LEN + ((i2 + 1) % LEN)];
         float val2 = hist[LEN + ((i2 + LEN - 1) % LEN)];
         float peak = i2 + 0.5f * (val1 - val2) / (2.0f * maxval2 - val1 - val2);
-       // unsigned int idx = infra::atomic_fetch_compare_inc(
-         //   &d_PointCounter[2 * octave + 1], (unsigned int)0x7fffffff);
-	  unsigned int idx =
-           infra::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(
-               &d_PointCounter[2 * octave + 1], 2) / 2;
+        // unsigned int idx = infra::atomic_fetch_compare_inc(
+        //   &d_PointCounter[2 * octave + 1], (unsigned int)0x7fffffff);
+        unsigned int idx =
+            infra::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(
+                &d_PointCounter[2 * octave + 1], 2) /
+            2;
         if (idx < d_MaxNumPoints)
         {
           d_Sift[idx].xpos = d_Sift[bx].xpos;
@@ -734,7 +735,7 @@ void ComputeOrientationsCONST(rawImg_data texObj,
       if (bin > 31)
         bin = 0;
       float grad = sycl::sqrt(dx * dx + dy * dy);
-      infra::atomic_fetch_add<sycl::access::address_space::local_space>(
+      infra::atomic_fetch_add<float, sycl::access::address_space::local_space>(
           &hist[bin], grad * gauss[xd] * gauss[yd]);
     }
 
@@ -789,11 +790,12 @@ void ComputeOrientationsCONST(rawImg_data texObj,
         float val1 = hist[32 + ((i2 + 1) & 31)];
         float val2 = hist[32 + ((i2 + 31) & 31)];
         float peak = i2 + 0.5f * (val1 - val2) / (2.0f * maxval2 - val1 - val2);
-       // unsigned int idx = infra::atomic_fetch_compare_inc(
-       //     &d_PointCounter[2 * octave + 1], (unsigned int)0x7fffffff);
-       unsigned int idx =
+        // unsigned int idx = infra::atomic_fetch_compare_inc(
+        //     &d_PointCounter[2 * octave + 1], (unsigned int)0x7fffffff);
+        unsigned int idx =
             infra::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(
-                &d_PointCounter[2 * octave + 1], 2) / 2;
+                &d_PointCounter[2 * octave + 1], 2) /
+            2;
 
         if (idx < d_MaxNumPoints)
         {
@@ -979,11 +981,12 @@ void FindPointsMultiNew(float *d_Data0, SiftPoint *d_Sift, int width, int pitch,
         sycl::atomic<unsigned int>(
             sycl::global_ptr<unsigned int>(&d_PointCounter[2 * octave + 0]))
             .fetch_max(d_PointCounter[2 * octave - 1]);
-       // unsigned int idx = infra::atomic_fetch_compare_inc(
-         //   &d_PointCounter[2 * octave + 0], (unsigned int)0x7fffffff);
-	  unsigned int idx =
+        // unsigned int idx = infra::atomic_fetch_compare_inc(
+        //   &d_PointCounter[2 * octave + 0], (unsigned int)0x7fffffff);
+        unsigned int idx =
             infra::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(
-                &d_PointCounter[2 * octave + 0], 2) / 2;
+                &d_PointCounter[2 * octave + 0], 2) /
+            2;
 
         idx = (idx >= maxPts ? maxPts - 1 : idx);
         d_Sift[idx].xpos = xpos + pdx;
