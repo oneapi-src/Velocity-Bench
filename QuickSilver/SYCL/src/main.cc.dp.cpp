@@ -360,7 +360,7 @@ void cycleTracking(MonteCarlo *monteCarlo, uint64_cu *tallies, uint64_cu *tallie
 #if defined(HAVE_SYCL)
 
                         const size_t N = numParticles;
-                        unsigned int wg_size = 16;
+                        unsigned int wg_size = 256;
                         unsigned int num_wgs = (N + wg_size - 1) / wg_size;
 
                         sycl_device_queue.submit([&](sycl::handler &cgh)

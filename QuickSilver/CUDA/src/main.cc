@@ -311,7 +311,7 @@ void cycleTracking(MonteCarlo *monteCarlo, uint64_cu *tallies, uint64_cu *tallie
 #if defined(HAVE_CUDA)
 
                         const size_t N = numParticles;
-                        unsigned int wg_size = 16;
+                        unsigned int wg_size = 256;
                         unsigned int num_wgs = (N + wg_size - 1) / wg_size;
                         CycleTrackingKernel<<<num_wgs, wg_size, NUM_TALLIES * replications * sizeof(int), 0>>>(monteCarlo, numParticles, processingVault, processedVault, tallies_d);
                         checkMsg("CycleTrackingKernel, execution failed\n");
