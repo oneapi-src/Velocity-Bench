@@ -31,20 +31,26 @@ void WaveFieldsMemoryHandler::FirstTouch(float *ptr, GridBox *apGridBox, bool en
     /////assert(0);
     int nx, nz, compute_nx, compute_nz;
 
+    int iBlockX(0), iBlockZ(0);
     if (enable_window) {
       nx = apGridBox->GetActualWindowSize(X_AXIS);
       nz = apGridBox->GetActualWindowSize(Z_AXIS);
       compute_nx = apGridBox->GetComputationGridSize(X_AXIS);
       compute_nz = apGridBox->GetComputationGridSize(Z_AXIS);
+      iBlockX = mpParameters->GetBlockX();
+      iBlockZ = mpParameters->GetBlockZ();
     } else {
       nx = apGridBox->GetActualGridSize(X_AXIS);
       nz = apGridBox->GetActualGridSize(Z_AXIS);
       compute_nx = (nx - 2 * mpParameters->GetHalfLength());
       compute_nz = (nz - 2 * mpParameters->GetHalfLength());
+      iBlockX = 1; 
+      iBlockZ = 1; 
+
     }
     OneAPIBackend::GetInstance()->GetDeviceQueue()->submit([&](handler &cgh) {
       auto global_range = range<2>(compute_nx, compute_nz);
-      auto local_range = range<2>(mpParameters->GetBlockX(), mpParameters->GetBlockZ());
+      auto local_range = range<2>(iBlockX, iBlockZ);
       auto starting_offset = id<2>(mpParameters->GetHalfLength(), mpParameters->GetHalfLength());
       auto global_nd_range = nd_range<2>(global_range, local_range, starting_offset);
       float *curr_base = ptr;
