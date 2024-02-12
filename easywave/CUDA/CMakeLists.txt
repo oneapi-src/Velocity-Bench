@@ -83,7 +83,7 @@ endif()
 add_compile_options(-DUSE_CUDA)
 add_compile_options(-DENABLE_CUDA_LOGGING)
 
-set(CUDA_NVCC_FLAGS -std=c++17)
+#set(CUDA_NVCC_FLAGS -std=c++17)
 if(ENABLE_GPU_TIMINGS)
     message(STATUS "GPU Timings will be displayed")
     add_compile_options(-DENABLE_GPU_TIMINGS)
