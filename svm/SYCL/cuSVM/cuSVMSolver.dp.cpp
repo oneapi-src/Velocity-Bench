@@ -490,10 +490,10 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
 
     q_ct1.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.interop_task([=](sycl::interop_handler ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::cuda>(q_ct1);
+        cgh.host_task([=](sycl::interop_handle ih) {
+            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
             cublasSetStream(handle, cudaStreamHandle);
-            //auto cuA = reinterpret_cast<float *>(ih.get_mem<sycl::backend::cuda>(d_A));
+            //auto cuA = reinterpret_cast<float *>(ih.get_mem<sycl::backend::ext_oneapi_cuda>(d_A));
             //constexpr float ALPHA = 2.f;
             //constexpr int INCX = 1;
             constexpr float ALPHA = 1.0f;

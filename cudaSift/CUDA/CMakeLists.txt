@@ -1,3 +1,25 @@
+#  Modifications Copyright (C) 2023 Intel Corporation
+
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"),
+#  to deal in the Software without restriction, including without limitation
+#  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+#  and/or sell copies of the Software, and to permit persons to whom
+#  the Software is furnished to do so, subject to the following conditions:
+
+#  The above copyright notice and this permission notice shall be included
+#  in all copies or substantial portions of the Software.
+
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+#  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+#  OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+#  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+#  OR OTHER DEALINGS IN THE SOFTWARE.
+
+#  SPDX-License-Identifier: MIT
+
 cmake_minimum_required(VERSION 3.10)
 project(cudaSift C CXX)
 
@@ -7,27 +29,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(DEVICE_TIMER            "Build using Device Timer" OFF)
 option(USE_SM                  "Specifies which streaming multiprocessor architecture to use"     )
 
+set(DEF_WL_CXX_FLAGS           " -msse2 ")
+set(DEF_GENERAL_CXX_FLAGS      " -O3 ")
+set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
+
 find_package(OpenCV REQUIRED)
 find_package(CUDA)
 if (NOT CUDA_FOUND)
   message(STATUS "CUDA not found. Project will not be built.")
 endif(NOT CUDA_FOUND)
-
-if (WIN32)
-  set(EXTRA_CXX_FLAGS "/DVERBOSE /D_CRT_SECURE_NO_WARNINGS ")
-  list(APPEND CUDA_NVCC_FLAGS "-arch=sm_35;--compiler-options;-O2;-DVERBOSE") 
-endif()
-if (UNIX)
-  # if (APPLE)
-  #   set(EXTRA_CXX_FLAGS "-DVERBOSE -msse2")
-  #   list(APPEND CUDA_NVCC_FLAGS "-arch=sm_35;--compiler-options;-O2;-DVERBOSE") 
-  # else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -msse2")
-    # list(APPEND CUDA_NVCC_FLAGS "-lineinfo;-ccbin;/usr/bin/gcc;--compiler-options;-O2;-D_FORCE_INLINES;-DVERBOSE_NOT")
-    # list(APPEND CUDA_NVCC_FLAGS "-lineinfo;-ccbin") 
-    # list(APPEND CUDA_NVCC_FLAGS "-g;-G;-lineinfo;-ccbin;/usr/bin/gcc-8;--compiler-options;-O2;-D_FORCE_INLINES;-DVERBOSE_NOT;") 
-  # endif()
-endif()
 
 set(cuda_sources  
   cudaImage.cu  
@@ -55,11 +65,28 @@ if(DEVICE_TIMER)
     add_compile_options(-DDEVICE_TIMER)
 endif()
 
-cuda_add_executable(cudasift ${cuda_sources} ${sources} OPTIONS -arch=sm_${USE_SM})
-set_target_properties(cudasift PROPERTIES
-  COMPILE_FLAGS "${EXTRA_CXX_FLAGS}"			   
-)
+# -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
+# -DOVERRIDE_GENERAL_CXX_FLAGS=" -blah -blah " overrides the general flags only (and not the workload specific flags)
+# passing in both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS is not allowed, in order to prevent ambiguity
 
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "Using DEFAULT compilation flags")
+    set(CMAKE_CXX_FLAGS "${DEF_COMBINED_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS ${DEF_WL_CXX_FLAGS})
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+endif()
+
+
+set(CUDA_SEPARABLE_COMPILATION ON)
+message(STATUS "CXX  Compilation flags to: ${CMAKE_CXX_FLAGS}")
+
+cuda_add_executable(cudasift ${cuda_sources} ${sources} OPTIONS -arch=sm_${USE_SM})
 target_link_libraries(cudasift ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
  
 install(FILES 

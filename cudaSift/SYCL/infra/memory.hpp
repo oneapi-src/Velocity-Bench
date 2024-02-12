@@ -1,25 +1,9 @@
 //==---- memory.hpp -------------------------------*- C++ -*----------------==//
-// Copyright (C) 2023 Intel Corporation
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom
-// the Software is furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-// OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-// OR OTHER DEALINGS IN THE SOFTWARE.
-
-// SPDX-License-Identifier: MIT
+//
+// Copyright (C) 2018 - 2021 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef __INFRA_MEMORY_HPP__
@@ -266,7 +250,7 @@ namespace infra
       return mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
 #else
       return sycl::malloc_device(size, q.get_device(), q.get_context());
-#endif
+#endif // INFRA_USM_LEVEL_NONE
     }
 
 #define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
@@ -303,7 +287,7 @@ namespace infra
     cgh.fill(acc, (byte_t)value); });
 #else
       return q.memset(dev_ptr, value, size);
-#endif
+#endif // INFRA_USM_LEVEL_NONE
     }
 
     /// Set \p value to the 3D memory region pointed by \p data in \p q. \p size
@@ -506,7 +490,7 @@ namespace infra
       }
 #else
       return q.memcpy(to_ptr, from_ptr, size);
-#endif
+#endif // INFRA_USM_LEVEL_NONE
     }
 
     /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
@@ -750,7 +734,7 @@ namespace infra
       detail::mem_mgr::instance().mem_free(ptr);
 #else
       sycl::free(ptr, q.get_context());
-#endif
+#endif // INFRA_USM_LEVEL_NONE
     }
   }
 
@@ -1018,6 +1002,7 @@ namespace infra
     detail::sift_memset(q, pitch, val, size);
   }
 
+  /// infra accessor used as device function parameter.
   template <class T, memory_region Memory, size_t Dimension>
   class accessor;
   template <class T, memory_region Memory>
@@ -1206,7 +1191,7 @@ namespace infra
             .template get_access<sycl::access_mode::read_write>()[index];
 #else
         return _device_ptr[index];
-#endif
+#endif // INFRA_USM_LEVEL_NONE
       }
 
 #ifdef INFRA_USM_LEVEL_NONE
@@ -1227,7 +1212,7 @@ namespace infra
       {
         return infra_accessor_t((T *)_device_ptr, _range);
       }
-#endif
+#endif // INFRA_USM_LEVEL_NONE
 
     private:
       device_memory(value_t *memory_ptr, size_t size)
@@ -1276,7 +1261,7 @@ namespace infra
                        .template reinterpret<T, 1>(sycl::range<1>(1));
         return accessor_t(buf, cgh);
       }
-#endif
+#endif // INFRA_USM_LEVEL_NONE
     };
   }
 
@@ -1286,6 +1271,6 @@ namespace infra
   using constant_memory = detail::device_memory<T, constant, Dimension>;
   template <class T, size_t Dimension>
   using shared_memory = detail::device_memory<T, shared, Dimension>;
-}
+} // namespace infra
 
-#endif
+#endif // __INFRA_MEMORY_HPP__

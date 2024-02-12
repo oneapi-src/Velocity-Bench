@@ -83,7 +83,7 @@ CC=/path/to/compiler/bin/clang cmake=/path/to/compiler/bin/clang++ .. -DUSE_NVID
 To compile the code for AMD, please use the following `cmake` command:
 
 ```
-CC=/path/to/compiler/bin/clang cmake=/path/to/compiler/bin/clang++ .. -DUSE_AMDHIP_BACKEND={gfx90a|gfx908} -DETHASHSYCL=ON  
+CC=/path/to/compiler/bin/clang cmake=/path/to/compiler/bin/clang++ .. -DUSE_AMD_BACKEND=ON -DUSE_AMD_ARCH={gfx90a|gfx908} -DETHASHSYCL=ON  
 
 ```
 

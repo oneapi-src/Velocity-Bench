@@ -58,7 +58,7 @@ std::vector<int> const vShuffleOffsets({
     24,
     24,
     24,
-#ifdef USE_AMDHIP_BACKEND
+#ifdef USE_AMD_BACKEND
     32,
     32,
     32,

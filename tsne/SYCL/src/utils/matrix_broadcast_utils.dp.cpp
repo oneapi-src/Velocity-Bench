@@ -37,6 +37,7 @@
  * Copyright (c) 2018, Regents of the University of California
  */
 
+#include <complex>
 #include <sycl/sycl.hpp>
 #include "include/utils/matrix_broadcast_utils.h"
 

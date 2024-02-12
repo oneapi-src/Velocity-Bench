@@ -2,22 +2,12 @@
 
 hashtable implements a simple hash table in GPU (original CUDA source code is from [here](https://github.com/nosferalatu/SimpleGPUHashTable)).
 
-## Cloning
-
-To clone
-
-```
-git clone https://github.com/oneapi-src/Velocity-Bench.git
-```
-
 ## Supported versions
 
 - CUDA: The original code was obtained from [here](https://github.com/nosferalatu/SimpleGPUHashTable)
 - SYCL: The CUDA code was migrated using Intel DPCT, and then the resulting code was modified to remove the dpct headers.
 - HIP: Created from CUDA version using hipify-perl script.
 
-# Current Version:
-- Initial release of the workload
 
 # Build Instructions
 

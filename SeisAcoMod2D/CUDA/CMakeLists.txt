@@ -25,12 +25,25 @@ endif()
 
 option(USE_SM "Build for specific SM" OFF)
 
-# CMAKE_CXX_FLAGS
-if("${CMAKE_CXX_FLAGS}" STREQUAL "")
+set(DEF_WL_CXX_FLAGS           " ")
+set(DEF_GENERAL_CXX_FLAGS      " -O3 -std=c++11 -fopenmp ")
+set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
+
+# -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
+# -DOVERRIDE_GENERAL_CXX_FLAGS=" -blah -blah " overrides the general flags only (and not the workload specific flags)
+# passing in both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS is not allowed, in order to prevent ambiguity
+
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
     message(STATUS "Using DEFAULT compilation flags")
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -O3 -std=c++11 -fopenmp ")
-else()
-    message(STATUS "OVERRIDING DEFAULT compilation flags")
+    set(CMAKE_CXX_FLAGS "${DEF_COMBINED_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(CMAKE_CXX_FLAGS "${OVERRIDE_GENERAL_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS ${DEF_WL_CXX_FLAGS})
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
 endif()
 
 # CUDA_NVCC_FLAGS
@@ -45,20 +58,6 @@ endif()
 find_package(CUDA REQUIRED)
 
 find_package(MPI REQUIRED)
-# message(STATUS "MPI_FOUND: ${MPI_FOUND}")
-# message(STATUS "MPI_VERSION: ${MPI_VERSION}")
-# message(STATUS "MPIEXEC: ${MPIEXEC}")
-# message(STATUS "MPIEXEC_EXECUTABLE: ${MPIEXEC_EXECUTABLE}")
-# message(STATUS "MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
-# message(STATUS "MPIEXEC_NUMPROC_FLAG: ${MPIEXEC_NUMPROC_FLAG}")
-# message(STATUS "MPIEXEC_MAX_NUMPROCS: ${MPIEXEC_MAX_NUMPROCS}")
-# message(STATUS "MPIEXEC_PREFLAGS: ${MPIEXEC_PREFLAGS}")
-# message(STATUS "MPIEXEC_POSTFLAGS: ${MPIEXEC_POSTFLAGS}")
-# message(STATUS "MPI_CXX_COMPILE_FLAGS: ${MPI_CXX_COMPILE_FLAGS}")
-# message(STATUS "MPI_CXX_COMPILE_OPTIONS: ${MPI_CXX_COMPILE_OPTIONS}")
-# message(STATUS "MPI_CXX_INCLUDE_PATH: ${MPI_CXX_INCLUDE_PATH}")
-# message(STATUS "MPI_CXX_LINK_FLAGS: ${MPI_CXX_LINK_FLAGS}")
-# message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/../common/main.cpp

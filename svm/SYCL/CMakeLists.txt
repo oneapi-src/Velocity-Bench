@@ -76,6 +76,8 @@ set(SOURCES
     #infrastructure/SYCL.cpp
 )
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/libSVM
                     ${CMAKE_SOURCE_DIR}/cuSVM
@@ -86,7 +88,7 @@ include_directories(${CMAKE_SOURCE_DIR}
 # Use either default or user defined CXX flags
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags
 
-set(INTEL_GPU_CXX_FLAGS  " -O3 -fsycl -DMKL_ILP64")
+set(INTEL_GPU_CXX_FLAGS  " -O3 -fsycl")
 set(NVIDIA_GPU_CXX_FLAGS " -O3 -fsycl -DUSE_CUBLAS")
 set(AMD_GPU_CXX_FLAGS    " -O3 -fsycl -DUSE_HIPBLAS -D__HIP_PLATFORM_AMD__")
 
@@ -110,8 +112,9 @@ elseif(USE_AMD_BACKEND)
     target_link_libraries(${PROJECT_NAME} -lhipblas)
 else()
     message(STATUS "Enabling INTEL backend")
-    link_directories(${MKLROOT}/lib/intel64)
-    target_link_libraries(${PROJECT_NAME} mkl_sycl mkl_intel_ilp64 mkl_tbb_thread mkl_core pthread dl m)
+    find_package(oneMKL REQUIRED CONFIG HINTS ${oneMKLROOT})
+    message(STATUS "Found oneMKL: ${oneMKL_DIR}")
+    target_link_libraries(${PROJECT_NAME} PRIVATE MKL::onemkl)
 endif()
 
 if(GPU_AOT)
@@ -141,4 +144,4 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/a9a
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 #add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} sycl stdc++fs)
+target_link_libraries(${PROJECT_NAME} PRIVATE sycl stdc++fs)

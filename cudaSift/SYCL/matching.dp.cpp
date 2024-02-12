@@ -97,17 +97,20 @@ void MatchSiftPoints2(SiftPoint *sift1, SiftPoint *sift2, float *corrData, int n
       sift2[sycl::min((unsigned int)(numPts2 - 1),
                       (unsigned int)(item_ct1.get_group(1) * 16 + ty))]
           .data;
+
   for (int i = 0; i < 8; i++)
   {
     siftPoints1[128 * ty + 16 * i + tx] = ptr1[16 * i + tx];
     siftPoints2[128 * ty + 16 * i + tx] = ptr2[16 * i + tx];
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
+
   const int p1 = item_ct1.get_group(2) * 16 + ty;
   const int p2 = item_ct1.get_group(1) * 16 + tx;
   const float *pt1 = &siftPoints1[ty * 128];
   const float *pt2 = &siftPoints2[tx * 128];
   float sum = 0.0f;
+
   for (int i = 0; i < 128; i++)
   {
     int itx = (i + tx) & 127; // avoid bank conflicts
@@ -131,7 +134,7 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
   maxScore[idx] = -1.0f;
   maxScor2[idx] = -1.0f;
   maxIndex[idx] = -1;
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   float *corrs = &corrData[p1 * corrWidth];
   for (int i = tx; i < corrWidth; i += 16)
   {
@@ -145,7 +148,7 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
     else if (val > maxScor2[idx])
       maxScor2[idx] = val;
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   for (int len = 8; len > 0; len /= 2)
   {
     if (tx < 8)
@@ -164,7 +167,7 @@ void FindMaxCorr(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPts
       if (va2 > maxScor2[idx])
         maxScor2[idx] = va2;
     }
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   if (tx == 0)
   {
@@ -187,8 +190,7 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
   const int idx = ty * 16 + tx;
 
   maxIndex[idx] = 0;
-  item_ct1.barrier();
-
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   float *corrs = NULL;
   if (p1 < numPts1)
   {
@@ -212,7 +214,7 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
         corrs[tx + 16] = sum;
     }
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (p1 < numPts1)
   {
     for (int len = 8; len > 0; len /= 2)
@@ -233,7 +235,7 @@ void FindMaxCorr3(float *corrData, SiftPoint *sift1, SiftPoint *sift2, int numPt
         if (va2 > corrs[tx + 16])
           corrs[tx + 16] = va2;
       }
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     if (tx == 0)
     {
@@ -266,12 +268,12 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     maxScor2[idx] = -1.0f;
     maxIndex[idx] = 0;
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   const float *pt1 = sift1[p1].data;
   for (int i = idx; i < 128; i += FMC2W * FMC2H)
     siftPoint[i] = pt1[i];
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   for (int p2 = ty; p2 < numPts2; p2 += FMC2H)
   {
     const float *pt2 = sift2[p2].data;
@@ -293,7 +295,7 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   for (int len = FMC2H / 2; len > 0; len /= 2)
   {
     if (ty == 0 && tx < len)
@@ -313,7 +315,7 @@ void FindMaxCorr2(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         maxScor2[tx] = va2;
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   if (ty == 0 && tx == 0)
   {
@@ -343,7 +345,7 @@ void FindMaxCorr4(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
   for (int j = tx; j < 128; j += FMC2W)
     siftPoint[128 * ty + j] = pt1[j];
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   for (int p2 = 0; p2 < numPts2; p2++)
   {
     const float *pt2 = sift2[p2].data;
@@ -365,7 +367,7 @@ void FindMaxCorr4(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     }
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (tx == 0)
   {
     sift1[p1].score = maxScore[ty];
@@ -404,9 +406,6 @@ void FindMaxCorr10(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     for (int d = tx; d < NDIM / 4; d += M7W)
     {
       buffer1[(j * NDIM / 4 + (d + j) % (NDIM / 4))] = ((sycl::float4 *)&sift1[p1].data)[d];
-      // int idx = j * NDIM / 4 + (d + j) % (NDIM / 4);
-      // if (idx < 1024)
-      //   buffer1[idx] = 0;
     }
   }
 
@@ -573,8 +572,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       for (int i = 0; i < FMC_BD / 2; i++)
         siftParts2[(i + 0) * FMC_BH + idx] = pts2[0 + i];
 
-    item_ct1.barrier();
-
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     int b = FMC_BD / 2;
     for (int d = FMC_BD / 2; d < 32; d += FMC_BD / 2)
     {
@@ -603,8 +601,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
           }
         }
       }
-
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
     }
 
     b ^= FMC_BD / 2;
@@ -626,14 +623,13 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
 
-    item_ct1.barrier();
-
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     float *blksums = (float *)siftParts1;
     for (int iy = 0; iy < FMC_TH; iy++)
       for (int ix = 0; ix < FMC_TW; ix++)
         blksums[(ty * FMC_TH + iy) * FMC_BW + (tx * FMC_TW + ix)] = sums[iy * FMC_TW + ix];
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     if (idx < FMC_BW)
     {
       for (int j = 0; j < FMC_BH; j++)
@@ -652,7 +648,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * FMC_BW + idx),
                            (unsigned int)(numPts1 - 1));
@@ -660,7 +656,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (idx < FMC_BW)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -677,7 +673,7 @@ void FindMaxCorr9(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (idx == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -725,9 +721,7 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       if (idx < FMC_BH)
         for (int i = 0; i < FMC_BD; i++)
           siftParts2[i * FMC_BH + idx] = pts2[d + i];
-
-      item_ct1.barrier();
-
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       for (int i = 0; i < FMC_BD; i++)
       {
         sycl::float4 v1[FMC_TW];
@@ -746,14 +740,14 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         }
       }
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     // float *blksums = (float*)siftParts1;
     for (int iy = 0; iy < FMC_TH; iy++)
       for (int ix = 0; ix < FMC_TW; ix++)
         blksums[(ty * FMC_TH + iy) * FMC_BW + (tx * FMC_TW + ix)] = sums[iy * FMC_TW + ix];
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     if (idx < FMC_BW)
     {
       for (int j = 0; j < FMC_BH; j++)
@@ -772,7 +766,7 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * FMC_BW + idx),
                            (unsigned int)(numPts1 - 1));
@@ -780,7 +774,7 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (idx < FMC_BW)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -797,7 +791,7 @@ void FindMaxCorr8(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (idx == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -830,13 +824,13 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       for (int l = 0; l < NUM; l++)
         sum[l] = 0.0f;
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     for (int i = 0; i < 2; i++)
     {
       pts1[17 * tx + ty] = p1l4[i * 16 + tx];
       pts2[16 * ty + tx] = p2l4[i * 16 + tx];
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       if (ty < (16 / NUM))
       {
 #pragma unroll
@@ -855,14 +849,14 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         }
       }
 
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     float *sums = siftParts1;
     if (ty < (16 / NUM))
       for (int l = 0; l < NUM; l++)
         sums[16 * (ty + l * (16 / NUM)) + tx] = sum[l];
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     if (ty == 0)
     {
       for (int j = 0; j < 16; j++)
@@ -881,7 +875,7 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
                            (unsigned int)(numPts1 - 1));
@@ -889,7 +883,7 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (ty == 0)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -906,7 +900,7 @@ void FindMaxCorr7(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -936,7 +930,7 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     reinterpret_cast<sycl::float4 *>(siftParts2)[32 * ty + tx] =
         reinterpret_cast<sycl::float4 *>(pt2l)[tx];
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     for (int i = 0; i < 16; i++)
     {
       sycl::float4 part2 =
@@ -952,7 +946,7 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
         sums[16 * i + ty] = sum;
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     if (ty == 0 && tx < 16)
     {
       for (int j = 0; j < 16; j++)
@@ -971,13 +965,13 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
       }
     }
 
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   if (tx == 0 && ty == 0)
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
 
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (ty == 0 && tx < 16)
   {
     const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
@@ -995,7 +989,7 @@ void FindMaxCorr6(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     else if (maxScore > maxScor2Old)
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -1025,14 +1019,14 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     {
       siftParts1[17 * tx + ty] = pt1l[i * 16 + tx]; // load and transpose
       siftParts2[17 * tx + ty] = pt2l[i * 16 + tx];
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
       for (int j = 0; j < 16; j++)
         sum += siftParts1[17 * j + tx] * siftParts2[17 * j + ty];
-      item_ct1.barrier();
+      item_ct1.barrier(sycl::access::fence_space::local_space);
     }
     float *sums = siftParts1;
     sums[16 * ty + tx] = sum;
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
     if (ty == 0)
     {
       for (int j = 0; j < 16; j++)
@@ -1050,14 +1044,14 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
           maxScor2 = sum;
       }
     }
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   const int p1 = sycl::min((unsigned int)(item_ct1.get_group(2) * 16 + tx),
                            (unsigned int)(numPts1 - 1));
   if (tx == 0 && ty == 0)
     while (infra::atomic_compare_exchange_strong((int *)lock, 0, 1) != 0)
       ;
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (ty == 0)
   {
     float maxScor2Old = sift1[p1].ambiguity * (sift1[p1].score + 1e-6f);
@@ -1073,7 +1067,7 @@ void FindMaxCorr5(SiftPoint *sift1, SiftPoint *sift2, int numPts1, int numPts2,
     else if (maxScore > maxScor2Old)
       sift1[p1].ambiguity = maxScore / (sift1[p1].score + 1e-6f);
   }
-  item_ct1.barrier();
+  item_ct1.barrier(sycl::access::fence_space::local_space);
   if (tx == 0 && ty == 0)
     infra::atomic_exchange((int *)lock, 0);
 }
@@ -1267,7 +1261,7 @@ void TestHomographies(float *d_coord, float *d_homo,
     if (tx < len)
       cnts[kty + tx] += cnts[kty + tx + len];
     len /= 2;
-    item_ct1.barrier();
+    item_ct1.barrier(sycl::access::fence_space::local_space);
   }
   if (tx < TESTHOMO_LOOPS && ty == 0)
     d_counts[idx] = cnts[TESTHOMO_TESTS * tx];
@@ -1403,7 +1397,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1) *
                                   sycl::range<3>(1, 1, 1),
                               sycl::range<3>(1, 1, 1)),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
             {
               memcopyKernel(temp3, &d_coord[0 * numPtsUp], szPt, szFl, numPts, szFl);
             })
@@ -1413,7 +1410,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1) *
                                   sycl::range<3>(1, 1, 1),
                               sycl::range<3>(1, 1, 1)),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
             {
               memcopyKernel(temp4, &d_coord[1 * numPtsUp], szPt, szFl, numPts, szFl);
             })
@@ -1423,7 +1423,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1) *
                                   sycl::range<3>(1, 1, 1),
                               sycl::range<3>(1, 1, 1)),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
             {
               memcopyKernel(temp5, &d_coord[2 * numPtsUp], szPt, szFl, numPts, szFl);
             })
@@ -1433,7 +1436,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1) *
                                   sycl::range<3>(1, 1, 1),
                               sycl::range<3>(1, 1, 1)),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
             {
               memcopyKernel(temp6, &d_coord[3 * numPtsUp], szPt, szFl, numPts, szFl);
             })
@@ -1450,7 +1456,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
             sycl::nd_range<3>(sycl::range<3>(1, 1, numLoops / 16) *
                                   sycl::range<3>(1, 1, 16),
                               sycl::range<3>(1, 1, 16)),
-            [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+            [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                [[intel::reqd_sub_group_size(32)]]
+#endif
             {
               ComputeHomographies(d_coord, d_randPts, d_homo, numPtsUp, item_ct1);
             })
@@ -1478,7 +1487,10 @@ double FindHomography(SiftData &data, float *homography, int *numMatches, sycl::
                                                         cgh);
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocks * threads, threads),
-                                                        [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+                                                        [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           TestHomographies(d_coord, d_homo, d_randPts, numPtsUp,
                                                                            thresh * thresh, item_ct1,
@@ -1619,7 +1631,10 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
           sycl::nd_range<3>(sycl::range<3>(1, 1, iDivUp(numPts1, 64)) *
                                 sycl::range<3>(1, 1, 64),
                             sycl::range<3>(1, 1, 64)),
-          [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+          [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+              [[intel::reqd_sub_group_size(32)]]
+#endif
           {
             CleanMatches(sift1, numPts1, item_ct1);
           })
@@ -1649,8 +1664,10 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                                            siftParts2_acc_ct1(sycl::range<1>(272 /*17*16*/), cgh);
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
-                                                        [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(
-                                                                                           32)]]
+                                                        [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           FindMaxCorr5(sift1, sift2, numPts1, numPts2, item_ct1,
                                                                        lock_ptr_ct1,
@@ -1675,13 +1692,15 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
 
                                        cgh.parallel_for(
                                            sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
-                                           [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(
-                                                                                           32)]]
-                                              {                                                
-                                                 FindMaxCorr6(sift1, sift2, numPts1, numPts2, item_ct1,
-                                                              lock_ptr_ct1, siftParts2_acc_ct1.get_pointer(),
-                                                              sums_acc_ct1.get_pointer());
-                                               }); });
+                                           [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                               [[intel::reqd_sub_group_size(32)]]
+#endif
+                                           {
+                                             FindMaxCorr6(sift1, sift2, numPts1, numPts2, item_ct1,
+                                                          lock_ptr_ct1, siftParts2_acc_ct1.get_pointer(),
+                                                          sums_acc_ct1.get_pointer());
+                                           }); });
   }
   else if (mode == 7)
     q_ct.submit([&](sycl::handler &cgh)
@@ -1698,8 +1717,10 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                                            siftParts2_acc_ct1(sycl::range<1>(1024 /*16*64*/), cgh);
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
-                                                        [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(
-                                                                                           32)]]
+                                                        [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           FindMaxCorr7(sift1, sift2, numPts1, numPts2, item_ct1,
                                                                        lock_ptr_ct1,
@@ -1728,8 +1749,10 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                                            blksums_acc_ct1(sycl::range<1>(1024 /*FMC_BW*FMC_BH*/), cgh);
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
-                                                        [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(
-                                                                                           32)]]
+                                                        [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           FindMaxCorr8(sift1, sift2, numPts1, numPts2, item_ct1,
                                                                        lock_ptr_ct1,
@@ -1757,8 +1780,10 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                                            siftParts2_acc_ct1(sycl::range<1>(512 /*FMC_BH*FMC_BD*/), cgh);
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
-                                                        [=](sycl::nd_item<3> item_ct1)[[intel::reqd_sub_group_size(
-                                                                                           32)]]
+                                                        [=](sycl::nd_item<3> item_ct1)
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           FindMaxCorr9(sift1, sift2, numPts1, numPts2, item_ct1,
                                                                        lock_ptr_ct1,
@@ -1781,16 +1806,16 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
                   {
                                        sycl::accessor<sycl::float4, 1, sycl::access_mode::read_write,
                                                       sycl::access::target::local>
-                                           buffer1_acc_ct1(sycl::range<1>(1024 /*M7W*NDIM/4*/), cgh);
-                                          // buffer1_acc_ct1(sycl::range<1>(M7W*NDIM/4), cgh);
+                                           buffer1_acc_ct1(sycl::range<1>(1024 /*M7W*NDIM/4*/), cgh);                                          
                                        sycl::accessor<sycl::float4, 1, sycl::access_mode::read_write,
                                                       sycl::access::target::local>
-                                            buffer2_acc_ct1(sycl::range<1>(1024 /*M7H*NDIM/4*/), cgh);
-                                          //  buffer2_acc_ct1(sycl::range<1>(M7H*NDIM/4), cgh);
+                                            buffer2_acc_ct1(sycl::range<1>(1024 /*M7H*NDIM/4*/), cgh);                                          
 
                                        cgh.parallel_for(sycl::nd_range<3>(blocksMax3 * threadsMax3, threadsMax3),
                                                         [=](sycl::nd_item<3> item_ct1)
-                                                        [[intel::reqd_sub_group_size(32)]]
+#if !defined(USE_NVIDIA_BACKEND) && !defined(USE_AMDHIP_BACKEND)
+                                                            [[intel::reqd_sub_group_size(32)]]
+#endif
                                                         {
                                                           FindMaxCorr10(sift1, sift2, numPts1, numPts2, item_ct1,
                                                                         buffer1_acc_ct1.get_pointer(),
@@ -1819,7 +1844,6 @@ double MatchSiftData(SiftData &data1, SiftData &data2, sycl::queue &q_ct, float 
 #ifdef DEVICE_TIMER
     auto start_memcpy = std::chrono::steady_clock::now();
 #endif
-    // infra::sift_memcpy(h_ptr, sizeof(SiftPoint), d_ptr, sizeof(SiftPoint), 5 * sizeof(float), data1.numPts, infra::device_to_host, q_ct);
     infra::sift_memcpy(h_ptr, d_ptr, sizeof(SiftPoint) * data1.numPts, infra::device_to_host, q_ct);
     q_ct.wait();
 #ifdef DEVICE_TIMER

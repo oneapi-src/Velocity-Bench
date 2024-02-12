@@ -1,25 +1,9 @@
 //==---- device.hpp -------------------------------*- C++ -*----------------==//
-// Copyright (C) 2023 Intel Corporation
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom
-// the Software is furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-// OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-// OR OTHER DEALINGS IN THE SOFTWARE.
-
-// SPDX-License-Identifier: MIT
+//
+// Copyright (C) 2018 - 2021 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef __INFRA_DEVICE_HPP__
@@ -149,6 +133,7 @@ namespace infra
     size_t _max_nd_range_size[3];
   };
 
+  /// infra device extension
   class device_ext : public sycl::device
   {
   public:
@@ -497,7 +482,7 @@ namespace infra
   };
 
   /// Util function to get the defualt queue of current device in
-  /// device manager.
+  /// infra device manager.
   static inline sycl::queue &get_default_queue()
   {
     return dev_mgr::instance().current_device().default_queue();
@@ -516,7 +501,7 @@ namespace infra
   }
 
   /// Util function to get the context of the default queue of current
-  /// device in device manager.
+  /// device in infra device manager.
   static inline sycl::context get_default_context()
   {
     return infra::get_current_device().get_context();
@@ -528,6 +513,6 @@ namespace infra
     return dev_mgr::instance().cpu_device();
   }
 
-}
+} // namespace infra
 
-#endif
+#endif // __INFRA_DEVICE_HPP__

@@ -45,6 +45,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include "hip/hip_runtime.h"
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "utils.hh"
 #include "Parameters.hh"
 #include "utilsMpi.hh"
@@ -107,6 +109,12 @@ int main(int argc, char **argv)
     printBanner(GIT_VERS, GIT_HASH);
 
     Parameters params = getParameters(argc, argv);
+    const string &filename = params.simulationParams.inputFile;
+    ifstream inp_file(filename.c_str());
+    if (!inp_file.good())
+    {
+        return -1;
+    }
     printParameters(params, cout);
 
     setGPU();

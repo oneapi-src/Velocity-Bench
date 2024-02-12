@@ -63,7 +63,7 @@ namespace dl_infra {
                 int input_stride_dims_[4];
                 int output_stride_dims_[4];
 
-                float alpha_ = 0.8f; //void *alpha;
+                float alpha_ = 1.0f; //void *alpha;
                 float beta_ = 0.0f;  //void *beta;
 
                 int dilation_[2] {1, 1};

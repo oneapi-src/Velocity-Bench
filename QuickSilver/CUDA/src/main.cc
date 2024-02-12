@@ -45,6 +45,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <cuda_profiler_api.h>
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "utils.hh"
 #include "Parameters.hh"
 #include "utilsMpi.hh"
@@ -106,6 +108,12 @@ int main(int argc, char **argv)
     printBanner(GIT_VERS, GIT_HASH);
 
     Parameters params = getParameters(argc, argv);
+    const string &filename = params.simulationParams.inputFile;
+    ifstream inp_file(filename.c_str());
+    if (!inp_file.good())
+    {
+        return -1;
+    }
     printParameters(params, cout);
 
     setGPU();
@@ -303,7 +311,7 @@ void cycleTracking(MonteCarlo *monteCarlo, uint64_cu *tallies, uint64_cu *tallie
 #if defined(HAVE_CUDA)
 
                         const size_t N = numParticles;
-                        unsigned int wg_size = 16;
+                        unsigned int wg_size = 256;
                         unsigned int num_wgs = (N + wg_size - 1) / wg_size;
                         CycleTrackingKernel<<<num_wgs, wg_size, NUM_TALLIES * replications * sizeof(int), 0>>>(monteCarlo, numParticles, processingVault, processedVault, tallies_d);
                         checkMsg("CycleTrackingKernel, execution failed\n");
@@ -376,7 +384,7 @@ void cycleTracking(MonteCarlo *monteCarlo, uint64_cu *tallies, uint64_cu *tallie
                     processingVault->getBaseParticleComm(mcb_particle, sendQueueT._particleIndex);
 
                     int buffer = monteCarlo->particle_buffer->Choose_Buffer(sendQueueT._neighbor);
-                    if(buffer >= 0)
+                    if (buffer >= 0)
                         monteCarlo->particle_buffer->Buffer_Particle(mcb_particle, buffer);
                 }
 

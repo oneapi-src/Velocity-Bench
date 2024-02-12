@@ -45,6 +45,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <sycl/sycl.hpp>
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "utils.hh"
 #include "Parameters.hh"
 #include "utilsMpi.hh"
@@ -109,6 +111,12 @@ int main(int argc, char **argv)
     printBanner(GIT_VERS, GIT_HASH);
     std::cout << "Loading params" << std::endl;
     Parameters params = getParameters(argc, argv);
+    const string &filename = params.simulationParams.inputFile;
+    ifstream inp_file(filename.c_str());
+    if (!inp_file.good())
+    {
+        return -1;
+    }
     std::cout << "Finished loading params" << std::endl;
     printParameters(params, cout);
     std::cout << "setting GPU" << std::endl;
@@ -352,7 +360,7 @@ void cycleTracking(MonteCarlo *monteCarlo, uint64_cu *tallies, uint64_cu *tallie
 #if defined(HAVE_SYCL)
 
                         const size_t N = numParticles;
-                        unsigned int wg_size = 16;
+                        unsigned int wg_size = 256;
                         unsigned int num_wgs = (N + wg_size - 1) / wg_size;
 
                         sycl_device_queue.submit([&](sycl::handler &cgh)

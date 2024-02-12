@@ -59,8 +59,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "macros.hh" // current location of openMP wrappers.
 #include "cudaUtils.hh"
 
-using sycl::ceil;
-
 //----------------------------------------------------------------------------------------------------------------------
 // Construct a MonteCarlo object.
 //----------------------------------------------------------------------------------------------------------------------
@@ -135,7 +133,7 @@ MonteCarlo::MonteCarlo(const Parameters &params)
     {
         const MaterialParameters &mp = matIter->second;
         double nuBar = params.crossSectionParams.at(mp.fissionCrossSection).nuBar;
-        size_t nb = ceil(nuBar);
+        size_t nb = sycl::ceil(nuBar);
         size_t test_size = nb * (batch_size);
 
         if (test_size > vector_size)

@@ -430,7 +430,7 @@ void OutputTransform_kernel(int N, int C, int se_K, T* output,
     if (k < se_K) {
       S = 0;
   #ifdef NVIDIABE
-      //  #pragma unroll
+       #pragma unroll
        for (int i = 0; i < C; i++) {
         S += shared_data[i] * float((w1[i*se_K + k]));
       }

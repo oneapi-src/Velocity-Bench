@@ -94,10 +94,8 @@ class LangHandle {
                 memCpyD2H(devPtr, hostPtr, size, needToSynchronize);
             } else if(memcpyType == D2D) {
                 memCpyD2D(devPtr, hostPtr, size, needToSynchronize);
-            }
-            assertDevApiInvar(cudaMemcpy(devPtr, hostPtr, size, cudaMemcpyHostToDevice));
-            if(needToSynchronize) {
-                assertDevApiInvar(cudaDeviceSynchronize());
+            } else {
+		throw std::runtime_error("Unknown or unsupported MemcpyType");
             }
         }
 

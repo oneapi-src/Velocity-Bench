@@ -26,7 +26,7 @@
 
 using namespace Utility;
 
-void Utility::RunDataVerification(const int threshold, const float matchPercentage)
+int Utility::RunDataVerification(const int threshold, const float matchPercentage)
 {
     printf("Performing data verification \n");
     switch (threshold)
@@ -39,6 +39,7 @@ void Utility::RunDataVerification(const int threshold, const float matchPercenta
         else
         {
             printf("Data verification FAILED. \n\n");
+            return -1;
         }
         break;
     case 2:
@@ -49,6 +50,7 @@ void Utility::RunDataVerification(const int threshold, const float matchPercenta
         else
         {
             printf("Data verification FAILED. \n\n");
+            return -1;
         }
         break;
     case 3:
@@ -59,6 +61,7 @@ void Utility::RunDataVerification(const int threshold, const float matchPercenta
         else
         {
             printf("Data verification FAILED. \n\n");
+            return -1;
         }
         break;
     case 4:
@@ -69,9 +72,12 @@ void Utility::RunDataVerification(const int threshold, const float matchPercenta
         else
         {
             printf("Data verification FAILED. \n\n");
+            return -1;
         }
         break;
     default:
         printf("Threshold values should be in the range [1, 4]. \n\n");
+        return -1;
     }
+    return 0;
 }
