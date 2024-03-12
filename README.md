@@ -27,7 +27,7 @@ To achieve this, the suite must be capable of running on most environments, usin
 
 # Velocity Bench: Simplifying GPU Performance Assessment
 
-This benchmark suite of optimized workloads helps solve the problem of benchmark portability and applicability across different platform configurations. The suite has 15 workloads; each is available in SYCL, HIP, and CUDA to allow for runs on Intel, AMD, and Nvidia GPUs using the different programming models. Additionally, with SYCL’s open backend, workloads can be extended to support other types of accelerators moving forward. Thus, we can look at platform performance using native platform programming languages as well as multiarchitecture programming models (e.g., SYCL vs. HIP on AMD GPU and SYCL vs. CUDA on Nvidia GPU).
+This benchmark suite of optimized workloads helps solve the problem of benchmark portability and applicability across different platform configurations. The suite has 16 workloads; each is available in SYCL, HIP, and CUDA to allow for runs on Intel, AMD, and Nvidia GPUs using the different programming models. Additionally, with SYCL’s open backend, workloads can be extended to support other types of accelerators moving forward. Thus, we can look at platform performance using native platform programming languages as well as multiarchitecture programming models (e.g., SYCL vs. HIP on AMD GPU and SYCL vs. CUDA on Nvidia GPU).
 
 Ensuring that all versions of the individual benchmark workloads are optimized to the same degree is a key focus of ongoing Velocity Bench development. This includes the use of equivalent algorithms, libraries, and input data types. Of course, further opportunities for changes and optimizations always exist. 
 
@@ -51,7 +51,8 @@ These benchmark workloads cover different use case scenarios and exercise differ
 12.	**ETHMiner**: Domain: Cryptography. This is a bitcoin-mining workload. ETHMiner is an Ethash GPU mining worker to mine every coin which relies on an Ethash Proof of Work, including Ethereum bitcoins.
 13.	**SVM**: Domain: Classical machine learning. Support Vector Machine is one of the most popular classical machine learning techniques. SVMs are supervised learning models with associated learning algorithms that analyze data for classification and regression analysis. 
 14.	**Sobel Filter**: Domains: Imaging, compute. Sobel filter is a popular and widely used RGB-to-grayscale image conversion (2D to 3D image conversion) technique, which applies a gaussian filter to reduce edge artifacts. 
-15.	**HP LINPACK**: Domains: Compute, system. This is not the most performant LINPACK tuned by various companies for which results are quoted, but it mainly uses libraries to calculate a device’s rate of execution. It uses GEMM calls to solve dense system of linear equations. 
+15.	**HP LINPACK**: Domains: Compute, system. This is not the most performant LINPACK tuned by various companies for which results are quoted, but it mainly uses libraries to calculate a device’s rate of execution. It uses GEMM calls to solve dense system of linear equations.
+16.	**Voxelizer**: Domains: Imaging, compute. Converts a mesh of polygons into annotated voxel grids.
 
 The Velocity Bench suite is a collection of workloads, some of which are developed and optimized by us. Others originated from the open source community. For the latter, we created/ported and optimized comparable code versions in the two other languages. For example, if CUDA was the originating code, we developed the SYCL and AMD versions. See the detailed workload descriptions and links to the source code origins in the Velocity Bench repository.
 
