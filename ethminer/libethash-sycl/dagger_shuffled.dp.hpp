@@ -85,6 +85,7 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
             shuffle[7].x() = item_ct1.get_sub_group().shuffle(state[7].x(), i + p + iShuffleOffset);
             shuffle[7].y() = item_ct1.get_sub_group().shuffle(state[7].y(), i + p + iShuffleOffset);
 
+            assert(mix_idx <= 3);
 
             switch (mix_idx) {
             case 0:
@@ -96,9 +97,9 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
             case 2:
                 mix[p] = vectorize2(shuffle[4], shuffle[5]);
                 break;
-            case 3:
-                mix[p] = vectorize2(shuffle[6], shuffle[7]);
-                break;
+            default:
+              mix[p] = vectorize2(shuffle[6], shuffle[7]);
+              break;
             }
 
             init0[p] = item_ct1.get_sub_group().shuffle(shuffle[0].x(), iShuffleOffset);
@@ -182,6 +183,7 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
             shuffle_7.y() = item_ct1.get_sub_group().shuffle(state[7].y(), i + p + iShuffleOffset);
 
             /////}
+            assert(mix_idx <= 3);
 
             switch (mix_idx) {
             case 0:
@@ -193,9 +195,9 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
             case 2:
                 mix[p] = vectorize2(shuffle_4, shuffle_5);
                 break;
-            case 3:
-                mix[p] = vectorize2(shuffle_6, shuffle_7);
-                break;
+            default:
+              mix[p] = vectorize2(shuffle_6, shuffle_7);
+              break;
             }
 
             init0[p] = item_ct1.get_sub_group().shuffle(shuffle_0.x(), iShuffleOffset);
