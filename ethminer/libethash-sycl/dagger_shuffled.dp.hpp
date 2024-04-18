@@ -31,7 +31,7 @@
 #ifdef USE_LOOP_UNROLLING
 #define mix_and_shuffle(t, a, p, b, thread_id)                                   \
     offset[p] = fnv(init0[p] ^ (a + b), ((uint32_t *)&mix[p])[b]) % d_dag_size;  \
-    offset[p] = item_ct1.get_sub_group().shuffle(offset[p], t + iShuffleOffset); \
+    offset[p] = sycl::select_from_group(item_ct1.get_sub_group(), offset[p], t + iShuffleOffset); \
     mix[p]    = fnv4(mix[p], d_dag[offset[p]].uint4s[thread_id]);
 #endif
 
@@ -48,8 +48,12 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
     const int thread_id = item_ct1.get_local_id(0) & (THREADS_PER_HASH - 1);
     const int mix_idx   = thread_id & 3;
 
-    int const iSubGroupThreadId(item_ct1.get_sub_group().get_local_id());
+    auto g = item_ct1.get_sub_group();
+
+    ///int const iSubGroupThreadId(item_ct1.get_sub_group().get_local_id());
+    int const iSubGroupThreadId(g.get_local_id());
     int const iShuffleOffset(pdShuffleOffsets[iSubGroupThreadId]);
+
 
 #ifndef USE_LOOP_UNROLLING
 
@@ -61,29 +65,29 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
         // share init among threads
         for (int p = 0; p < _PARALLEL_HASH; p++) {
             sycl::uint2 shuffle[8];
-            shuffle[0].x() = item_ct1.get_sub_group().shuffle(state[0].x(), i + p + iShuffleOffset);
-            shuffle[0].y() = item_ct1.get_sub_group().shuffle(state[0].y(), i + p + iShuffleOffset);
+            shuffle[0].x() = sycl::select_from_group(g, state[0].x(), i + p + iShuffleOffset); 
+            shuffle[0].y() = sycl::select_from_group(g, state[0].y(), i + p + iShuffleOffset); 
 
-            shuffle[1].x() = item_ct1.get_sub_group().shuffle(state[1].x(), i + p + iShuffleOffset);
-            shuffle[1].y() = item_ct1.get_sub_group().shuffle(state[1].y(), i + p + iShuffleOffset);
+            shuffle[1].x() = sycl::select_from_group(g, state[1].x(), i + p + iShuffleOffset); 
+            shuffle[1].y() = sycl::select_from_group(g, state[1].y(), i + p + iShuffleOffset); 
 
-            shuffle[2].x() = item_ct1.get_sub_group().shuffle(state[2].x(), i + p + iShuffleOffset);
-            shuffle[2].y() = item_ct1.get_sub_group().shuffle(state[2].y(), i + p + iShuffleOffset);
+            shuffle[2].x() = sycl::select_from_group(g, state[2].x(), i + p + iShuffleOffset); 
+            shuffle[2].y() = sycl::select_from_group(g, state[2].y(), i + p + iShuffleOffset); 
 
-            shuffle[3].x() = item_ct1.get_sub_group().shuffle(state[3].x(), i + p + iShuffleOffset);
-            shuffle[3].y() = item_ct1.get_sub_group().shuffle(state[3].y(), i + p + iShuffleOffset);
+            shuffle[3].x() = sycl::select_from_group(g, state[3].x(), i + p + iShuffleOffset); 
+            shuffle[3].y() = sycl::select_from_group(g, state[3].y(), i + p + iShuffleOffset); 
 
-            shuffle[4].x() = item_ct1.get_sub_group().shuffle(state[4].x(), i + p + iShuffleOffset);
-            shuffle[4].y() = item_ct1.get_sub_group().shuffle(state[4].y(), i + p + iShuffleOffset);
+            shuffle[4].x() = sycl::select_from_group(g, state[4].x(), i + p + iShuffleOffset); 
+            shuffle[4].y() = sycl::select_from_group(g, state[4].y(), i + p + iShuffleOffset); 
 
-            shuffle[5].x() = item_ct1.get_sub_group().shuffle(state[5].x(), i + p + iShuffleOffset);
-            shuffle[5].y() = item_ct1.get_sub_group().shuffle(state[5].y(), i + p + iShuffleOffset);
+            shuffle[5].x() = sycl::select_from_group(g, state[5].x(), i + p + iShuffleOffset); 
+            shuffle[5].y() = sycl::select_from_group(g, state[5].y(), i + p + iShuffleOffset); 
 
-            shuffle[6].x() = item_ct1.get_sub_group().shuffle(state[6].x(), i + p + iShuffleOffset);
-            shuffle[6].y() = item_ct1.get_sub_group().shuffle(state[6].y(), i + p + iShuffleOffset);
+            shuffle[6].x() = sycl::select_from_group(g, state[6].x(), i + p + iShuffleOffset); 
+            shuffle[6].y() = sycl::select_from_group(g, state[6].y(), i + p + iShuffleOffset); 
 
-            shuffle[7].x() = item_ct1.get_sub_group().shuffle(state[7].x(), i + p + iShuffleOffset);
-            shuffle[7].y() = item_ct1.get_sub_group().shuffle(state[7].y(), i + p + iShuffleOffset);
+            shuffle[7].x() = sycl::select_from_group(g, state[7].x(), i + p + iShuffleOffset); 
+            shuffle[7].y() = sycl::select_from_group(g, state[7].y(), i + p + iShuffleOffset); 
 
 
             switch (mix_idx) {
@@ -101,7 +105,7 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
                 break;
             }
 
-            init0[p] = item_ct1.get_sub_group().shuffle(shuffle[0].x(), iShuffleOffset);
+            init0[p] = sycl::select_from_group(item_ct1.get_sub_group(), shuffle[0].x(), iShuffleOffset);
         }
 
         for (uint32_t a = 0; a < ACCESSES; a += 4)
@@ -115,7 +119,7 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
                 {
                     offset[p] = fnv(init0[p] ^ (a + b), ((uint32_t*)&mix[p])[b]) % d_dag_size;
 
-                    offset[p] = item_ct1.get_sub_group().shuffle(offset[p], t + iShuffleOffset);
+                    offset[p] = sycl::select_from_group(item_ct1.get_sub_group(), offset[p], t + iShuffleOffset);
                     mix[p] = fnv4(mix[p], d_dag[offset[p]].uint4s[thread_id]);
                 }
             }
@@ -127,14 +131,14 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
 
             // update mix across threads
 
-            shuffle[0].x() = item_ct1.get_sub_group().shuffle(thread_mix, 0 + iShuffleOffset);
-            shuffle[0].y() = item_ct1.get_sub_group().shuffle(thread_mix, 1 + iShuffleOffset);
-            shuffle[1].x() = item_ct1.get_sub_group().shuffle(thread_mix, 2 + iShuffleOffset);
-            shuffle[1].y() = item_ct1.get_sub_group().shuffle(thread_mix, 3 + iShuffleOffset);
-            shuffle[2].x() = item_ct1.get_sub_group().shuffle(thread_mix, 4 + iShuffleOffset);
-            shuffle[2].y() = item_ct1.get_sub_group().shuffle(thread_mix, 5 + iShuffleOffset);
-            shuffle[3].x() = item_ct1.get_sub_group().shuffle(thread_mix, 6 + iShuffleOffset);
-            shuffle[3].y() = item_ct1.get_sub_group().shuffle(thread_mix, 7 + iShuffleOffset);
+            shuffle[0].x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 0 + iShuffleOffset); 
+            shuffle[0].y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 1 + iShuffleOffset); 
+            shuffle[1].x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 2 + iShuffleOffset); 
+            shuffle[1].y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 3 + iShuffleOffset); 
+            shuffle[2].x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 4 + iShuffleOffset); 
+            shuffle[2].y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 5 + iShuffleOffset); 
+            shuffle[3].x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 6 + iShuffleOffset); 
+            shuffle[3].y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 7 + iShuffleOffset); 
 
             if ((i + p) == thread_id) {
                 // move mix into state:
@@ -157,29 +161,29 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
             //////sycl::uint2 shuffle[8];
             //////for (int j = 0; j < 8; j++)
             //////{
-            shuffle_0.x() = item_ct1.get_sub_group().shuffle(state[0].x(), i + p + iShuffleOffset);
-            shuffle_0.y() = item_ct1.get_sub_group().shuffle(state[0].y(), i + p + iShuffleOffset);
+            shuffle_0.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[0].x(), i + p + iShuffleOffset);
+            shuffle_0.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[0].y(), i + p + iShuffleOffset);
 
-            shuffle_1.x() = item_ct1.get_sub_group().shuffle(state[1].x(), i + p + iShuffleOffset);
-            shuffle_1.y() = item_ct1.get_sub_group().shuffle(state[1].y(), i + p + iShuffleOffset);
+            shuffle_1.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[1].x(), i + p + iShuffleOffset);
+            shuffle_1.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[1].y(), i + p + iShuffleOffset);
 
-            shuffle_2.x() = item_ct1.get_sub_group().shuffle(state[2].x(), i + p + iShuffleOffset);
-            shuffle_2.y() = item_ct1.get_sub_group().shuffle(state[2].y(), i + p + iShuffleOffset);
+            shuffle_2.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[2].x(), i + p + iShuffleOffset);
+            shuffle_2.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[2].y(), i + p + iShuffleOffset);
 
-            shuffle_3.x() = item_ct1.get_sub_group().shuffle(state[3].x(), i + p + iShuffleOffset);
-            shuffle_3.y() = item_ct1.get_sub_group().shuffle(state[3].y(), i + p + iShuffleOffset);
+            shuffle_3.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[3].x(), i + p + iShuffleOffset);
+            shuffle_3.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[3].y(), i + p + iShuffleOffset);
 
-            shuffle_4.x() = item_ct1.get_sub_group().shuffle(state[4].x(), i + p + iShuffleOffset);
-            shuffle_4.y() = item_ct1.get_sub_group().shuffle(state[4].y(), i + p + iShuffleOffset);
+            shuffle_4.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[4].x(), i + p + iShuffleOffset);
+            shuffle_4.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[4].y(), i + p + iShuffleOffset);
 
-            shuffle_5.x() = item_ct1.get_sub_group().shuffle(state[5].x(), i + p + iShuffleOffset);
-            shuffle_5.y() = item_ct1.get_sub_group().shuffle(state[5].y(), i + p + iShuffleOffset);
+            shuffle_5.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[5].x(), i + p + iShuffleOffset);
+            shuffle_5.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[5].y(), i + p + iShuffleOffset);
 
-            shuffle_6.x() = item_ct1.get_sub_group().shuffle(state[6].x(), i + p + iShuffleOffset);
-            shuffle_6.y() = item_ct1.get_sub_group().shuffle(state[6].y(), i + p + iShuffleOffset);
+            shuffle_6.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[6].x(), i + p + iShuffleOffset);
+            shuffle_6.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[6].y(), i + p + iShuffleOffset);
 
-            shuffle_7.x() = item_ct1.get_sub_group().shuffle(state[7].x(), i + p + iShuffleOffset);
-            shuffle_7.y() = item_ct1.get_sub_group().shuffle(state[7].y(), i + p + iShuffleOffset);
+            shuffle_7.x() = sycl::select_from_group(item_ct1.get_sub_group(), state[7].x(), i + p + iShuffleOffset);
+            shuffle_7.y() = sycl::select_from_group(item_ct1.get_sub_group(), state[7].y(), i + p + iShuffleOffset);
 
             /////}
 
@@ -198,7 +202,7 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
                 break;
             }
 
-            init0[p] = item_ct1.get_sub_group().shuffle(shuffle_0.x(), iShuffleOffset);
+            init0[p] = sycl::select_from_group(item_ct1.get_sub_group(), shuffle_0.x(), iShuffleOffset);
         }
 
         //////for (uint32_t a = 0; a < ACCESSES; a += 4)
@@ -552,14 +556,14 @@ DEV_INLINE bool compute_hash(uint64_t nonce, sycl::uint2 *mix_hash, sycl::nd_ite
 
             // update mix across threads
 
-            shuffle_0.x() = item_ct1.get_sub_group().shuffle(thread_mix, 0 + iShuffleOffset);
-            shuffle_0.y() = item_ct1.get_sub_group().shuffle(thread_mix, 1 + iShuffleOffset);
-            shuffle_1.x() = item_ct1.get_sub_group().shuffle(thread_mix, 2 + iShuffleOffset);
-            shuffle_1.y() = item_ct1.get_sub_group().shuffle(thread_mix, 3 + iShuffleOffset);
-            shuffle_2.x() = item_ct1.get_sub_group().shuffle(thread_mix, 4 + iShuffleOffset);
-            shuffle_2.y() = item_ct1.get_sub_group().shuffle(thread_mix, 5 + iShuffleOffset);
-            shuffle_3.x() = item_ct1.get_sub_group().shuffle(thread_mix, 6 + iShuffleOffset);
-            shuffle_3.y() = item_ct1.get_sub_group().shuffle(thread_mix, 7 + iShuffleOffset);
+            shuffle_0.x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 0 + iShuffleOffset);
+            shuffle_0.y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 1 + iShuffleOffset);
+            shuffle_1.x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 2 + iShuffleOffset);
+            shuffle_1.y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 3 + iShuffleOffset);
+            shuffle_2.x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 4 + iShuffleOffset);
+            shuffle_2.y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 5 + iShuffleOffset);
+            shuffle_3.x() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 6 + iShuffleOffset);
+            shuffle_3.y() = sycl::select_from_group(item_ct1.get_sub_group(), thread_mix, 7 + iShuffleOffset);
 
             if ((i + p) == thread_id) {
                 // move mix into state:

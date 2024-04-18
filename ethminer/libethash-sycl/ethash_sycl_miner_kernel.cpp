@@ -93,46 +93,47 @@ void ethash_calculate_dag_item(uint32_t start, sycl::nd_item<1> item_ct1, uint32
     SHA3_512(dag_node_mem, keccak_round_constants);
 
     const int thread_id = item_ct1.get_local_id(0) & 3;
-    int const iSubGroupThreadId(item_ct1.get_sub_group().get_local_id());
+    auto g = item_ct1.get_sub_group();
+    int const iSubGroupThreadId(g.get_local_id());
 
     for (uint32_t i = 0; i != ETHASH_DATASET_PARENTS; ++i) {
         uint32_t parent_index = fnv(node_index ^ i, dag_node.words[i % NODE_WORDS]) % d_light_size;
         for (uint32_t t = 0; t < 4; t++) {
             uint32_t shuffle_index = 0;
             if (item_ct1.get_sub_group().get_local_id() < 4)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t);
+                shuffle_index = sycl::select_from_group(g, parent_index, t); 
             else if (item_ct1.get_sub_group().get_local_id() < 8)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 4);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 4);  
             else if (item_ct1.get_sub_group().get_local_id() < 12)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 8);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 8);  
             else if (item_ct1.get_sub_group().get_local_id() < 16)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 12);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 12); 
             else if (item_ct1.get_sub_group().get_local_id() < 20)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 16);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 16); 
             else if (item_ct1.get_sub_group().get_local_id() < 24)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 20);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 20); 
             else if (item_ct1.get_sub_group().get_local_id() < 28)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 24);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 24); 
             else if (item_ct1.get_sub_group().get_local_id() < 32)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 28);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 28); 
 
 #ifdef USE_AMD_BACKEND // Shuffle on AMD GPUs is done over 64 threads
             else if (item_ct1.get_sub_group().get_local_id() < 36)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 32);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 32);
             else if (item_ct1.get_sub_group().get_local_id() < 40)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 36);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 36);
             else if (item_ct1.get_sub_group().get_local_id() < 44)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 40);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 40);
             else if (item_ct1.get_sub_group().get_local_id() < 48)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 44);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 44);
             else if (item_ct1.get_sub_group().get_local_id() < 52)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 48);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 48);
             else if (item_ct1.get_sub_group().get_local_id() < 56)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 52);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 52);
             else if (item_ct1.get_sub_group().get_local_id() < 60)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 56);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 56);
             else if (item_ct1.get_sub_group().get_local_id() < 64)
-                shuffle_index = item_ct1.get_sub_group().shuffle(parent_index, t + 60);
+                shuffle_index = sycl::select_from_group(g, parent_index, t + 60);
 #endif
 
             sycl::uint4 p4 = d_light[shuffle_index].uint4s[thread_id & 3];
@@ -175,7 +176,10 @@ void ethash_calculate_dag_item(uint32_t start, sycl::nd_item<1> item_ct1, uint32
                     w1 = w + 60;
 #endif
 
-                sycl::uint4 s4 = sycl::uint4(item_ct1.get_sub_group().shuffle(p4.x(), w1), item_ct1.get_sub_group().shuffle(p4.y(), w1), item_ct1.get_sub_group().shuffle(p4.z(), w1), item_ct1.get_sub_group().shuffle(p4.w(), w1));
+                sycl::uint4 s4 = sycl::uint4(sycl::select_from_group(item_ct1.get_sub_group(), p4.x(), w1), 
+                                             sycl::select_from_group(item_ct1.get_sub_group(), p4.y(), w1), 
+                                             sycl::select_from_group(item_ct1.get_sub_group(), p4.z(), w1), 
+                                             sycl::select_from_group(item_ct1.get_sub_group(), p4.w(), w1));
 
                 if (t == (thread_id & 3)) {
                     dag_node.uint4s[w] = fnv4(dag_node.uint4s[w], s4);
