@@ -74,7 +74,7 @@ class MC_Particle;
 inline HOST_DEVICE
 
     MC_Tally_Event::Enum
-    MC_Facet_Crossing_Event(MC_Particle &mc_particle, MonteCarlo *monteCarlo, int particle_index, ParticleVault *processingVault)
+    MC_Facet_Crossing_Event(MC_Particle &mc_particle, MonteCarlo_d *monteCarlo, int particle_index, ParticleVault_d *processingVault)
 {
     MC_Location location = mc_particle.Get_Location();
 
@@ -108,17 +108,17 @@ inline HOST_DEVICE
         mc_particle.facet = facet_adjacency.adjacent.facet;
         mc_particle.last_event = MC_Tally_Event::Facet_Crossing_Communication;
 
-#ifdef __SYCL_DEVICE_ONLY__
+//#ifdef __SYCL_DEVICE_ONLY__
         int neighbor_rank = monteCarlo->domain_d[facet_adjacency.current.domain].mesh._nbrRank[facet_adjacency.neighbor_index];
-#else
-        // Select particle buffer
-        int neighbor_rank = monteCarlo->domain[facet_adjacency.current.domain].mesh._nbrRank[facet_adjacency.neighbor_index];
-#endif
+//#else
+//         Select particle buffer
+//        int neighbor_rank = monteCarlo->domain[facet_adjacency.current.domain].mesh._nbrRank[facet_adjacency.neighbor_index];
+//#endif
 
         processingVault->putParticle(mc_particle, particle_index);
 
         // Push neighbor rank and mc_particle onto the send queue
-        monteCarlo->_particleVaultContainer->getSendQueue()->push(neighbor_rank, particle_index);
+        monteCarlo->_particleVaultContainer_d->getSendQueue()->push(neighbor_rank, particle_index);
     }
 
     return mc_particle.last_event;

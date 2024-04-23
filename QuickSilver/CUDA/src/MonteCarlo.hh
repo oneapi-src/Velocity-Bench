@@ -26,7 +26,9 @@ class NuclearData;
 class NuclearData_d;
 class MaterialDatabase;
 class ParticleVaultContainer;
+class ParticleVaultContainer_d;
 class Tallies;
+class Tallies_d;
 class MC_Processor_Info;
 class MC_Time_Info;
 class MC_Particle_Buffer;
@@ -69,5 +71,15 @@ private:
    MonteCarlo& operator=(const MonteCarlo&);
 };
 
+class MonteCarlo_d
+{
+public:
+   MC_Domain_d * domain_d;
+   ParticleVaultContainer_d* _particleVaultContainer_d;
+   Tallies_d *_tallies_d; 
+   MC_Time_Info *time_info_d; 
+   Material_d * _material_d;
+   NuclearData_d* _nuclearData_d;
+};
 
 #endif

@@ -101,7 +101,7 @@ MonteCarlo* initMC(const Parameters& params)
    #ifdef HAVE_UVM
       void* ptr;
       //in my experiments you need the cudaMemAttachGlobal flag set to make pcie atomics work.  
-      gpuMallocManaged( &ptr, sizeof(MonteCarlo), cudaMemAttachGlobal);
+      gpuMallocManaged( &ptr, sizeof(MonteCarlo),1/* cudaMemAttachGlobal*/);
       monteCarlo = new(ptr) MonteCarlo(params);
    #else
      monteCarlo = new MonteCarlo(params);
@@ -111,12 +111,10 @@ MonteCarlo* initMC(const Parameters& params)
    initNuclearData(monteCarlo, params);
    initMesh(monteCarlo, params);
    initTallies(monteCarlo, params);
-
    MC_Base_Particle::Update_Counts();
 
    //   used when debugging cross sections
    checkCrossSections(monteCarlo, params);
-
    void * ptr_dm, * ptr_dn, *ptr_dmesh;
    safeCall(cudaMalloc( (void **) &(ptr_dm),monteCarlo->_materialDatabase->_mat.size()*sizeof(Material_d)));
    //monteCarlo->_material_d = new(ptr_d) Material_d;
@@ -126,7 +124,6 @@ MonteCarlo* initMC(const Parameters& params)
  
    safeCall(cudaMalloc( (void **) &(ptr_dmesh),monteCarlo->domain.size()*sizeof(MC_Domain_d)));
    monteCarlo->domain_d = (MC_Domain_d *) ptr_dmesh;
- 
    return monteCarlo;
 }
 
@@ -194,18 +191,19 @@ namespace
          void *ptr1, *ptr2;
          ptr1=calloc( 1, sizeof(NuclearData));
          ptr2=calloc( 1, sizeof(MaterialDatabase));
-
+//printf("P0\n");
          monteCarlo->_nuclearData = new(ptr1) NuclearData(params.simulationParams.nGroups,
                                                           params.simulationParams.eMin,
                                                           params.simulationParams.eMax);
          monteCarlo->_materialDatabase = new(ptr2) MaterialDatabase();
+//	 printf("P1\n");
      #else
          monteCarlo->_nuclearData = new NuclearData(params.simulationParams.nGroups,
                                                     params.simulationParams.eMin,
                                                     params.simulationParams.eMax);
          monteCarlo->_materialDatabase = new MaterialDatabase();
      #endif
-
+//printf("P2\n");
      map<string, Polynomial> crossSection;
      for (auto crossSectionIter = params.crossSectionParams.begin();
           crossSectionIter != params.crossSectionParams.end();
@@ -224,13 +222,14 @@ namespace
         num_isotopes += mp.nIsotopes;
         num_materials++;
      }
-     
+ //    printf("P3\n");
      monteCarlo->_nuclearData->_isotopes.reserve( num_isotopes, VAR_MEM );
      monteCarlo->_materialDatabase->_mat.reserve( num_materials, VAR_MEM );
-     
+//     printf("P4\n");
      for (auto matIter = params.materialParams.begin();
           matIter != params.materialParams.end(); matIter++)
      {
+//	      printf("P5\n");
         const MaterialParameters& mp = matIter->second;
         Material material(mp.name, mp.mass);
         double nuBar = params.crossSectionParams.at(mp.fissionCrossSection).nuBar;
@@ -238,6 +237,7 @@ namespace
         
         for (int iIso=0; iIso<mp.nIsotopes; ++iIso)
         {
+//		 printf("P6\n");
            int isotopeGid = monteCarlo->_nuclearData->addIsotope(
               mp.nReactions,
               crossSection.at(mp.fissionCrossSection),
@@ -253,7 +253,9 @@ namespace
            // isotopes as equally prevalent.
            material.addIsotope(Isotope(isotopeGid, 1.0/mp.nIsotopes));
         }
+//	 printf("P7\n");
         monteCarlo->_materialDatabase->addMaterial(material);
+//	 printf("P8\n");
      }
    }
 }

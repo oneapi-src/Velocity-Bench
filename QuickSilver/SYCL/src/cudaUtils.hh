@@ -90,15 +90,15 @@ inline ExecutionPolicy getExecutionPolicy(int useGPU)
 template <class T>
 inline void gpuMallocManaged(T **ptr, size_t size, unsigned int flags = 1 /*cudaMemAttachGlobal*/)
 {
-#if defined(HAVE_SYCL)
-#ifdef UNIFIED_HOST
+//#if defined(HAVE_SYCL)
+//#ifdef UNIFIED_HOST
     *ptr = (T *)sycl::malloc_host(size, sycl_device_queue);
-#elif defined(UNIFIED_DEVICE)
-    *ptr = (T *)sycl::malloc_device(size, sycl_device_queue);
-#else
-    *ptr = (T *)sycl::malloc_shared(size, sycl_device_queue);
-#endif
-#endif
+//#elif defined(UNIFIED_DEVICE)
+//    *ptr = (T *)sycl::malloc_device(size, sycl_device_queue);
+//#else
+  //  *ptr = (T *)sycl::malloc_shared(size, sycl_device_queue);
+//#endif
+//#endif
 }
 
 template <class T>

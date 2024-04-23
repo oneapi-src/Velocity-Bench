@@ -26,7 +26,9 @@ class NuclearData;
 class NuclearData_d;
 class MaterialDatabase;
 class ParticleVaultContainer;
+class ParticleVaultContainer_d;
 class Tallies;
+class Tallies_d;
 class MC_Processor_Info;
 class MC_Time_Info;
 class MC_Particle_Buffer;
@@ -34,6 +36,14 @@ class MC_Fast_Timer_Container;
 class MC_Domain;
 class Material_d;
 
+void copyParticleVaultContainerH2D(ParticleVaultContainer* pvc, ParticleVaultContainer_d* pvc_d);
+void copyParticleVaultContainerD2H(ParticleVaultContainer_d* pvc_d, ParticleVaultContainer* pvc);
+void copyTalliesDevice(Tallies* tallies, Tallies_d* tallies_d);
+void copyTalliesHost(Tallies_d* tallies_d, Tallies* tallies);
+void copyMC_Time_InfoDevice(MC_Time_Info* mc_time_info, MC_Time_Info* mc_time_info_d);
+void copyMC_Time_InfoHost(MC_Time_Info* mc_time_info_d, MC_Time_Info* mc_time_info);
+void copyMonteCarloDevice(MonteCarlo* mc, MonteCarlo_d* mc_d);
+void copyMonteCarloHost(MonteCarlo_d* mc_d, MonteCarlo* mc);
 class MonteCarlo
 {
 public:
@@ -69,5 +79,14 @@ private:
    MonteCarlo& operator=(const MonteCarlo&);
 };
 
-
+class MonteCarlo_d
+{
+public:
+   MC_Domain_d * domain_d;
+   ParticleVaultContainer_d* _particleVaultContainer_d;
+   Tallies_d *_tallies_d; 
+   MC_Time_Info *time_info_d; 
+   Material_d * _material_d;
+   NuclearData_d* _nuclearData_d;
+};
 #endif

@@ -75,13 +75,13 @@ const int NIt = MaxIt;
 
 
 inline HOST_DEVICE_SYCL
-void CycleTrackingFunction( MonteCarlo *monteCarlo, MC_Particle &mc_particle, int particle_index, ParticleVault* processingVault, ParticleVault* processedVault, int * tallyArray)
+void CycleTrackingFunction( MonteCarlo_d *monteCarlo, MC_Particle &mc_particle, int particle_index, ParticleVault_d* processingVault, ParticleVault_d* processedVault, int * tallyArray)
 {
     bool keepTrackingThisParticle = true;
-    unsigned int tally_index = (particle_index) % monteCarlo->_tallies->GetNumBalanceReplications();
-    unsigned int flux_tally_index = (particle_index) % monteCarlo->_tallies->GetNumFluxReplications();
-    unsigned int cell_tally_index = (particle_index) % monteCarlo->_tallies->GetNumCellTallyReplications();
-
+    unsigned int tally_index = (particle_index) % monteCarlo->_tallies_d->GetNumBalanceReplications();
+    unsigned int flux_tally_index = (particle_index) % monteCarlo->_tallies_d->GetNumFluxReplications();
+    unsigned int cell_tally_index = (particle_index) % monteCarlo->_tallies_d->GetNumCellTallyReplications();
+    
     int i1 = 0;
     // The while loop will exit after a particle reaches census or goes through MaxIters iterations, whichever comes first. If a particle reaches MaxIters it will be added to the ExtraVaults and processed in a later kernel. MaxIt can be defined in the makefile, otherwise it defaults to a large number that should ensure that it is never reached. 
     int MaxIters = MaxIt;
@@ -100,16 +100,15 @@ void CycleTrackingFunction( MonteCarlo *monteCarlo, MC_Particle &mc_particle, in
         {
 
 #ifdef EXPONENTIAL_TALLY
-        monteCarlo->_tallies->TallyCellValue(exp(rngSample(&mc_particle.random_number_seed)), mc_particle.domain, cell_tally_index, mc_particle.cell);
+        monteCarlo->_tallies_d->TallyCellValue(exp(rngSample(&mc_particle.random_number_seed)), mc_particle.domain, cell_tally_index, mc_particle.cell);
 #endif
         segment_outcome = MC_Segment_Outcome(monteCarlo, mc_particle, flux_tally_index);
 
-#ifdef __SYCL_DEVICE_ONLY__
+//#ifdef __SYCL_DEVICE_ONLY__
         ATOMIC_UPDATE(tallyArray[tally_index*NUM_TALLIES+0]);
-#else
-        ATOMIC_UPDATE( monteCarlo->_tallies->_balanceTask[tally_index]._numSegments);
-#endif
-
+//#else
+  //      ATOMIC_UPDATE( monteCarlo->_tallies_d->_balanceTask[tally_index]._numSegments);
+//#endif
 
         mc_particle.num_segments += 1.;  /* Track the number of segments this particle has
                                             undergone this cycle on all processes. */
@@ -144,11 +143,11 @@ void CycleTrackingFunction( MonteCarlo *monteCarlo, MC_Particle &mc_particle, in
             }
             else if (facet_crossing_type == MC_Tally_Event::Facet_Crossing_Escape)
             {
-                #ifdef __SYCL_DEVICE_ONLY__
+                //#ifdef __SYCL_DEVICE_ONLY__
                 ATOMIC_UPDATE( tallyArray[tally_index*NUM_TALLIES+1]);
-                #else
-                ATOMIC_UPDATE( monteCarlo->_tallies->_balanceTask[tally_index]._escape);
-                #endif
+                //#else
+                //ATOMIC_UPDATE( monteCarlo->_tallies->_balanceTask[tally_index]._escape);
+                //#endif
 
                 mc_particle.last_event = MC_Tally_Event::Facet_Crossing_Escape;
                 mc_particle.species = -1;
@@ -171,11 +170,11 @@ void CycleTrackingFunction( MonteCarlo *monteCarlo, MC_Particle &mc_particle, in
         {
             // The particle has reached the end of the time step.
             processedVault->pushParticle(mc_particle);
-            #ifdef __SYCL_DEVICE_ONLY__
+            //#ifdef __SYCL_DEVICE_ONLY__
             ATOMIC_UPDATE( tallyArray[tally_index*NUM_TALLIES+2]);
-            #else
-            ATOMIC_UPDATE( monteCarlo->_tallies->_balanceTask[tally_index]._census);
-            #endif
+            //#else
+            //ATOMIC_UPDATE( monteCarlo->_tallies->_balanceTask[tally_index]._census);
+            //#endif
 
             keepTrackingThisParticle = false;
         }
@@ -201,13 +200,13 @@ void CycleTrackingFunction( MonteCarlo *monteCarlo, MC_Particle &mc_particle, in
     }
     else
     {
-        monteCarlo->_particleVaultContainer->addExtraParticle(mc_particle);
+        monteCarlo->_particleVaultContainer_d->addExtraParticle(mc_particle);
     }
 
 }
 
 inline HOST_DEVICE_SYCL
-void CycleTrackingGuts( MonteCarlo *monteCarlo, int particle_index, ParticleVault *processingVault, ParticleVault *processedVault, int * tallyArray)
+void CycleTrackingGuts( MonteCarlo_d *monteCarlo, int particle_index, ParticleVault_d *processingVault, ParticleVault_d *processedVault, int * tallyArray)
 {
     MC_Particle mc_particle;
 

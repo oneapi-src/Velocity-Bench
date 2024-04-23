@@ -73,17 +73,17 @@ HOST_DEVICE_END
 //  A reactionIndex of -1 means total cross section.
 //----------------------------------------------------------------------------------------------------------------------
 
-inline HOST_DEVICE double macroscopicCrossSection(MonteCarlo *monteCarlo, int reactionIndex, int domainIndex, int cellIndex,
+inline HOST_DEVICE double macroscopicCrossSection(MonteCarlo_d *monteCarlo, int reactionIndex, int domainIndex, int cellIndex,
                                                   int isoIndex, int energyGroup)
 {
 // Initialize various data items.
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    int globalMatIndex = monteCarlo->domain_d[domainIndex].cell_state[cellIndex]._material;
    double atomFraction = monteCarlo->_material_d[globalMatIndex]._iso[isoIndex]._atomFraction;
-#else
-   int globalMatIndex = monteCarlo->domain[domainIndex].cell_state[cellIndex]._material;
-   double atomFraction = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._atomFraction;
-#endif
+//#else
+//   int globalMatIndex = monteCarlo->domain[domainIndex].cell_state[cellIndex]._material;
+//   double atomFraction = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._atomFraction;
+//#endif
 
    double microscopicCrossSection = 0.0;
    // The cell number density is the fraction of the atoms in cell
@@ -91,19 +91,19 @@ inline HOST_DEVICE double macroscopicCrossSection(MonteCarlo *monteCarlo, int re
    // This is a statement that we treat materials as if all of their
    // isotopes are present in equal amounts
 
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    double cellNumberDensity = monteCarlo->domain_d[domainIndex].cell_state[cellIndex]._cellNumberDensity;
    int isotopeGid = monteCarlo->_material_d[globalMatIndex]._iso[isoIndex]._gid;
-#else
-   double cellNumberDensity = monteCarlo->domain[domainIndex].cell_state[cellIndex]._cellNumberDensity;
-   int isotopeGid = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._gid;
-#endif
+//#else
+//   double cellNumberDensity = monteCarlo->domain[domainIndex].cell_state[cellIndex]._cellNumberDensity;
+//   int isotopeGid = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._gid;
+//#endif
    if (atomFraction == 0.0 || cellNumberDensity == 0.0)
    {
       return 1e-20;
    }
 
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    if (reactionIndex < 0)
    {
       // Return total cross section
@@ -114,7 +114,7 @@ inline HOST_DEVICE double macroscopicCrossSection(MonteCarlo *monteCarlo, int re
       // Return the reaction cross section
       microscopicCrossSection = monteCarlo->_nuclearData_d->getReactionCrossSection((unsigned int)reactionIndex, isotopeGid, energyGroup);
    }
-#else
+/*#else
    if (reactionIndex < 0)
    {
       // Return total cross section
@@ -125,7 +125,7 @@ inline HOST_DEVICE double macroscopicCrossSection(MonteCarlo *monteCarlo, int re
       // Return the reaction cross section
       microscopicCrossSection = monteCarlo->_nuclearData->getReactionCrossSection((unsigned int)reactionIndex, isotopeGid, energyGroup);
    }
-#endif
+#endif*/
 
    return atomFraction * cellNumberDensity * microscopicCrossSection;
 }
@@ -138,27 +138,27 @@ HOST_DEVICE_END
 // applied by this routine.  In Mercury we would weight for multiple
 // materials in a cell.
 //----------------------------------------------------------------------------------------------------------------------
-inline HOST_DEVICE double weightedMacroscopicCrossSection(MonteCarlo *monteCarlo, int taskIndex, int domainIndex,
+inline HOST_DEVICE double weightedMacroscopicCrossSection(MonteCarlo_d *monteCarlo, int taskIndex, int domainIndex,
                                                           int cellIndex, int energyGroup)
 {
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    double *precomputedCrossSection =
        &monteCarlo->domain_d[domainIndex].cell_state[cellIndex]._total[energyGroup];
-#else
-   double *precomputedCrossSection =
-       &monteCarlo->domain[domainIndex].cell_state[cellIndex]._total[energyGroup];
-#endif
+//#else
+//   double *precomputedCrossSection =
+//      &monteCarlo->domain[domainIndex].cell_state[cellIndex]._total[energyGroup];
+//#endif
    qs_assert(precomputedCrossSection != NULL);
    if (*precomputedCrossSection > 0.0)
       return *precomputedCrossSection;
 
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    int globalMatIndex = monteCarlo->domain_d[domainIndex].cell_state[cellIndex]._material;
    int nIsotopes = (int)monteCarlo->_material_d[globalMatIndex]._isosize;
-#else
-   int globalMatIndex = monteCarlo->domain[domainIndex].cell_state[cellIndex]._material;
-   int nIsotopes = (int)monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso.size();
-#endif
+//#else
+//   int globalMatIndex = monteCarlo->domain[domainIndex].cell_state[cellIndex]._material;
+//   int nIsotopes = (int)monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso.size();
+//#endif
    double sum = 0.0;
    for (int isoIndex = 0; isoIndex < nIsotopes; isoIndex++)
    {

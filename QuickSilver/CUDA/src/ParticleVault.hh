@@ -74,6 +74,17 @@ public:
         _particles.reserve(n, VAR_MEM);
     }
 
+    //return vault ptr
+    MC_Base_Particle*  get_valut_ptr()
+   {
+        return _particles.outputPointer();
+   }
+
+   //copy vault
+   void set_vault(const qs_vector<MC_Base_Particle> &aa)
+   {
+        _particles=aa;
+   }
     // Add all particles in a 2nd vault into this vault.
     void append(ParticleVault &vault2)
     {
@@ -128,9 +139,46 @@ public:
     // Swaps this particle at index with last particle and resizes to delete it
     void eraseSwapParticle(int index);
 
-private:
+//private:
     // The container of particles.
     qs_vector<MC_Base_Particle> _particles;
+};
+
+//------------------------------------------------------------------------
+class ParticleVault_d
+{
+public:
+   // Get the size of the vault.
+   HOST_DEVICE_CUDA
+   size_t size() const {return _particlesSize;}
+
+   HOST_DEVICE_CUDA
+   void setsize(int size) {_particlesSize = size;}
+
+   // Put a particle into the vault, down casting its class.
+   HOST_DEVICE_CUDA
+   void pushParticle(MC_Particle &particle);
+
+   // Put a base particle into the vault.
+   HOST_DEVICE_CUDA
+   void pushBaseParticle(MC_Base_Particle &base_particle);
+
+   HOST_DEVICE_CUDA
+   bool getParticle(MC_Particle &particle, int index);
+   // Copy a particle back into the vault
+   HOST_DEVICE_CUDA
+   bool putParticle(MC_Particle particle, int index);
+
+   // invalidates the particle in the vault at an index
+   HOST_DEVICE_CUDA
+   void invalidateParticle(int index);
+
+//private:
+
+   // The container of particles.
+   //qs_vector<MC_Base_Particle> _particles;
+   MC_Base_Particle* _particles;
+   int _particlesSize;
 };
 
 // -----------------------------------------------------------------------
@@ -258,8 +306,74 @@ inline void ParticleVault::
     }
 }
 
+//------------------------------------------------------------------------
+HOST_DEVICE_CUDA
+inline void ParticleVault_d::
+pushParticle(MC_Particle &particle)
+{
+    MC_Base_Particle base_particle(particle);
+    //size_t indx = _particles.atomic_Index_Inc(1);
+    size_t indx;
+    int pos;
+    ATOMIC_CAPTURE(_particlesSize, 1, pos);
+    indx = pos;
+    _particles[indx] = base_particle;
+}
+
 // -----------------------------------------------------------------------
-inline HOST_DEVICE void MC_Load_Particle(MonteCarlo *monteCarlo, MC_Particle &mc_particle, ParticleVault *particleVault, int particle_index)
+HOST_DEVICE_CUDA
+inline void ParticleVault_d::
+pushBaseParticle(MC_Base_Particle &base_particle)
+{
+    //int indx = _particles.atomic_Index_Inc(1);
+    int indx;
+    ATOMIC_CAPTURE(_particlesSize, 1, indx);
+    _particles[indx] = base_particle;
+}
+
+//------------------------------------------------------------------------
+HOST_DEVICE_CUDA
+inline bool ParticleVault_d::
+getParticle(MC_Particle &particle, int index)
+{
+    qs_assert(size() > index);
+    if(size() > index)
+    {
+            MC_Base_Particle base_particle(_particles[index]);
+            particle = MC_Particle(base_particle);
+
+            return true;
+    }
+    return false;
+}
+
+// -----------------------------------------------------------------------
+HOST_DEVICE_CUDA
+inline bool ParticleVault_d::
+putParticle(MC_Particle particle, int index)
+{
+    qs_assert(size() > index);
+    if(size() > index)
+    {
+        MC_Base_Particle base_particle(particle);
+        _particles[index] = base_particle;
+        return true;
+    }
+    return false;
+}
+
+// -----------------------------------------------------------------------
+HOST_DEVICE_CUDA
+inline void ParticleVault_d::
+invalidateParticle(int index)
+{
+    qs_assert(index >= 0);
+    qs_assert(index < _particlesSize);
+    _particles[index].species = -1;
+}
+
+// -----------------------------------------------------------------------
+inline HOST_DEVICE void MC_Load_Particle(MonteCarlo_d *monteCarlo, MC_Particle &mc_particle, ParticleVault_d *particleVault, int particle_index)
 {
     // particleVault.popParticle(mc_particle);
     particleVault->getParticle(mc_particle, particle_index);
@@ -267,7 +381,7 @@ inline HOST_DEVICE void MC_Load_Particle(MonteCarlo *monteCarlo, MC_Particle &mc
     // Time to Census
     if (mc_particle.time_to_census <= 0.0)
     {
-        mc_particle.time_to_census += monteCarlo->time_info->time_step;
+        mc_particle.time_to_census += monteCarlo->time_info_d->time_step;
     }
 
     // Age
@@ -277,13 +391,31 @@ inline HOST_DEVICE void MC_Load_Particle(MonteCarlo *monteCarlo, MC_Particle &mc
     }
 
 //    Energy Group
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
     mc_particle.energy_group = monteCarlo->_nuclearData_d->getEnergyGroup(mc_particle.kinetic_energy);
-#else
-    mc_particle.energy_group = monteCarlo->_nuclearData->getEnergyGroup(mc_particle.kinetic_energy);
-#endif
+//#else
+//    mc_particle.energy_group = monteCarlo->_nuclearData->getEnergyGroup(mc_particle.kinetic_energy);
+//#endif
     //                    printf("file=%s line=%d\n",__FILE__,__LINE__);
 }
 HOST_DEVICE_END
+
+inline void MC_Load_Particle(MonteCarlo *monteCarlo, MC_Particle &mc_particle, ParticleVault *particleVault, int particle_index)
+{
+    //particleVault.popParticle(mc_particle);
+    particleVault->getParticle(mc_particle, particle_index);
+
+    // Time to Census
+    if (mc_particle.time_to_census <= 0.0)
+    {
+        mc_particle.time_to_census += monteCarlo->time_info->time_step;
+    }
+
+    // Age
+    if (mc_particle.age < 0.0) { mc_particle.age = 0.0; }
+
+//    Energy Group
+    mc_particle.energy_group = monteCarlo->_nuclearData->getEnergyGroup(mc_particle.kinetic_energy);
+}
 
 #endif

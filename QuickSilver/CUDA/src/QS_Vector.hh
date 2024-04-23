@@ -117,9 +117,13 @@ public:
 
    void push_back(const T &dataElem)
    {
+//      printf ("nowPush\n");
       qs_assert(_isOpen);
+  //    printf ("nowPush1\n");
       _data[_size] = dataElem;
+    //  printf ("nowPush2\n");
       _size++;
+    //  printf ("nowPush3\n");
    }
 
    void Open() { _isOpen = true; }
@@ -221,7 +225,7 @@ public:
       }
    }
 
-   const T *const outputPointer()
+   /*const*/ T * outputPointer()
    {
       return _data;
    }
@@ -237,7 +241,7 @@ public:
       return pos;
    }
 
-private:
+//private:
    T *_data;
    int _capacity;
    int _size;

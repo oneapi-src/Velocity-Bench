@@ -55,6 +55,7 @@ class MC_Domain;
 class MC_Domain_d;
 class MC_Cell_State;
 class MonteCarlo;
+class MonteCarlo_d;
 
 HOST_DEVICE_CLASS
 class MC_Location
@@ -83,7 +84,7 @@ HOST_DEVICE_SYCL
    HOST_DEVICE_SYCL
    const MC_Domain& get_domain(MonteCarlo *mcco) const;
    HOST_DEVICE_SYCL
-   const MC_Domain_d& get_domain_d(MonteCarlo *mcco) const;
+   const MC_Domain_d& get_domain_d(MonteCarlo_d *mcco) const;
 };
 HOST_DEVICE_END
 

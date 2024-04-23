@@ -79,7 +79,8 @@ public:
     // Clear send queue before after use
     void clear();
 
-private:
+    sendQueueTuple* get_data_pointer() {return _data.outputPointer();}
+//private:
     // The send queue - stores particle index and neighbor index for any particles that hit (TRANSIT_OFF_PROCESSOR)
     qs_vector<sendQueueTuple> _data;
 };
@@ -139,5 +140,29 @@ inline sendQueueTuple &SendQueue::
     qs_assert(index_ < _data.size());
     return _data[index_];
 }
+// -----------------------------------------------------------------------
+class SendQueue_d
+{
+public:
+    HOST_DEVICE_CUDA
+    void push(int neighbor_, int vault_index_);
 
+    //qs_vector<sendQueueTuple> _data;
+    sendQueueTuple* _data;
+    int _dataSize;
+};
+// -----------------------------------------------------------------------
+inline HOST_DEVICE void SendQueue_d::
+    push(int neighbor_, int vault_index_)
+{
+    //size_t indx = _data.atomic_Index_Inc(1);
+    size_t indx;
+    int pos;
+    ATOMIC_CAPTURE(_dataSize, 1, pos);
+    indx = pos;
+
+    _data[indx]._neighbor = neighbor_;
+    _data[indx]._particleIndex = vault_index_;
+}
+HOST_DEVICE_END
 #endif

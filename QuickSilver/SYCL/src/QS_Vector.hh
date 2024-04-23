@@ -224,7 +224,7 @@ public:
 
    }
 
-   const T *const outputPointer()
+   /*const*/ T *const outputPointer()
    {
       return _data;
    }
@@ -241,7 +241,7 @@ public:
    }
 
 
-private:
+//private:
    T *_data;
    int _capacity;
    int _size;
