@@ -131,9 +131,9 @@ void CrossCorrelationKernel::Stack() {
                     });
         } else {
             cgh.parallel_for(
-                    global_nd_range, [=](sycl::id<2> idx) {
-                        uint offset_window = idx[0] + idx[1] * wnx;
-                        uint offset = idx[0] + idx[1] * nx;
+                    global_nd_range, [=](sycl::nd_item<2> it) {
+                        uint offset_window = it.get_global_id(0) + it.get_global_id(1) * wnx;
+                        uint offset = it.get_global_id(0) + it.get_global_id(1) * nx;
                         stack_buf[offset] += cor_buf[offset_window];
                         stack_src[offset] += cor_src[offset_window];
                         stack_rcv[offset] += cor_rcv[offset_window];
