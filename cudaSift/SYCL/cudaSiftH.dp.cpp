@@ -168,7 +168,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
 #endif
     q_ct.memcpy(&siftData.numPts, &d_PointCounterAddr[2 * numOctaves], sizeof(int));
     q_ct.wait();
-    siftData.numPts/=2;
+    siftData.numPts /= 2;
 #ifdef DEVICE_TIMER
     auto stop_memcpy2 = std::chrono::steady_clock::now();
     totTime += std::chrono::duration<float, std::micro>(stop_memcpy2 - start_memcpy2).count();
@@ -204,7 +204,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
                           sizeof(int)),
               0));
     q_ct.wait();
-    siftData.numPts/=2;
+    siftData.numPts /= 2;
 #ifdef DEVICE_TIMER
     auto stop_memcpy4 = std::chrono::steady_clock::now();
     totTime += std::chrono::duration<float, std::micro>(stop_memcpy4 - start_memcpy4).count();
@@ -227,7 +227,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
     totTime += std::chrono::duration<float, std::micro>(stop_memcpy5 - start_memcpy5).count();
     printf("Total time for sift extraction =  %.2f us\n\n", totTime);
 #endif
-    printf("Number of Points after sift extraction =  %d\n\n", siftData.numPts);
+    // printf("Number of Points after sift extraction =  %d\n\n", siftData.numPts);
   }
 }
 
