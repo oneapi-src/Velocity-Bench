@@ -244,7 +244,7 @@ void ExtractSift(SiftData &siftData, CudaImage &img, int numOctaves, double init
 #endif
   }
 #endif
-  printf("Number of Points after sift extraction =  %d\n\n", siftData.numPts);
+  // printf("Number of Points after sift extraction =  %d\n\n", siftData.numPts);
 }
 
 int ExtractSiftLoop(SiftData &siftData, CudaImage &img, int numOctaves, double initBlur, float thresh, float lowestScale,

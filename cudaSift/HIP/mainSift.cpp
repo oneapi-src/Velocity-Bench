@@ -62,105 +62,111 @@ int main(int argc, char **argv)
   float matchingTime = 0.0;
   float ioReadTime = 0.0;
   float dataVerificationTime = 0.0;
+  int data_verification_flag = 0;
+  int iterations = 50; // Running for 50 iterations to avg out intial heavy loading time in hip
 
-  // Read images using OpenCV
-  cv::Mat limg, rimg;
-  auto ioRead_start = std::chrono::steady_clock::now();
-  if (imgSet)
-  {
-    cv::imread("../../inputData/left.pgm", 0).convertTo(limg, CV_32FC1);
-    cv::imread("../../inputData/righ.pgm", 0).convertTo(rimg, CV_32FC1);
-  }
-  else
-  {
-    cv::imread("../../inputData/img1.png", 0).convertTo(limg, CV_32FC1);
-    cv::imread("../../inputData/img2.png", 0).convertTo(rimg, CV_32FC1);
-  }
-  auto ioRead_stop = std::chrono::steady_clock::now();
-  ioReadTime = std::chrono::duration<float, std::micro>(ioRead_stop - ioRead_start).count();
-
-  unsigned int w = limg.cols;
-  unsigned int h = limg.rows;
-  std::cout << "Image size = (" << w << "," << h << ")" << std::endl;
-
-  // Initial Cuda images and download images to device
-  std::cout << "Initializing data..." << std::endl;
   auto start_deviceSet = std::chrono::steady_clock::now();
   hipSetDevice(0);
   auto stop_deviceSet = std::chrono::steady_clock::now();
 
-  CudaImage img1, img2;
-  img1.Allocate(w, h, iAlignUp(w, 128), false, imageInitTime, NULL, (float *)limg.data);
-  img2.Allocate(w, h, iAlignUp(w, 128), false, imageInitTime, NULL, (float *)rimg.data);
-  img1.Download(imageInitTime);
-  img2.Download(imageInitTime);
-
-  // Extract Sift features from images
-  SiftData siftData1, siftData2;
-  float initBlur = 1.0f;
-  float thresh = (imgSet ? 4.5f : 2.0f);
-
-  InitSiftData(siftData1, imageInitTime, 32768, true, true);
-  InitSiftData(siftData2, imageInitTime, 32768, true, true);
-
-  // A bit of benchmarking
-  // for (int thresh1=1.00f;thresh1<=4.01f;thresh1+=0.50f) {
-  float *memoryTmp = AllocSiftTempMemory(w, h, 5, imageInitTime, false);
-
-  for (int i = 0; i < 50; i++)
+  for (int i = 0; i < iterations; ++i)
   {
-    float time = 0.0f;
-    ExtractSift(siftData1, img1, 5, initBlur, thresh, time, 0.0f, false, memoryTmp);
-    extractSiftTime += time;
-    time = 0.0f;
-    ExtractSift(siftData2, img2, 5, initBlur, thresh, time, 0.0f, false, memoryTmp);
-    extractSiftTime += time;
-  }
-  FreeSiftTempMemory(memoryTmp);
 
-  // Match Sift features and find a homography
-  for (int i = 0; i < 1; i++)
-    MatchSiftData(siftData1, siftData2, matchingTime);
-  float homography[9];
-  int numMatches;
-  FindHomography(siftData1, homography, &numMatches, matchingTime, 10000, 0.00f, 0.80f, 5.0);
-  int numFit = ImproveHomography(siftData1, homography, 5, 0.00f, 0.80f, 3.0);
-  float matchPercentage = 100.0f * numFit / std::min(siftData1.numPts, siftData2.numPts);
+    // Read images using OpenCV
+    cv::Mat limg, rimg;
+    auto ioRead_start = std::chrono::steady_clock::now();
+    if (imgSet)
+    {
+      cv::imread("../../inputData/left.pgm", 0).convertTo(limg, CV_32FC1);
+      cv::imread("../../inputData/righ.pgm", 0).convertTo(rimg, CV_32FC1);
+    }
+    else
+    {
+      cv::imread("../../inputData/img1.png", 0).convertTo(limg, CV_32FC1);
+      cv::imread("../../inputData/img2.png", 0).convertTo(rimg, CV_32FC1);
+    }
+    auto ioRead_stop = std::chrono::steady_clock::now();
+    ioReadTime = std::chrono::duration<float, std::micro>(ioRead_stop - ioRead_start).count();
 
-  std::cout << "Number of original features: " << siftData1.numPts << " " << siftData2.numPts << std::endl;
-  std::cout << "Number of matching features: " << numFit << " " << numMatches << " " << 100.0f * numFit / std::min(siftData1.numPts, siftData2.numPts) << "% " << initBlur << " " << thresh << "\n"
-            << std::endl;
+    unsigned int w = limg.cols;
+    unsigned int h = limg.rows;
+    std::cout << "Image size = (" << w << "," << h << ")" << std::endl;
 
-  totTime = imageInitTime + extractSiftTime + matchingTime;
+    // Initial Cuda images and download images to device
+    std::cout << "Initializing data..." << std::endl;
+
+    CudaImage img1, img2;
+    img1.Allocate(w, h, iAlignUp(w, 128), false, imageInitTime, NULL, (float *)limg.data);
+    img2.Allocate(w, h, iAlignUp(w, 128), false, imageInitTime, NULL, (float *)rimg.data);
+    img1.Download(imageInitTime);
+    img2.Download(imageInitTime);
+
+    // Extract Sift features from images
+    SiftData siftData1, siftData2;
+    float initBlur = 1.0f;
+    float thresh = (imgSet ? 4.5f : 2.0f);
+
+    InitSiftData(siftData1, imageInitTime, 32768, true, true);
+    InitSiftData(siftData2, imageInitTime, 32768, true, true);
+
+    // A bit of benchmarking
+    // for (int thresh1=1.00f;thresh1<=4.01f;thresh1+=0.50f) {
+    float *memoryTmp = AllocSiftTempMemory(w, h, 5, imageInitTime, false);
+
+    for (int i = 0; i < 50; i++)
+    {
+      float time = 0.0f;
+      ExtractSift(siftData1, img1, 5, initBlur, thresh, time, 0.0f, false, memoryTmp);
+      extractSiftTime += time;
+      time = 0.0f;
+      ExtractSift(siftData2, img2, 5, initBlur, thresh, time, 0.0f, false, memoryTmp);
+      extractSiftTime += time;
+    }
+    FreeSiftTempMemory(memoryTmp);
+
+    // Match Sift features and find a homography
+    for (int i = 0; i < 1; i++)
+      MatchSiftData(siftData1, siftData2, matchingTime);
+    float homography[9];
+    int numMatches;
+    FindHomography(siftData1, homography, &numMatches, matchingTime, 10000, 0.00f, 0.80f, 5.0);
+    int numFit = ImproveHomography(siftData1, homography, 5, 0.00f, 0.80f, 3.0);
+    float matchPercentage = 100.0f * numFit / std::min(siftData1.numPts, siftData2.numPts);
+
+    std::cout << "Number of original features: " << siftData1.numPts << " " << siftData2.numPts << std::endl;
+    std::cout << "Number of matching features: " << numFit << " " << numMatches << " " << 100.0f * numFit / std::min(siftData1.numPts, siftData2.numPts) << "% " << initBlur << " " << thresh << "\n"
+              << std::endl;
+
+    totTime = imageInitTime + extractSiftTime + matchingTime;
 
 #ifdef DEVICE_TIMER
-  std::cout << "Images initialization time = " << imageInitTime / 1000 << " ms" << std::endl;
-  std::cout << "Feature extraction time = " << extractSiftTime / 1000 << " ms" << std::endl;
-  std::cout << "Matching time = " << matchingTime / 1000 << " ms"
-            << "\n"
-            << std::endl;
-  std::cout << "Total Time = " << totTime / 1000 << " ms"
-            << "\n"
-            << std::endl;
+    std::cout << "Images initialization time = " << imageInitTime / 1000 << " ms" << std::endl;
+    std::cout << "Feature extraction time = " << extractSiftTime / 1000 << " ms" << std::endl;
+    std::cout << "Matching time = " << matchingTime / 1000 << " ms"
+              << "\n"
+              << std::endl;
+    std::cout << "Total Time = " << totTime / 1000 << " ms"
+              << "\n"
+              << std::endl;
 #endif
-  // data validation
-  auto dataVerficationTimer_start = std::chrono::steady_clock::now();
-  int data_verification_flag = Utility::RunDataVerification(thresh, matchPercentage);
-  auto dataVerficationTimer_stop = std::chrono::steady_clock::now();
-  dataVerificationTime = std::chrono::duration<float, std::micro>(dataVerficationTimer_stop - dataVerficationTimer_start).count();
-  // // Print out and store summary data
-  // // PrintMatchData(siftData1, siftData2, img1);
-  // cv::imwrite("data/limg_pts.pgm", limg);
+    // data validation
+    auto dataVerficationTimer_start = std::chrono::steady_clock::now();
+    int data_verification_flag = Utility::RunDataVerification(thresh, matchPercentage);
+    auto dataVerficationTimer_stop = std::chrono::steady_clock::now();
+    dataVerificationTime += std::chrono::duration<float, std::micro>(dataVerficationTimer_stop - dataVerficationTimer_start).count();
+    // // Print out and store summary data
+    // // PrintMatchData(siftData1, siftData2, img1);
+    // cv::imwrite("data/limg_pts.pgm", limg);
 
-  // MatchAll(siftData1, siftData2, homography);
+    // MatchAll(siftData1, siftData2, homography);
 
-  // Free Sift data from device
-  FreeSiftData(siftData1);
-  FreeSiftData(siftData2);
-
+    // Free Sift data from device
+    FreeSiftData(siftData1);
+    FreeSiftData(siftData2);
+  }
   auto totalProgTimer_end = std::chrono::steady_clock::now();
   float totalProgramTime = std::chrono::duration<float, std::micro>(totalProgTimer_end - totalProgTimer_start).count() - ioReadTime - dataVerificationTime;
-  std::cout << "Total workload time = " << totalProgramTime / 1000 << " ms"
+  std::cout << "Avg workload time = " << totalProgramTime / (1000 * iterations) << " ms"
             << "\n"
             << std::endl;
   return data_verification_flag;

@@ -65,32 +65,6 @@ inline bool deviceInit(int dev)
   return true;
 }
 
-class TimerGPU
-{
-public:
-  cudaEvent_t start, stop;
-  cudaStream_t stream;
-  TimerGPU(cudaStream_t stream_ = 0) : stream(stream_)
-  {
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, stream);
-  }
-  ~TimerGPU()
-  {
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-  }
-  float read()
-  {
-    cudaEventRecord(stop, stream);
-    cudaEventSynchronize(stop);
-    float time;
-    cudaEventElapsedTime(&time, start, stop);
-    return time;
-  }
-};
-
 class TimerCPU
 {
   static const int bits = 10;
