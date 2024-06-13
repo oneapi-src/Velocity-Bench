@@ -372,6 +372,7 @@ void iDFT2D1gpu(std::complex<float>* din, std::complex<float>* dout, int num_row
         sum = sum + std::conj(din[((num_rows-j)%num_rows) * (num_cols/2+1) + ((num_cols-k)%num_cols)]) * twiddle;
     }
 
+
     dout[i * num_rows + j] = sum;
 }
 
@@ -515,8 +516,13 @@ void tsnecuda::PrecomputeFFT2D(
 }
 
 void tsnecuda::NbodyFFT2D(
-    // std::shared_ptr<descriptor_t>& plan_dft,
-    // std::shared_ptr<descriptor_t>& plan_idft,
+#if defined(USE_NVIDIA_BACKEND)
+    cufftHandle& plan_dft,
+    cufftHandle& plan_idft,
+#else
+    std::shared_ptr<descriptor_t>& plan_dft,
+    std::shared_ptr<descriptor_t>& plan_idft,
+#endif
     std::complex<float>* fft_kernel_tilde_device,
     std::complex<float>* fft_w_coefficients,
     int    N,
@@ -655,13 +661,8 @@ void tsnecuda::NbodyFFT2D(
                 item);
         }
     );
-    // myQueue.wait_and_throw();
+    myQueue.wait_and_throw();
 
-    // Compute fft values at interpolated nodes
-    // oneapi::mkl::dft::compute_forward(
-    //         *plan_dft,
-    //         reinterpret_cast<float *>(fft_input),
-    //         (float *)reinterpret_cast<sycl::float2 *>(fft_w_coefficients) ).wait();
 
     int num_rows = n_fft_coeffs;
     int num_cols = n_fft_coeffs;
@@ -670,6 +671,27 @@ void tsnecuda::NbodyFFT2D(
     sycl::range<2> grid_size1((num_rows       + block_size[0] - 1) / block_size[0], (num_cols + block_size[1] - 1) / block_size[1]);
     sycl::range<2> grid_size2(((num_cols/2+1) + block_size[0] - 1) / block_size[0], (num_rows + block_size[1] - 1) / block_size[1]);
 
+
+#if defined(USE_NVIDIA_BACKEND)
+    myQueue.submit([&](sycl::handler &cgh) {
+        cgh.host_task([=] {
+            cufftExecR2C(plan_dft, (float*)fft_input, (float2*)fft_w_coefficients);
+            cudaStreamSynchronize(0);
+            //cufftDestroy(cufft_plan_fwd);
+        });
+    });
+    myQueue.wait_and_throw();
+
+#else
+
+#define USE_MKL
+#if defined(USE_MKL)
+    // Compute fft values at interpolated nodes
+    oneapi::mkl::dft::compute_forward(
+            *plan_dft,
+            reinterpret_cast<float *>(fft_input),
+            (float *)reinterpret_cast<sycl::float2 *>(fft_w_coefficients) ).wait();
+#else
     std::vector<sycl::event> events = {sycl::event(), sycl::event(), sycl::event(), sycl::event()};
     for (int f = 0; f < n_terms; ++f) {
         events[f] = myQueue.parallel_for<class DFT2D1gpu2>(
@@ -703,6 +725,9 @@ void tsnecuda::NbodyFFT2D(
     }
     myQueue.wait_and_throw();
 
+#endif
+#endif
+
     // Take the broadcasted Hadamard product of a complex matrix and a complex vector
     // TODO: Check timing on this kernel
     tsnecuda::utils::BroadcastMatrixVector(
@@ -715,12 +740,29 @@ void tsnecuda::NbodyFFT2D(
         std::complex<float>(1.0f),
         myQueue);
 
-    // Invert the computed values at the interpolated nodes
-    // oneapi::mkl::dft::compute_backward(
-    //     *plan_idft,
-    //     (float *)reinterpret_cast<sycl::float2 *>(fft_w_coefficients),
-    //     reinterpret_cast<float *>(fft_output)).wait();
+#if defined(USE_NVIDIA_BACKEND)
+    myQueue.wait_and_throw();
+    myQueue.submit([&](sycl::handler &cgh) {
+        cgh.host_task([=] {
+            cufftExecC2R(plan_idft, (float2*)fft_w_coefficients, (float*)fft_output);
+            cudaStreamSynchronize(0);
+            //cufftDestroy(cufft_plan_fwd);
+        });
+    });
+    myQueue.wait_and_throw();
 
+    std::vector<sycl::event> events2 = {};
+
+#else
+
+#if defined(USE_MKL)
+    // Invert the computed values at the interpolated nodes
+    oneapi::mkl::dft::compute_backward(
+        *plan_idft,
+        (float *)reinterpret_cast<sycl::float2 *>(fft_w_coefficients),
+        reinterpret_cast<float *>(fft_output)).wait();
+    std::vector<sycl::event> events2 = {};
+#else
     std::vector<sycl::event> events2 = {sycl::event(), sycl::event(), sycl::event(), sycl::event()};
     for (int f = 0; f < n_terms; ++f) {
         events[f] = myQueue.parallel_for<class iDFT2D1gpu2>(
@@ -753,11 +795,15 @@ void tsnecuda::NbodyFFT2D(
         );
     }
     // myQueue.wait_and_throw();
+#endif
+#endif
+
+#undef USE_MKL
+
 
     auto e6 = myQueue.parallel_for<class copy_from_fft_output2>(
         sycl::nd_range<1>(num_blocks * num_threads, num_threads), events2,
         [=](sycl::nd_item<1> item) {
-
             copy_from_fft_output(
                 y_tilde_values,         // output
                 fft_output,

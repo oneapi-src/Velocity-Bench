@@ -68,5 +68,6 @@
 #include "common.h"
 
 int iDivUp(int, int);
+extern "C" void CufftSafeCall(int err);
 
 #endif
