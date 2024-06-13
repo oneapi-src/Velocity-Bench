@@ -43,7 +43,7 @@ if(NOT DEFINED ROCM_PATH)
         set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Path to which HIP has been installed")
     endif()
 endif()
-set(CMAKE_MODULE_PATH "${ROCM_PATH}/hip/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake/hip" ${CMAKE_MODULE_PATH})
 set(HIP_INCLUDE_DIRS  "${ROCM_PATH}/include"   ${HIP_INCLUDE_DIRS})
 set(HIP_LIBRARIES     "${ROCM_PATH}/lib"       ${HIP_LIBRARIES})
 
@@ -78,6 +78,7 @@ set(SOURCES
     ${CMAKE_SOURCE_DIR}/src/utils/math_utils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/matrix_broadcast_utils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/reduce_utils.cpp
+    ${CMAKE_SOURCE_DIR}/../data/verify.cpp
 
     # Kernels
     ${CMAKE_SOURCE_DIR}/src/kernels/apply_forces.cpp
@@ -95,6 +96,7 @@ set(SOURCES
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/../data
     ${HIP_INCLUDE_DIRS}
 )
 
