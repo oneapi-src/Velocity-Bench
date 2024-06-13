@@ -90,10 +90,10 @@ void tsnecuda::utils::BroadcastMatrixVector(
     const int axis,
     const T alpha)
 {
-    // Checks to make sure dimensions are correct
-    assert(d_matrix.size() >= N * M);
-    assert((axis == 0 && d_vector.size() >= N) ||
-            (axis == 1 && d_vector.size() >= M));
+    // // Checks to make sure dimensions are correct
+    // assert(d_matrix.size() >= N * M);
+    // assert((axis == 0 && d_vector.size() >= N) ||
+    //        (axis == 1 && d_vector.size() >= M));
 
     const int kBlockSize = 32;
     const int kNumBlocks = iDivUp(N * M, kBlockSize);

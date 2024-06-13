@@ -486,8 +486,8 @@ void tsnecuda::PrecomputeFFT2D(
 }
 
 void tsnecuda::NbodyFFT2D(
-    // hipfftHandle& plan_dft,
-    // hipfftHandle& plan_idft,
+    hipfftHandle& plan_dft,
+    hipfftHandle& plan_idft,
     thrust::device_vector<thrust::complex<float>>& fft_kernel_tilde_device,
     thrust::device_vector<thrust::complex<float>>& fft_w_coefficients,
     int    N,
@@ -601,13 +601,15 @@ void tsnecuda::NbodyFFT2D(
     );
     HIP_CHECK_LAST_ERROR()
     GpuErrorCheck(hipDeviceSynchronize());
+#define USE_HIPFFT
 
+#ifdef USE_HIPFFT
     // Compute fft values at interpolated nodes
-    // hipfftExecR2C(plan_dft,
-    //              reinterpret_cast<hipfftReal *>(thrust::raw_pointer_cast(fft_input.data())),
-    //              reinterpret_cast<hipfftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())));
-    // GpuErrorCheck(hipDeviceSynchronize());
-
+    hipfftExecR2C(plan_dft,
+                 reinterpret_cast<hipfftReal *>(thrust::raw_pointer_cast(fft_input.data())),
+                 reinterpret_cast<hipfftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())));
+    GpuErrorCheck(hipDeviceSynchronize());
+#else
     int num_rows = n_fft_coeffs;
     int num_cols = n_fft_coeffs;
 
@@ -638,6 +640,7 @@ void tsnecuda::NbodyFFT2D(
         HIP_CHECK_LAST_ERROR();
         GpuErrorCheck(hipDeviceSynchronize());
     }
+#endif
 
     // Take the broadcasted Hadamard product of a complex matrix and a complex vector
     // TODO: Check timing on this kernel
@@ -651,11 +654,13 @@ void tsnecuda::NbodyFFT2D(
         thrust::complex<float>(1.0f));
 
     // Invert the computed values at the interpolated nodes
-    // hipfftExecC2R(plan_idft,
-    //              reinterpret_cast<hipfftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())),
-    //              reinterpret_cast<hipfftReal *>(thrust::raw_pointer_cast(fft_output.data())));
-    // GpuErrorCheck(hipDeviceSynchronize());
 
+#ifdef USE_HIPFFT
+    hipfftExecC2R(plan_idft,
+                 reinterpret_cast<hipfftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())),
+                 reinterpret_cast<hipfftReal *>(thrust::raw_pointer_cast(fft_output.data())));
+    GpuErrorCheck(hipDeviceSynchronize());
+#else
     din  = reinterpret_cast<float*>(thrust::raw_pointer_cast(fft_output.data()));
 
     for (int f = 0; f < n_terms; ++f) {
@@ -677,6 +682,9 @@ void tsnecuda::NbodyFFT2D(
         HIP_CHECK_LAST_ERROR();
         GpuErrorCheck(hipDeviceSynchronize());
     }
+#endif
+
+#undef USE_HIPFFT
 
     hipLaunchKernelGGL(copy_from_fft_output, num_blocks, num_threads, 0, 0, 
         thrust::raw_pointer_cast(y_tilde_values.data()),    // output
