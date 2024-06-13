@@ -63,6 +63,7 @@ int main(int argc, char** argv)
     std::chrono::steady_clock::time_point time_end;
     double time_total = 0.0;
     double time_total_ = 0.0;
+    int success = 99;
 
     TIMER_START()
 
@@ -125,7 +126,12 @@ int main(int argc, char** argv)
     }
 
     // Do the t-SNE
-    time_total_ = tsnecuda::RunTsne(opt);
+    time_total_ = tsnecuda::RunTsne(opt, success);
+    if (success == 0) {
+        std::cout << "Verification SUCCESSFUL\n";
+    } else {
+        std::cout << "Verification FAILED\n";
+    }
     std::cout << "\nDone!\n";
     } catch (std::exception const& e) {
         std::cout << "Exception: " << e.what() << "\n";
@@ -134,5 +140,5 @@ int main(int argc, char** argv)
     TIMER_END()
     TIMER_PRINT("tsne - total time for whole calculation")
 
-    return 0;
+    return success;
 }

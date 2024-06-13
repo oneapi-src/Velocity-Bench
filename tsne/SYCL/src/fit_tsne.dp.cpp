@@ -40,6 +40,7 @@
 #include <complex>
 #include <chrono>
 #include "include/fit_tsne.h"
+#include "verify.hpp"
 
 // #ifndef DEBUG_TIME
 // #define DEBUG_TIME
@@ -68,7 +69,7 @@
 #define PRINT_IL_TIMER(x) std::cout << #x << ": " << ((float)x.count()) / 1000000.0 << "s" << std::endl
 #endif
 
-double tsnecuda::RunTsne(tsnecuda::Options& opt)
+double tsnecuda::RunTsne(tsnecuda::Options& opt, int& success)
 {
     std::chrono::steady_clock::time_point time_start_;
     std::chrono::steady_clock::time_point time_end_;
@@ -420,14 +421,15 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
         std::cout << "done." << std::endl;
     }
 
-    // int fft_dimensions[2] = {n_fft_coeffs, n_fft_coeffs};        // {780, 780}
+    int fft_dimensions[2] = {n_fft_coeffs, n_fft_coeffs};        // {780, 780}
+    size_t work_size_idft, work_size_dft;
 
-    // std::int64_t fwd_strides1[3] = {0,  n_fft_coeffs,        1};    // {0, 780, 1} -> 0 + 780*i + j
-    // std::int64_t fwd_strides2[3] = {0, (n_fft_coeffs/2+1)*2, 1};    // {0, 780, 1} -> 0 + 780*i + j
-    // std::int64_t bwd_strides[3]  = {0, (n_fft_coeffs/2+1),   1};    // {0, 391, 1} -> 0 + 391*i + j
-    // std::int64_t fwd_distances1  = n_fft_coeffs* n_fft_coeffs;
-    // std::int64_t fwd_distances2  = n_fft_coeffs*(n_fft_coeffs/2+1)*2;
-    // std::int64_t bwd_distances   = n_fft_coeffs*(n_fft_coeffs/2+1)  ;
+    std::int64_t fwd_strides1[3] = {0,  n_fft_coeffs,        1};    // {0, 780, 1} -> 0 + 780*i + j
+    std::int64_t fwd_strides2[3] = {0, (n_fft_coeffs/2+1)*2, 1};    // {0, 780, 1} -> 0 + 780*i + j
+    std::int64_t bwd_strides[3]  = {0, (n_fft_coeffs/2+1),   1};    // {0, 391, 1} -> 0 + 391*i + j
+    std::int64_t fwd_distances1  = n_fft_coeffs* n_fft_coeffs;
+    std::int64_t fwd_distances2  = n_fft_coeffs*(n_fft_coeffs/2+1)*2;
+    std::int64_t bwd_distances   = n_fft_coeffs*(n_fft_coeffs/2+1)  ;
 
     // std::cout << "Setting up dft plans...\n";
     // // *** TIMED SEPARATELY. NOT ADDED TO PERF TIME ***
@@ -443,27 +445,66 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
     // TIME_SINCE(time_start);
 
     // TIME_START();
-    // std::shared_ptr<descriptor_t> plan_dft;
-    // plan_dft = std::make_shared<descriptor_t>(std::vector<std::int64_t>{n_fft_coeffs, n_fft_coeffs});
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::PLACEMENT,       DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,   fwd_strides1);
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,  bwd_strides);
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,    fwd_distances1);
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,    bwd_distances);
-    // plan_dft->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, n_terms);
-    // plan_dft->commit(qts);
-    // TIME_SINCE(time_start);
 
+
+#if defined(USE_NVIDIA_BACKEND)
+    cufftHandle plan_dft;
+    CufftSafeCall(cufftCreate(&plan_dft));
+    CufftSafeCall(cufftMakePlanMany(
+        plan_dft,
+        2,
+        fft_dimensions,
+        NULL,
+        1,
+        n_fft_coeffs * n_fft_coeffs,
+        NULL,
+        1,
+        n_fft_coeffs * (n_fft_coeffs / 2 + 1),
+        CUFFT_R2C,
+        n_terms,
+        &work_size_dft)
+    );
+#else
+    std::shared_ptr<descriptor_t> plan_dft;
+    plan_dft = std::make_shared<descriptor_t>(std::vector<std::int64_t>{n_fft_coeffs, n_fft_coeffs});
+    plan_dft->set_value(oneapi::mkl::dft::config_param::PLACEMENT,       DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+    plan_dft->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,   fwd_strides1);
+    plan_dft->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,  bwd_strides);
+    plan_dft->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,    fwd_distances1);
+    plan_dft->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,    bwd_distances);
+    plan_dft->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, n_terms);
+    plan_dft->commit(qts);
+#endif
+    // TIME_SINCE(time_start);
     // TIME_START();
-    // std::shared_ptr<descriptor_t> plan_idft;
-    // plan_idft = std::make_shared<descriptor_t>(std::vector<std::int64_t>{n_fft_coeffs, n_fft_coeffs});
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::PLACEMENT,      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,  bwd_strides);
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, fwd_strides2);
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,   fwd_distances2);
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,   bwd_distances);
-    // plan_idft->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, n_terms);
-    // plan_idft->commit(qts);
+#if defined(USE_NVIDIA_BACKEND)
+    cufftHandle plan_idft;
+    CufftSafeCall(cufftCreate(&plan_idft));
+    CufftSafeCall(cufftMakePlanMany(
+        plan_idft,
+        2,
+        fft_dimensions,
+        NULL,
+        1,
+        n_fft_coeffs * (n_fft_coeffs / 2 + 1),
+        NULL,
+        1,
+        n_fft_coeffs * n_fft_coeffs,
+        CUFFT_C2R,
+        n_terms,
+        &work_size_idft)
+    );
+#else
+    std::shared_ptr<descriptor_t> plan_idft;
+    plan_idft = std::make_shared<descriptor_t>(std::vector<std::int64_t>{n_fft_coeffs, n_fft_coeffs});
+    plan_idft->set_value(oneapi::mkl::dft::config_param::PLACEMENT,      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+    plan_idft->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,  bwd_strides);
+    plan_idft->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, fwd_strides1);
+    plan_idft->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,   fwd_distances1);
+    plan_idft->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,   bwd_distances);
+    plan_idft->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, n_terms);
+    plan_idft->commit(qts);
+#endif
     // // *** TIMED SEPARATELY. NOT ADDED TO PERF TIME ***
     // TIME_SINCE(time_start);
     // std::cout << "done.\n";
@@ -564,8 +605,8 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
 #endif
 
         tsnecuda::NbodyFFT2D(
-            // plan_dft,
-            // plan_idft,
+            plan_dft,
+            plan_idft,
             fft_kernel_tilde_device,            // input
             fft_w_coefficients,                 // intermediate value
             N,
@@ -723,6 +764,9 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
             dump_file << host_ys[i] << " " << host_ys[i + num_points] << std::endl;
         }
         dump_file.close();
+
+        std::string golden_file = "../../data/tsne_mnist_output_golden.txt";
+        success = verify(golden_file, opt.get_dump_file(), 0.2, 10.0);
         TIMER_END_()
 
         sycl::free(host_ys, qts);

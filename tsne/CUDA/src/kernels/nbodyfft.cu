@@ -477,8 +477,8 @@ void tsnecuda::PrecomputeFFT2D(
 }
 
 void tsnecuda::NbodyFFT2D(
-    // cufftHandle& plan_dft,
-    // cufftHandle& plan_idft,
+    cufftHandle& plan_dft,
+    cufftHandle& plan_idft,
     thrust::device_vector<thrust::complex<float>>& fft_kernel_tilde_device,
     thrust::device_vector<thrust::complex<float>>& fft_w_coefficients,
     int    N,
@@ -592,13 +592,15 @@ void tsnecuda::NbodyFFT2D(
     );
     CUDA_CHECK_LAST_ERROR()
     GpuErrorCheck(cudaDeviceSynchronize());
+#define USE_CUFFT
 
-    // // Compute fft values at interpolated nodes
-    // cufftExecR2C(plan_dft,
-    //              reinterpret_cast<cufftReal *>(thrust::raw_pointer_cast(fft_input.data())),
-    //              reinterpret_cast<cufftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())));
-    // GpuErrorCheck(cudaDeviceSynchronize());
-
+#ifdef USE_CUFFT
+    // Compute fft values at interpolated nodes
+    cufftExecR2C(plan_dft,
+                 reinterpret_cast<cufftReal *>(thrust::raw_pointer_cast(fft_input.data())),
+                 reinterpret_cast<cufftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())));
+    GpuErrorCheck(cudaDeviceSynchronize());
+#else
     int num_rows = n_fft_coeffs;
     int num_cols = n_fft_coeffs;
 
@@ -629,6 +631,7 @@ void tsnecuda::NbodyFFT2D(
         CUDA_CHECK_LAST_ERROR();
         GpuErrorCheck(cudaDeviceSynchronize());
     }
+#endif
 
     // Take the broadcasted Hadamard product of a complex matrix and a complex vector
     // TODO: Check timing on this kernel
@@ -642,11 +645,13 @@ void tsnecuda::NbodyFFT2D(
         thrust::complex<float>(1.0f));
 
     // Invert the computed values at the interpolated nodes
-    // cufftExecC2R(plan_idft,
-    //              reinterpret_cast<cufftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())),
-    //              reinterpret_cast<cufftReal *>(thrust::raw_pointer_cast(fft_output.data())));
-    // GpuErrorCheck(cudaDeviceSynchronize());
 
+#ifdef USE_CUFFT
+    cufftExecC2R(plan_idft,
+                 reinterpret_cast<cufftComplex *>(thrust::raw_pointer_cast(fft_w_coefficients.data())),
+                 reinterpret_cast<cufftReal *>(thrust::raw_pointer_cast(fft_output.data())));
+    GpuErrorCheck(cudaDeviceSynchronize());
+#else
     din  = reinterpret_cast<float*>(thrust::raw_pointer_cast(fft_output.data()));
 
     for (int f = 0; f < n_terms; ++f) {
@@ -668,6 +673,9 @@ void tsnecuda::NbodyFFT2D(
         CUDA_CHECK_LAST_ERROR();
         GpuErrorCheck(cudaDeviceSynchronize());
     }
+#endif
+
+#undef USE_CUFFT
 
     copy_from_fft_output<<<num_blocks, num_threads>>>(
         thrust::raw_pointer_cast(y_tilde_values.data()),    // output

@@ -41,9 +41,14 @@
 
  // SYCL Includes
 #include <sycl/sycl.hpp>
-// #include <oneapi/mkl.hpp>
 
-// typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL> descriptor_t;
+#if defined(USE_NVIDIA_BACKEND)
+#include <cufft.h>
+#include <cuda_runtime.h>
+#else
+#include <oneapi/mkl.hpp>
+typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL> descriptor_t;
+#endif
 
 // Thrust includes
 

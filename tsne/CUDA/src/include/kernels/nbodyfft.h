@@ -59,8 +59,8 @@ void PrecomputeFFT2D(
     thrust::device_vector<thrust::complex<float>>& fft_scratchpad_device, double& duration); // added
 
 void NbodyFFT2D(
-    // cufftHandle& plan_dft,
-    // cufftHandle& plan_idft,
+    cufftHandle& plan_dft,
+    cufftHandle& plan_idft,
     thrust::device_vector<thrust::complex<float>>& fft_kernel_tilde_device,
     thrust::device_vector<thrust::complex<float>>& fft_w_coefficients,
     int   N,

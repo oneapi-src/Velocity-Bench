@@ -19,7 +19,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(MPI_HOME)
     message(STATUS "Using provided MPI_HOME=${MPI_HOME}")
 else()
-    set(MPI_HOME "/opt/intel/oneapi/mpi/latest")
+    # set(MPI_HOME "/opt/intel/oneapi/mpi/latest")
+    set(MPI_HOME "/usr/lib/x86_64-linux-gnu/openmpi")
     message(STATUS "Using default MPI_HOME=${MPI_HOME}")
 endif()
 
@@ -30,12 +31,12 @@ if(NOT DEFINED ROCM_PATH)
         set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Path to which HIP has been installed")
     endif()
 endif()
-set(CMAKE_MODULE_PATH "${ROCM_PATH}/hip/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake/hip" ${CMAKE_MODULE_PATH})
 set(HIP_INCLUDE_DIRS  "${ROCM_PATH}/include"   ${HIP_INCLUDE_DIRS})
 set(HIP_LIBRARIES     "${ROCM_PATH}/lib"       ${HIP_LIBRARIES})
 
 set(DEF_WL_CXX_FLAGS           " -D__HIP_PLATFORM_AMD__ ")
-set(DEF_GENERAL_CXX_FLAGS      " -cxx=hipcc -O3 -std=c++17 -fopenmp ")
+set(DEF_GENERAL_CXX_FLAGS      " -O3 -std=c++17 ")
 set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
 
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
@@ -79,4 +80,4 @@ include_directories(
 
 add_executable(SeisAcoMod2D ${SOURCES})
 
-target_link_libraries(SeisAcoMod2D -L${MPI_HOME}/lib -L${HIP_LIBRARIES})
+target_link_libraries(SeisAcoMod2D -L${HIP_LIBRARIES} -L${MPI_HOME}/lib -lmpi_cxx -lmpi)

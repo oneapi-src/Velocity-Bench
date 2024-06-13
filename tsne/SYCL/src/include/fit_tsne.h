@@ -56,7 +56,7 @@
 #include "include/kernels/rep_forces.h"
 
 namespace tsnecuda {
-double RunTsne(tsnecuda::Options& opt);
+double RunTsne(tsnecuda::Options& opt, int& success);
 }
 
 #endif

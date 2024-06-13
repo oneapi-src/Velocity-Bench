@@ -61,8 +61,13 @@ void PrecomputeFFT2D(
     sycl::queue& myQueue, double& duration);
 
 void NbodyFFT2D(
-    // std::shared_ptr<descriptor_t>& plan_dft,
-    // std::shared_ptr<descriptor_t>& plan_idft,
+#if defined(USE_NVIDIA_BACKEND)
+    cufftHandle& plan_dft,
+    cufftHandle& plan_idft,
+#else
+    std::shared_ptr<descriptor_t>& plan_dft,
+    std::shared_ptr<descriptor_t>& plan_idft,
+#endif
     std::complex<float>* fft_kernel_tilde_device,
     std::complex<float>* fft_w_coefficients,
     int    N,

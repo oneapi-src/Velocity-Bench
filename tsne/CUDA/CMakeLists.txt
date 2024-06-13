@@ -78,6 +78,7 @@ set(SOURCES
     ${CMAKE_SOURCE_DIR}/src/utils/math_utils.cu
     ${CMAKE_SOURCE_DIR}/src/utils/matrix_broadcast_utils.cu
     ${CMAKE_SOURCE_DIR}/src/utils/reduce_utils.cu
+    ${CMAKE_SOURCE_DIR}/../data/verify.cpp
 
     # Kernels
     ${CMAKE_SOURCE_DIR}/src/kernels/apply_forces.cu
@@ -95,6 +96,7 @@ set(SOURCES
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/../data
     ${CUDA_INCLUDE_DIRS}
 )
 

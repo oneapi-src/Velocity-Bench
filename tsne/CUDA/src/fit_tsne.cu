@@ -34,6 +34,7 @@
 
 #include <chrono>
 #include "include/fit_tsne.h"
+#include "verify.hpp"
 
 // #ifndef DEBUG_TIME
 // #define DEBUG_TIME
@@ -62,7 +63,7 @@
 #define PRINT_IL_TIMER(x) std::cout << #x << ": " << ((float)x.count()) / 1000000.0 << "s" << std::endl
 #endif
 
-double tsnecuda::RunTsne(tsnecuda::Options& opt)
+double tsnecuda::RunTsne(tsnecuda::Options& opt, int& success)
 {
     std::chrono::steady_clock::time_point time_start_;
     std::chrono::steady_clock::time_point time_end_;
@@ -406,8 +407,9 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
         std::cout << "done." << std::endl;
     }
 
-    // int fft_dimensions[2] = {n_fft_coeffs, n_fft_coeffs};        // {780, 780}
-    // size_t work_size, work_size_dft, work_size_idft;
+    int fft_dimensions[2] = {n_fft_coeffs, n_fft_coeffs};        // {780, 780}
+    size_t work_size_idft, work_size_dft;
+    // size_t work_size;
 
     // std::cout << "Setting up dft plans...\n";
     // // *** TIMED SEPARATELY. NOT ADDED TO PERF TIME ***
@@ -424,41 +426,41 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
     // TIME_SINCE(time_start);
 
     // TIME_START();
-    // cufftHandle plan_dft;
-    // CufftSafeCall(cufftCreate(&plan_dft));
-    // CufftSafeCall(cufftMakePlanMany(
-    //     plan_dft,
-    //     2,
-    //     fft_dimensions,
-    //     NULL,
-    //     1,
-    //     n_fft_coeffs * n_fft_coeffs,
-    //     NULL,
-    //     1,
-    //     n_fft_coeffs * (n_fft_coeffs / 2 + 1),
-    //     CUFFT_R2C,
-    //     n_terms,
-    //     &work_size_dft)
-    // );
+    cufftHandle plan_dft;
+    CufftSafeCall(cufftCreate(&plan_dft));
+    CufftSafeCall(cufftMakePlanMany(
+        plan_dft,
+        2,
+        fft_dimensions,
+        NULL,
+        1,
+        n_fft_coeffs * n_fft_coeffs,
+        NULL,
+        1,
+        n_fft_coeffs * (n_fft_coeffs / 2 + 1),
+        CUFFT_R2C,
+        n_terms,
+        &work_size_dft)
+    );
     // TIME_SINCE(time_start);
 
     // TIME_START();
-    // cufftHandle plan_idft;
-    // CufftSafeCall(cufftCreate(&plan_idft));
-    // CufftSafeCall(cufftMakePlanMany(
-    //     plan_idft,
-    //     2,
-    //     fft_dimensions,
-    //     NULL,
-    //     1,
-    //     n_fft_coeffs * (n_fft_coeffs / 2 + 1),
-    //     NULL,
-    //     1,
-    //     n_fft_coeffs * n_fft_coeffs,
-    //     CUFFT_C2R,
-    //     n_terms,
-    //     &work_size_idft)
-    // );
+    cufftHandle plan_idft;
+    CufftSafeCall(cufftCreate(&plan_idft));
+    CufftSafeCall(cufftMakePlanMany(
+        plan_idft,
+        2,
+        fft_dimensions,
+        NULL,
+        1,
+        n_fft_coeffs * (n_fft_coeffs / 2 + 1),
+        NULL,
+        1,
+        n_fft_coeffs * n_fft_coeffs,
+        CUFFT_C2R,
+        n_terms,
+        &work_size_idft)
+    );
     // TIME_SINCE(time_start);
     // std::cout << "done.\n";
 
@@ -545,8 +547,8 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
 #endif
 
         tsnecuda::NbodyFFT2D(
-            // plan_dft,
-            // plan_idft,
+            plan_dft,
+            plan_idft,
             fft_kernel_tilde_device,            // input
             fft_w_coefficients,                 // intermediate value
             N,
@@ -697,6 +699,9 @@ double tsnecuda::RunTsne(tsnecuda::Options& opt)
             dump_file << host_ys[i] << " " << host_ys[i + num_points] << std::endl;
         }
         dump_file.close();
+
+        std::string golden_file = "../../data/tsne_mnist_output_golden.txt";
+        success = verify(golden_file, opt.get_dump_file(), 0.2, 10.0);
         TIMER_END_()
 
         host_ys.clear();

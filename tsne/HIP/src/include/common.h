@@ -41,9 +41,9 @@
 
 // CUDA Includes
 #include <hip/hip_runtime.h>
-#include <hipblas.h>
-#include <hipsparse.h>
-#include <hipfft.h>
+#include <hipblas/hipblas.h>
+#include <hipsparse/hipsparse.h>
+#include <hipfft/hipfft.h>
 
 // Thrust includes
 #include <thrust/host_vector.h>

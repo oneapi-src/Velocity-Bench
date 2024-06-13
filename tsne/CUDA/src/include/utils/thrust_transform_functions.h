@@ -47,7 +47,7 @@ struct FunctionalEntropy {
   __host__ __device__
   float operator()(const float& x) const {
       float val = x * log(x);
-      return (val != val || isinf(val)) ? 0 : val;
+      return (x == 0 || val != val || isinf(val)) ? 0 : val;
     }
 };
 

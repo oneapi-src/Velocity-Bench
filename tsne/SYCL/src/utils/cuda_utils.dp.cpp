@@ -74,200 +74,200 @@ int iDivUp(int a, int b) { return ((a % b) != 0) ? (a / b + 1) : (a / b); }
 // /* CUDA ERROR CHECK */
 // /********************/
 // // --- Credit to http://stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
-// void gpuAssert(int code, const char *file, int line, bool abort = true)
-// {
-// }
+void gpuAssert(int code, const char *file, int line, bool abort = true)
+{
+}
 
-// extern "C" void GpuErrorCheck(int ans) { gpuAssert((ans), __FILE__, __LINE__); }
+extern "C" void GpuErrorCheck(int ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
-// /*************************/
-// /* CUBLAS ERROR CHECKING */
-// /*************************/
-// static const char *_cublasGetErrorEnum(int error)
-// {
-// 	switch (error)
-// 	{
-//         case 0:
-//                 return "CUBLAS_STATUS_SUCCESS";
+/*************************/
+/* CUBLAS ERROR CHECKING */
+/*************************/
+static const char *_cublasGetErrorEnum(int error)
+{
+	switch (error)
+	{
+        case 0:
+                return "CUBLAS_STATUS_SUCCESS";
 
-//         case 1:
-//                 return "CUBLAS_STATUS_NOT_INITIALIZED";
+        case 1:
+                return "CUBLAS_STATUS_NOT_INITIALIZED";
 
-//         case 3:
-//                 return "CUBLAS_STATUS_ALLOC_FAILED";
+        case 3:
+                return "CUBLAS_STATUS_ALLOC_FAILED";
 
-//         case 7:
-//                 return "CUBLAS_STATUS_INVALID_VALUE";
+        case 7:
+                return "CUBLAS_STATUS_INVALID_VALUE";
 
-//         case 8:
-//                 return "CUBLAS_STATUS_ARCH_MISMATCH";
+        case 8:
+                return "CUBLAS_STATUS_ARCH_MISMATCH";
 
-//         case 11:
-//                 return "CUBLAS_STATUS_MAPPING_ERROR";
+        case 11:
+                return "CUBLAS_STATUS_MAPPING_ERROR";
 
-//         case 13:
-//                 return "CUBLAS_STATUS_EXECUTION_FAILED";
+        case 13:
+                return "CUBLAS_STATUS_EXECUTION_FAILED";
 
-//         case 14:
-//                 return "CUBLAS_STATUS_INTERNAL_ERROR";
+        case 14:
+                return "CUBLAS_STATUS_INTERNAL_ERROR";
 
-//         case 15:
-//                 return "CUBLAS_STATUS_NOT_SUPPORTED";
+        case 15:
+                return "CUBLAS_STATUS_NOT_SUPPORTED";
 
-//         case 16:
-//                 return "CUBLAS_STATUS_LICENSE_ERROR";
-// 	}
+        case 16:
+                return "CUBLAS_STATUS_LICENSE_ERROR";
+	}
 
-// 	return "<unknown>";
-// }
+	return "<unknown>";
+}
 
-// inline void __CublasSafeCall(int err, const char *file, const int line)
-// {
-//         if (0 != err) {
-//                 fprintf(stderr, "CUBLAS error in file '%s', line %d, error: %s\nterminating!\n", __FILE__, __LINE__, \
-// 			_cublasGetErrorEnum(err)); \
-// 			assert(0); \
-// 	}
-// }
+inline void __CublasSafeCall(int err, const char *file, const int line)
+{
+        if (0 != err) {
+                fprintf(stderr, "CUBLAS error in file '%s', line %d, error: %s\nterminating!\n", __FILE__, __LINE__, \
+			_cublasGetErrorEnum(err)); \
+			assert(0); \
+	}
+}
 
-// extern "C" void CublasSafeCall(int err) {
-//  __CublasSafeCall(err, __FILE__, __LINE__);
-// }
+extern "C" void CublasSafeCall(int err) {
+ __CublasSafeCall(err, __FILE__, __LINE__);
+}
 
-// /***************************/
-// /* CUSPARSE ERROR CHECKING */
-// /***************************/
-// static const char *_cusparseGetErrorEnum(int error)
-// {
-// 	switch (error)
-// 	{
+/***************************/
+/* CUSPARSE ERROR CHECKING */
+/***************************/
+static const char *_cusparseGetErrorEnum(int error)
+{
+	switch (error)
+	{
 
-//         case 0:
-//                 return "CUSPARSE_STATUS_SUCCESS";
+        case 0:
+                return "CUSPARSE_STATUS_SUCCESS";
 
-//         case 1:
-//                 return "CUSPARSE_STATUS_NOT_INITIALIZED";
+        case 1:
+                return "CUSPARSE_STATUS_NOT_INITIALIZED";
 
-//         case 2:
-//                 return "CUSPARSE_STATUS_ALLOC_FAILED";
+        case 2:
+                return "CUSPARSE_STATUS_ALLOC_FAILED";
 
-//         case 3:
-//                 return "CUSPARSE_STATUS_INVALID_VALUE";
+        case 3:
+                return "CUSPARSE_STATUS_INVALID_VALUE";
 
-//         case 4:
-//                 return "CUSPARSE_STATUS_ARCH_MISMATCH";
+        case 4:
+                return "CUSPARSE_STATUS_ARCH_MISMATCH";
 
-//         case 5:
-//                 return "CUSPARSE_STATUS_MAPPING_ERROR";
+        case 5:
+                return "CUSPARSE_STATUS_MAPPING_ERROR";
 
-//         case 6:
-//                 return "CUSPARSE_STATUS_EXECUTION_FAILED";
+        case 6:
+                return "CUSPARSE_STATUS_EXECUTION_FAILED";
 
-//         case 7:
-//                 return "CUSPARSE_STATUS_INTERNAL_ERROR";
+        case 7:
+                return "CUSPARSE_STATUS_INTERNAL_ERROR";
 
-//         case 8:
-//                 return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+        case 8:
+                return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
 
-//         case 9:
-//                 return "CUSPARSE_STATUS_ZERO_PIVOT";
-// 	}
+        case 9:
+                return "CUSPARSE_STATUS_ZERO_PIVOT";
+	}
 
-// 	return "<unknown>";
-// }
+	return "<unknown>";
+}
 
-// inline void __CusparseSafeCall(int err, const char *file, const int line)
-// {
-//         if (0 != err) {
-//                 fprintf(stderr, "CUSPARSE error in file '%s', line %d, error %s\nterminating!\n", __FILE__, __LINE__, \
-// 			_cusparseGetErrorEnum(err)); \
-// 			assert(0); \
-// 	}
-// }
+inline void __CusparseSafeCall(int err, const char *file, const int line)
+{
+        if (0 != err) {
+                fprintf(stderr, "CUSPARSE error in file '%s', line %d, error %s\nterminating!\n", __FILE__, __LINE__, \
+			_cusparseGetErrorEnum(err)); \
+			assert(0); \
+	}
+}
 
-// extern "C" void CusparseSafeCall(int err) {
-//  __CusparseSafeCall(err, __FILE__, __LINE__);
-// }
+extern "C" void CusparseSafeCall(int err) {
+ __CusparseSafeCall(err, __FILE__, __LINE__);
+}
 
-// /************************/
-// /* CUFFT ERROR CHECKING */
-// /************************/
+/************************/
+/* CUFFT ERROR CHECKING */
+/************************/
 
-// static const char *_cufftGetErrorEnum(int error)
-// {
-//     switch (error)
-//     {
-//         case 0:
-//             return "CUFFT_SUCCESS";
+static const char *_cufftGetErrorEnum(int error)
+{
+    switch (error)
+    {
+        case 0:
+            return "CUFFT_SUCCESS";
 
-//         case 1:
-//             return "CUFFT_INVALID_PLAN";
+        case 1:
+            return "CUFFT_INVALID_PLAN";
 
-//         case 2:
-//             return "CUFFT_ALLOC_FAILED";
+        case 2:
+            return "CUFFT_ALLOC_FAILED";
 
-//         case 3:
-//             return "CUFFT_INVALID_TYPE";
+        case 3:
+            return "CUFFT_INVALID_TYPE";
 
-//         case 4:
-//             return "CUFFT_INVALID_VALUE";
+        case 4:
+            return "CUFFT_INVALID_VALUE";
 
-//         case 5:
-//             return "CUFFT_INTERNAL_ERROR";
+        case 5:
+            return "CUFFT_INTERNAL_ERROR";
 
-//         case 6:
-//             return "CUFFT_EXEC_FAILED";
+        case 6:
+            return "CUFFT_EXEC_FAILED";
 
-//         case 7:
-//             return "CUFFT_SETUP_FAILED";
+        case 7:
+            return "CUFFT_SETUP_FAILED";
 
-//         case 8:
-//             return "CUFFT_INVALID_SIZE";
+        case 8:
+            return "CUFFT_INVALID_SIZE";
 
-//         case 9:
-//             return "CUFFT_UNALIGNED_DATA";
+        case 9:
+            return "CUFFT_UNALIGNED_DATA";
 
-//         case 11:
-//             return "CUFFT_INVALID_DEVICE";
+        case 11:
+            return "CUFFT_INVALID_DEVICE";
 
-//         case 10:
-//             return "CUFFT_INCOMPLETE_PARAMETER_LIST";
+        case 10:
+            return "CUFFT_INCOMPLETE_PARAMETER_LIST";
 
-//         case 12:
-//             return "CUFFT_PARSE_ERROR";
+        case 12:
+            return "CUFFT_PARSE_ERROR";
 
-//         case 13:
-//             return "CUFFT_NO_WORKSPACE";
+        case 13:
+            return "CUFFT_NO_WORKSPACE";
 
-//         case 16:
-//             return "CUFFT_NOT_SUPPORTED";
+        case 16:
+            return "CUFFT_NOT_SUPPORTED";
 
-//         case 14:
-//             return "CUFFT_NOT_IMPLEMENTED";
+        case 14:
+            return "CUFFT_NOT_IMPLEMENTED";
 
-//         case 15:
-//             return "CUFFT_LICENSE_ERROR";
+        case 15:
+            return "CUFFT_LICENSE_ERROR";
 
-//         default:
-//             return "<unknown>";
-//     }
-// }
+        default:
+            return "<unknown>";
+    }
+}
 
-// inline void __cufftSafeCall(int err, const char *file, const int line)
-// {
-//     if (0 != err) {
-//                 fprintf(stderr,
-//                 "CUFFT error in file '%s', line %d, error %s\nterminating!\n",
-//                 __FILE__,
-//                 __LINE__,
-// 				_cufftGetErrorEnum(err));
-//                 dpct::get_current_device().reset();
-//         assert(0);
-//     }
-// }
+inline void __cufftSafeCall(int err, const char *file, const int line)
+{
+    if (0 != err) {
+                fprintf(stderr,
+                "CUFFT error in file '%s', line %d, error %s\nterminating!\n",
+                __FILE__,
+                __LINE__,
+				_cufftGetErrorEnum(err));
+        //GpuErrorCheck(cudaDeviceReset());
+        //dpct::get_current_device().reset();
+        assert(0);
+    }
+}
 
-// extern "C" void CufftSafeCall(int err) {
-//  __cufftSafeCall(err, __FILE__, __LINE__);
-// }
+extern "C" void CufftSafeCall(int err) {__cufftSafeCall(err, __FILE__, __LINE__);
+}
 
-// /// END OF CUDA UTILITIES
+/// END OF CUDA UTILITIES

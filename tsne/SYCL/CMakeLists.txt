@@ -112,12 +112,14 @@ endif()
 
 message(STATUS "CXX Compilation flags set to: ${CMAKE_CXX_FLAGS}")
 
-if(GPU_AOT)
+if(NOT USE_NVIDIA_BACKEND)
     set(MKL_LINK static)
     set(MKL_THREADING sequential)
     find_package(MKL CONFIG REQUIRED HINTS "$ENV{MKLROOT}/lib/cmake/mkl")
+else()
+    find_package(CUDA REQUIRED)
+    include_directories(${CUDA_INCLUDE_DIRS})
 endif()
-
 # Project Setup
 #-------------------------------------------------------------------------------
 set(SOURCES
@@ -128,6 +130,7 @@ set(SOURCES
     ${CMAKE_SOURCE_DIR}/src/utils/math_utils.dp.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/matrix_broadcast_utils.dp.cpp
     # ${CMAKE_SOURCE_DIR}/src/utils/reduce_utils.dp.cpp
+    ${CMAKE_SOURCE_DIR}/../data/verify.cpp
 
     # # Kernels
     ${CMAKE_SOURCE_DIR}/src/kernels/apply_forces.dp.cpp
@@ -145,14 +148,18 @@ set(SOURCES
 include_directories(
     ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/../data
     /nfs/pdx/home/mgrabban/oneDPL/include
     /nfs/pdx/home/mgrabban/oneTBB/include
 )
 
 add_executable(tsne ${SOURCES})
 
-if(GPU_AOT)
+if(NOT USE_NVIDIA_BACKEND)
     target_compile_options(tsne PUBLIC $<TARGET_PROPERTY:MKL::MKL_DPCPP,INTERFACE_COMPILE_OPTIONS>)
     target_include_directories(tsne PUBLIC $<TARGET_PROPERTY:MKL::MKL_DPCPP,INTERFACE_INCLUDE_DIRECTORIES>)
     target_link_libraries(tsne PUBLIC $<LINK_ONLY:MKL::MKL_DPCPP>)
+else()
+    target_link_libraries(tsne ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${CUDA_cusparse_LIBRARY})
 endif()
+
