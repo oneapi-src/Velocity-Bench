@@ -334,7 +334,7 @@ void copyMonteCarloHost_part(MonteCarlo_d* mc_d, MonteCarlo* mc)
     safeCall(cudaMemcpy(mc->time_info, tmp, sizeof(MC_Time_Info), cudaMemcpyDeviceToHost));
     safeCall(cudaDeviceSynchronize());
     //sycl::free(tmp,sycl_device_queue);
-    cudaFree(tmp);
+    safeCall(cudaFree(tmp));
 
     ParticleVaultContainer_d* tmp_p;
     //sycl_device_queue.memcpy(&tmp_p, &(mc_d->_particleVaultContainer_d), sizeof(ParticleVaultContainer_d*)).wait();
@@ -362,15 +362,15 @@ void copyMonteCarloHost_part(MonteCarlo_d* mc_d, MonteCarlo* mc)
 	    ParticleVault_d *tmp_0;
 	    //sycl_device_queue.memcpy(&tmp_0, &(tmp_ev[i]), sizeof(ParticleVault_d *)).wait();
         safeCall(cudaMemcpy(&tmp_0, &(tmp_ev[i]), sizeof(ParticleVault_d *), cudaMemcpyDeviceToHost));
-	safeCall(cudaDeviceSynchronize());
+	    safeCall(cudaDeviceSynchronize());
         copyParticleVault_d2h(mc->_particleVaultContainer->_extraVault[i], tmp_0);
 	    //sycl::free(tmp_0, sycl_device_queue);
-        cudaFree(tmp_0);
+        safeCall(cudaFree(tmp_0));
     }
     //sycl::free(tmp_ev, sycl_device_queue);
-    cudaFree(tmp_ev);
+    safeCall(cudaFree(tmp_ev));
     //sycl::free(tmp_p, sycl_device_queue);
-    cudaFree(tmp_p);
+    safeCall(cudaFree(tmp_p));
 }
 
 void copyMonteCarloHost_last(MonteCarlo_d* mc_d, MonteCarlo* mc)
