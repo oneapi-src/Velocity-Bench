@@ -756,7 +756,7 @@ Library.
 	cxxopts
 	Copyright (c) 2014 Jarryd Beck
 
-  Voxelizer CUDA
+        Voxelizer CUDA
 	Copyright (c) 2019 Jeroen Baert
 	
 	Voxelizer HIP
