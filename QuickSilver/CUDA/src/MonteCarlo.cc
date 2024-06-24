@@ -77,10 +77,10 @@ MonteCarlo::MonteCarlo(const Parameters& params)
 #if defined(HAVE_UVM)
     void *ptr1, *ptr2, *ptr3, *ptr4;
 
-    gpuMallocManaged(&ptr1, sizeof(Tallies), cudaMemAttachGlobal);
-    gpuMallocManaged(&ptr2, sizeof(MC_Processor_Info), cudaMemAttachGlobal);
-    gpuMallocManaged(&ptr3, sizeof(MC_Time_Info), cudaMemAttachGlobal);
-    gpuMallocManaged(&ptr4, sizeof(MC_Fast_Timer_Container), cudaMemAttachGlobal);
+    gpuMallocManaged(&ptr1, sizeof(Tallies),1/* cudaMemAttachGlobal*/);
+    gpuMallocManaged(&ptr2, sizeof(MC_Processor_Info), 1/*cudaMemAttachGlobal*/);
+    gpuMallocManaged(&ptr3, sizeof(MC_Time_Info), 1/*cudaMemAttachGlobal*/);
+    gpuMallocManaged(&ptr4, sizeof(MC_Fast_Timer_Container), 1/*cudaMemAttachGlobal*/);
 
     _tallies = new (ptr1) Tallies(params.simulationParams.balanceTallyReplications,
                                   params.simulationParams.fluxTallyReplications,
@@ -148,8 +148,8 @@ MonteCarlo::MonteCarlo(const Parameters& params)
 
 #if defined(HAVE_UVM)
     void *ptr5, *ptr6;
-    gpuMallocManaged(&ptr5, sizeof(MC_Particle_Buffer), cudaMemAttachGlobal);
-    gpuMallocManaged(&ptr6, sizeof(ParticleVaultContainer), cudaMemAttachGlobal);
+    gpuMallocManaged(&ptr5, sizeof(MC_Particle_Buffer), 1/*cudaMemAttachGlobal*/);
+    gpuMallocManaged(&ptr6, sizeof(ParticleVaultContainer), 1/*cudaMemAttachGlobal*/);
     particle_buffer = new (ptr5) MC_Particle_Buffer(this, batch_size);
     _particleVaultContainer = new (ptr6) ParticleVaultContainer(batch_size, num_batches, num_extra_vaults);
 #else

@@ -307,7 +307,6 @@ bool MC_Particle_Buffer::Trivially_Done()
     {
         return true;
     }
-
     return false;
 }
 

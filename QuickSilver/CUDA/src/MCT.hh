@@ -103,14 +103,14 @@ HOST_DEVICE_END
 inline HOST_DEVICE
 
     Subfacet_Adjacency &
-    MCT_Adjacent_Facet(const MC_Location &location, MC_Particle &mc_particle, MonteCarlo *monteCarlo)
+    MCT_Adjacent_Facet(const MC_Location &location, MC_Particle &mc_particle, MonteCarlo_d *monteCarlo)
 
 {
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    MC_Domain_d &domain = monteCarlo->domain_d[location.domain];
-#else
-   MC_Domain &domain = monteCarlo->domain[location.domain];
-#endif
+//#else
+//   MC_Domain &domain = monteCarlo->domain[location.domain];
+//#endif
    Subfacet_Adjacency &adjacency = domain.mesh._cellConnectivity[location.cell]._facet[location.facet].subfacet;
 
    return adjacency;
@@ -203,7 +203,7 @@ inline HOST_DEVICE
                       double distance_threshold,
                       double current_best_distance,
                       bool new_segment,
-                      MonteCarlo *monteCarlo)
+                      MonteCarlo_d *monteCarlo)
 {
    //    #ifndef BCMN_HAVE_OPENMP
    //    MC_FASTTIMER_START(MC_Fast_Timer::Nearest_Facet);
@@ -218,11 +218,11 @@ inline HOST_DEVICE
       //         MC_Fatal_Jump( "Bad location value. region: %d domain: %d, cell: %d.\nParticle record\n%s\n",
       //                          location.region, location.domain, location.cell, output_string.c_str());
    }
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    MC_Domain_d &domain = monteCarlo->domain_d[location.domain];
-#else
-   MC_Domain &domain = monteCarlo->domain[location.domain];
-#endif
+//#else
+   //MC_Domain &domain = monteCarlo->domain[location.domain];
+//#endif
 
    MC_Nearest_Facet nearest_facet =
        MCT_Nearest_Facet_3D_G(mc_particle, domain, location, coordinate, direction_cosine);
@@ -525,16 +525,16 @@ namespace
 }
 
 ///  Reflects the particle off of a reflection boundary.
-inline HOST_DEVICE void MCT_Reflect_Particle(MonteCarlo *monteCarlo, MC_Particle &particle)
+inline HOST_DEVICE void MCT_Reflect_Particle(MonteCarlo_d *monteCarlo, MC_Particle &particle)
 {
    DirectionCosine *direction_cosine = particle.Get_Direction_Cosine();
    MC_Location location = particle.Get_Location();
 
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    const MC_Domain_d &domain = location.get_domain_d(monteCarlo);
-#else
-   const MC_Domain &domain = location.get_domain(monteCarlo);
-#endif
+//#else
+//   const MC_Domain &domain = location.get_domain(monteCarlo);
+//#endif
    const MC_General_Plane &plane = domain.mesh._cellGeometry[location.cell]._facet[location.facet];
 
    MC_Vector facet_normal(plane.A, plane.B, plane.C);
@@ -807,7 +807,7 @@ inline HOST_DEVICE const MC_Domain &MC_Location::get_domain(MonteCarlo *mcco) co
 
 HOST_DEVICE_END
 
-inline HOST_DEVICE const MC_Domain_d &MC_Location::get_domain_d(MonteCarlo *mcco) const
+inline HOST_DEVICE const MC_Domain_d &MC_Location::get_domain_d(MonteCarlo_d *mcco) const
 {
    return mcco->domain_d[domain];
 }

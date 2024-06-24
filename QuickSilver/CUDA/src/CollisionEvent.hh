@@ -88,13 +88,13 @@ inline HOST_DEVICE void updateTrajectory(double energy, double angle, MC_Particl
 }
 HOST_DEVICE_END
 
-inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_particle, unsigned int tally_index, int particle_index, int *tallyArray)
+inline HOST_DEVICE bool CollisionEvent(MonteCarlo_d *monteCarlo, MC_Particle &mc_particle, unsigned int tally_index, int particle_index, int *tallyArray)
 {
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    const MC_Cell_State &cell = monteCarlo->domain_d[mc_particle.domain].cell_state[mc_particle.cell];
-#else
-   const MC_Cell_State &cell = monteCarlo->domain[mc_particle.domain].cell_state[mc_particle.cell];
-#endif
+//#else
+  // const MC_Cell_State &cell = monteCarlo->domain[mc_particle.domain].cell_state[mc_particle.cell];
+//#endif
 
    int globalMatIndex = cell._material;
 
@@ -107,21 +107,21 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
    int selectedIso = -1;
    int selectedUniqueNumber = -1;
    int selectedReact = -1;
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    int numIsos = (int)monteCarlo->_material_d[globalMatIndex]._isosize;
-#else
-   int numIsos = (int)monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso.size();
-#endif
+//#else
+//   int numIsos = (int)monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso.size();
+//#endif
 
    for (int isoIndex = 0; isoIndex < numIsos && currentCrossSection >= 0; isoIndex++)
    {
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
       int uniqueNumber = monteCarlo->_material_d[globalMatIndex]._iso[isoIndex]._gid;
       int numReacts = monteCarlo->_nuclearData_d->getNumberReactions(uniqueNumber);
-#else
-      int uniqueNumber = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._gid;
-      int numReacts = monteCarlo->_nuclearData->getNumberReactions(uniqueNumber);
-#endif
+//#else
+//      int uniqueNumber = monteCarlo->_materialDatabase->_mat[globalMatIndex]._iso[isoIndex]._gid;
+//      int numReacts = monteCarlo->_nuclearData->getNumberReactions(uniqueNumber);
+//#endif
       for (int reactIndex = 0; reactIndex < numReacts; reactIndex++)
       {
          currentCrossSection -= macroscopicCrossSection(monteCarlo, reactIndex, mc_particle.domain, mc_particle.cell,
@@ -145,15 +145,15 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
    double energyOut[MAX_PRODUCTION_SIZE];
    double angleOut[MAX_PRODUCTION_SIZE];
    int nOut = 0;
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    double mat_mass = monteCarlo->_material_d[globalMatIndex]._mass;
    monteCarlo->_nuclearData_d->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact].sampleCollision(
        mc_particle.kinetic_energy, mat_mass, &energyOut[0], &angleOut[0], nOut, &(mc_particle.random_number_seed), MAX_PRODUCTION_SIZE);
-#else
-   double mat_mass = monteCarlo->_materialDatabase->_mat[globalMatIndex]._mass;
-   monteCarlo->_nuclearData->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact].sampleCollision(
-       mc_particle.kinetic_energy, mat_mass, &energyOut[0], &angleOut[0], nOut, &(mc_particle.random_number_seed), MAX_PRODUCTION_SIZE);
-#endif
+//#else
+  // double mat_mass = monteCarlo->_materialDatabase->_mat[globalMatIndex]._mass;
+  // monteCarlo->_nuclearData->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact].sampleCollision(
+  //     mc_particle.kinetic_energy, mat_mass, &energyOut[0], &angleOut[0], nOut, &(mc_particle.random_number_seed), MAX_PRODUCTION_SIZE);
+//#endif
 
 //--------------------------------------------------------------------------------------------------------------
 //  Post-Collision Phase 1:
@@ -161,42 +161,42 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
 //--------------------------------------------------------------------------------------------------------------
 
 // Set the reaction for this particle.
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    ATOMIC_UPDATE(tallyArray[tally_index * NUM_TALLIES + 3]);
-#else
-   ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._collision);
-#endif
+//#else
+//   ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._collision);
+//#endif
 
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    NuclearDataReaction::Enum reactionType = (NuclearDataReaction::Enum)monteCarlo->_nuclearData_d->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact]._reactionType;
-#else
-   NuclearDataReaction::Enum reactionType = monteCarlo->_nuclearData->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact]._reactionType;
-#endif
+//#else
+//   NuclearDataReaction::Enum reactionType = monteCarlo->_nuclearData->_isotopes[selectedUniqueNumber]._species[0]._reactions[selectedReact]._reactionType;
+//#endif
 
    switch (reactionType)
    {
    case NuclearDataReaction::Scatter:
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
       ATOMIC_UPDATE(tallyArray[tally_index * NUM_TALLIES + 4]);
-#else
-      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._scatter);
-#endif
+//#else
+//      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._scatter);
+//#endif
       break;
    case NuclearDataReaction::Absorption:
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
       ATOMIC_UPDATE(tallyArray[tally_index * NUM_TALLIES + 5]);
-#else
-      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._absorb);
-#endif
+//#else
+//      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._absorb);
+//#endif
       break;
    case NuclearDataReaction::Fission:
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
       ATOMIC_UPDATE(tallyArray[tally_index * NUM_TALLIES + 6]);
       ATOMIC_ADD(tallyArray[tally_index * NUM_TALLIES + 7], nOut);
-#else
-      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._fission);
-      ATOMIC_ADD(monteCarlo->_tallies->_balanceTask[tally_index]._produce, nOut);
-#endif
+//#else
+//      ATOMIC_UPDATE(monteCarlo->_tallies->_balanceTask[tally_index]._fission);
+//      ATOMIC_ADD(monteCarlo->_tallies->_balanceTask[tally_index]._produce, nOut);
+//#endif
       break;
    case NuclearDataReaction::Undefined:
 #ifdef DEBUG
@@ -219,7 +219,7 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
       updateTrajectory(energyOut[secondaryIndex], angleOut[secondaryIndex], secondaryParticle);
 
       // Atomic capture will be called here
-      monteCarlo->_particleVaultContainer->addExtraParticle(secondaryParticle);
+      monteCarlo->_particleVaultContainer_d->addExtraParticle(secondaryParticle);
    }
 
    updateTrajectory(energyOut[0], angleOut[0], mc_particle);
@@ -231,15 +231,15 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
    if (nOut > 1)
    {
       // Atomic capture will be called here
-      monteCarlo->_particleVaultContainer->addExtraParticle(mc_particle);
+      monteCarlo->_particleVaultContainer_d->addExtraParticle(mc_particle);
    }
 
 // If we are still tracking this particle the update its energy group
-#ifdef __CUDA_ARCH__
+//#ifdef __CUDA_ARCH__
    mc_particle.energy_group = monteCarlo->_nuclearData_d->getEnergyGroup(mc_particle.kinetic_energy);
-#else
-   mc_particle.energy_group = monteCarlo->_nuclearData->getEnergyGroup(mc_particle.kinetic_energy);
-#endif
+//#else
+//   mc_particle.energy_group = monteCarlo->_nuclearData->getEnergyGroup(mc_particle.kinetic_energy);
+//#endif
 
    return nOut == 1;
 }

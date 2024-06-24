@@ -237,10 +237,13 @@ public:
        double totalCrossSection,
        double fissionWeight, double scatterWeight, double absorptionWeight)
    {
+	 //  printf("A1\n");
       _isotopes.Open();
+      // printf("A1.1\n");
       _isotopes.push_back(NuclearDataIsotope());
+      // printf("A1.2\n");
       _isotopes.Close();
-
+// printf("A1.3\n");
       double totalWeight = fissionWeight + scatterWeight + absorptionWeight;
 
       int nFission = nReactions / 3;
@@ -258,7 +261,7 @@ public:
          ++nFission;
          break;
       }
-
+//printf("A2\n");
       double fissionCrossSection = (totalCrossSection * fissionWeight) / (nFission * totalWeight);
       double scatterCrossSection = (totalCrossSection * scatterWeight) / (nScatter * totalWeight);
       double absorptionCrossSection = (totalCrossSection * absorptionWeight) / (nAbsorption * totalWeight);
@@ -267,6 +270,7 @@ public:
 
       for (int ii = 0; ii < nReactions; ++ii)
       {
+//	      printf("A3\n");
          NuclearDataReaction::Enum type;
          Polynomial polynomial(0.0, 0.0, 0.0, 0.0, 0.0);
          double reactionCrossSection = 0.;
@@ -289,7 +293,9 @@ public:
             reactionCrossSection = absorptionCrossSection;
             break;
          }
+//	 printf("A4\n");
          _isotopes.back()._species[0].addReaction(type, nuBar, _energies, polynomial, reactionCrossSection);
+//	 printf("A5\n");
       }
 
       return _isotopes.size() - 1;

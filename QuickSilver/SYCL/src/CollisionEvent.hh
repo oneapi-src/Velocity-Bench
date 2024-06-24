@@ -91,7 +91,7 @@ inline HOST_DEVICE void updateTrajectory(double energy, double angle, MC_Particl
 }
 HOST_DEVICE_END
 
-inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_particle, unsigned int tally_index, int particle_index, int *tallyArray)
+inline HOST_DEVICE bool CollisionEvent(MonteCarlo_d *monteCarlo, MC_Particle &mc_particle, unsigned int tally_index, int particle_index, int *tallyArray)
 {
 
    const MC_Cell_State &cell = monteCarlo->domain_d[mc_particle.domain].cell_state[mc_particle.cell];
@@ -192,7 +192,7 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
       updateTrajectory(energyOut[secondaryIndex], angleOut[secondaryIndex], secondaryParticle);
 
       // Atomic capture will be called here
-      monteCarlo->_particleVaultContainer->addExtraParticle(secondaryParticle);
+      monteCarlo->_particleVaultContainer_d->addExtraParticle(secondaryParticle);
    }
 
    updateTrajectory(energyOut[0], angleOut[0], mc_particle);
@@ -204,7 +204,7 @@ inline HOST_DEVICE bool CollisionEvent(MonteCarlo *monteCarlo, MC_Particle &mc_p
    if (nOut > 1)
    {
       // Atomic capture will be called here
-      monteCarlo->_particleVaultContainer->addExtraParticle(mc_particle);
+      monteCarlo->_particleVaultContainer_d->addExtraParticle(mc_particle);
    }
 
    // If we are still tracking this particle the update its energy group

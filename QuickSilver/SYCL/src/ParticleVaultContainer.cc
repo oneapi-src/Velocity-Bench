@@ -380,7 +380,7 @@ cleanExtraVaults()
 
         while( extra_index < num_extra )
         {
-
+            
             if( this->_extraVault[extra_index]->size() == 0 )
             {
                 extra_index++;

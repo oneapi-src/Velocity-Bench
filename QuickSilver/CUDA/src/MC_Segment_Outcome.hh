@@ -74,7 +74,7 @@ HOST_DEVICE_END
 //--------------------------------------------------------------------------------------------------
 
 inline HOST_DEVICE 
-MC_Segment_Outcome_type::Enum MC_Segment_Outcome(MonteCarlo* monteCarlo, MC_Particle &mc_particle, unsigned int &flux_tally_index)
+MC_Segment_Outcome_type::Enum MC_Segment_Outcome(MonteCarlo_d* monteCarlo, MC_Particle &mc_particle, unsigned int &flux_tally_index)
 {
     // initialize distances to large number
     int number_of_events = 3;
@@ -266,7 +266,7 @@ MC_Segment_Outcome_type::Enum MC_Segment_Outcome(MonteCarlo* monteCarlo, MC_Part
     }
 
     // Accumulate the particle's contribution to the scalar flux.
-    monteCarlo->_tallies->TallyScalarFlux(mc_particle.segment_path_length * mc_particle.weight, mc_particle.domain,
+    monteCarlo->_tallies_d->TallyScalarFlux(mc_particle.segment_path_length * mc_particle.weight, mc_particle.domain,
                                     flux_tally_index, mc_particle.cell, mc_particle.energy_group);
 
     return segment_outcome;

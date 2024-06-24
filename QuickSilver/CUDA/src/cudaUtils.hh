@@ -57,8 +57,19 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define safeCall(err) __safeCall(err, __FILE__, __LINE__)
 #define checkMsg(msg) __checkMsg(msg, __FILE__, __LINE__)
 
-inline void __safeCall(int err, const char *file, const int line)
+inline void __safeCall(int erro, const char *file, const int line)
 {
+	/*
+	#if defined (HAVE_CUDA)
+        cudaError_t err = cudaGetLastError();
+printf(" This is: %s\n", cudaGetErrorString(err));
+        if (cudaSuccess != err)
+        {
+            fprintf(stderr, "CUDA error: %s in file <%s>, line %i : %s.\n", cudaGetErrorString(err), file, line, cudaGetErrorString(err));
+            exit(-1);
+        }
+    #endif*/
+
 }
 inline void __checkMsg(const char *errorMessage, const char *file, const int line)
 {
@@ -109,26 +120,26 @@ inline ExecutionPolicy getExecutionPolicy(int useGPU)
 }
 
 template <class T>
-inline void gpuMallocManaged(T **ptr, size_t size, unsigned int flags = cudaMemAttachGlobal)
+inline void gpuMallocManaged(T **ptr, size_t size, unsigned int flags = 1)
 {
-     #if defined (HAVE_CUDA)
+     //#if defined (HAVE_CUDA)
         //   cudaMallocManaged(ptr,size);
-          #ifdef UNIFIED_HOST                    
-                cudaMallocHost(ptr, size);
-          #elif defined(UNIFIED_DEVICE)                    
-                cudaMalloc(ptr, size);
-          #else
-                safeCall(cudaMallocManaged(ptr,size));
-          #endif
-     #elif defined (HAVE_HIP)
-       #ifdef UNIFIED_HOST
-          hipHostMalloc(ptr,size,flags);
-       #elif defined(UNIFIED_DEVICE)
-          hipMalloc(ptr,size);
-       #else
-          hipMallocManaged(ptr,size);
-       #endif
-     #endif
+          //#ifdef UNIFIED_HOST                    
+               safeCall( cudaMallocHost(ptr, size));
+          //#elif defined(UNIFIED_DEVICE)                    
+                //cudaMalloc(ptr, size);
+          //#else
+               // safeCall(cudaMallocManaged(ptr,size));
+          //#endif
+     //#elif defined (HAVE_HIP)
+       //#ifdef UNIFIED_HOST
+          //hipHostMalloc(ptr,size,flags);
+       //#elif defined(UNIFIED_DEVICE)
+          //hipMalloc(ptr,size);
+       //#else
+          //hipMallocManaged(ptr,size);
+       //#endif
+     //#endif
 
 }
 
@@ -136,7 +147,7 @@ template <class T>
 inline void gpuFree(T *ptr)
 {
      #if defined (HAVE_CUDA)
-           safeCall(cudaFree(ptr));
+           safeCall(cudaFreeHost(ptr));
      #elif defined (HAVE_HIP)
           hipHostFree(ptr);
      #endif

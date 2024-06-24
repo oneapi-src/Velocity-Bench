@@ -141,7 +141,7 @@ public:
   // Vault list
   void cleanExtraVaults();
 
-private:
+//private:
   // The Size of the ParticleVaults (fixed at runtime for
   // each run)
   uint64_t _vaultSize;
@@ -191,4 +191,40 @@ inline HOST_DEVICE void ParticleVaultContainer::
 }
 HOST_DEVICE_END
 
+//--------------------------------------------------------------
+class ParticleVaultContainer_d
+{
+public:
+  uint64_t getNumExtraVaults() { return _numExtraVaults; }
+  SendQueue_d *getSendQueue();
+  void addExtraParticle(MC_Particle &particle);
+
+  uint64_t _vaultSize;
+  uint64_t _numExtraVaults;
+  uint64_cu _extraVaultIndex;
+  SendQueue_d *_sendQueue;
+  //qs_vector<ParticleVault *> _extraVault;
+  ParticleVault_d ** _extraVault;
+  int _extraVaultSize;
+
+};
+
+inline HOST_DEVICE
+    SendQueue_d *
+    ParticleVaultContainer_d::
+        getSendQueue()
+{
+  return this->_sendQueue;
+}
+HOST_DEVICE_END
+
+inline HOST_DEVICE void ParticleVaultContainer_d::
+    addExtraParticle(MC_Particle &particle)
+{
+  uint64_cu index = 0;
+  ATOMIC_CAPTURE(this->_extraVaultIndex, (uint64_cu)1, index);
+  uint64_t vault = index / this->_vaultSize;
+  _extraVault[vault]->pushParticle(particle);
+}
+HOST_DEVICE_END
 #endif

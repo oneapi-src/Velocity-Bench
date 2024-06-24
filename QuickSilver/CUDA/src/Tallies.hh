@@ -206,6 +206,17 @@ public:
 
     ~CellTallyTask() {}
 };
+//----------------------------------------------------
+class CellTallyTask_d
+{
+public:
+    //qs_vector<double> _cell;
+    double *_cell;
+    int _cellSize;
+
+    CellTallyTask_d() {}
+    ~CellTallyTask_d() {}
+};
 
 class ScalarFluxTask
 {
@@ -258,7 +269,18 @@ public:
 
     ~ScalarFluxTask() {}
 };
+//---------------------------------------------------------------------------------------------------
 
+class ScalarFluxTask_d
+{
+public:
+    //qs_vector<ScalarFluxCell> _cell;
+    ScalarFluxCell* _cell;
+    int _cellSize;
+
+    ScalarFluxTask_d() : _cell() {}
+    ~ScalarFluxTask_d() {}
+};
 class CellTallyDomain
 {
 public:
@@ -283,7 +305,17 @@ public:
 
     ~CellTallyDomain() {}
 };
+//-------------------------------------------------------------------------------------
+class CellTallyDomain_d
+{
+public:
+    //qs_vector<CellTallyTask> _task;
+    CellTallyTask_d* _task;
+    int _taskSize;
 
+    CellTallyDomain_d() {}
+    ~CellTallyDomain_d() {}
+};
 class ScalarFluxDomain
 {
 public:
@@ -308,7 +340,17 @@ public:
 
     ~ScalarFluxDomain() {}
 };
+//------------------------------------------------------------------------------------------------------
+class ScalarFluxDomain_d
+{
+public:
+    //qs_vector<ScalarFluxTask> _task;
+    ScalarFluxTask_d* _task;
+    int _taskSize;
 
+    ScalarFluxDomain_d() {}//: _task() {}
+    ~ScalarFluxDomain_d() {}
+};
 class FluenceDomain
 {
 public:
@@ -322,6 +364,24 @@ public:
 
 private:
     std::vector<double> _cell;
+};
+//-------------------------------------------------------------------------------------
+class FluenceDomain_d
+{
+public:
+    FluenceDomain_d(int numCells) 
+    {
+        _cell = new double[numCells];
+    }
+
+    void addCell(int index, double value) { _cell[index] += value; }
+    double getCell(int index) { return _cell[index]; }
+    int size() { return _cellSize; }
+
+private:
+   //std::vector<double> _cell;
+   double *_cell;
+   int _cellSize;
 };
 
 class Fluence
@@ -341,7 +401,28 @@ public:
 
     std::vector<FluenceDomain *> _domain;
 };
+//-----------------------------------------------------------------------------------------
+class Fluence_d
+{
+public:
+    Fluence_d(){};
+    ~Fluence_d()
+    {
+        //for (int i = 0; i < _domain.size(); i++)
+        for (int i = 0; i < _domainSize; i++)
+        {
+            if (_domain[i] != NULL)
+                delete _domain[i];
+        }
+    }
 
+    //void compute(int domain, ScalarFluxDomain_d &scalarFluxDomain);
+
+    //std::vector<FluenceDomain *> _domain;
+    FluenceDomain_d** _domain;
+    int _domainSize;
+};
+//--------------------------------------------------------------------
 class Tallies
 {
 public:
@@ -405,7 +486,76 @@ public:
 
     double ScalarFluxSum(MonteCarlo *mcco);
 
-private:
+//private:
+    int _num_balance_replications;
+    int _num_flux_replications;
+    int _num_cellTally_replications;
+};
+
+//-----------------------------------------------------------------------------------------
+class Tallies_d
+{
+public:
+    //Balance _balanceCumulative;
+    //qs_vector<Balance> _balanceTask;
+    //qs_vector<ScalarFluxDomain> _scalarFluxDomain;
+    //qs_vector<CellTallyDomain>  _cellTallyDomain;
+    Balance* _balanceTask;
+    int _balanceTaskSize;
+    ScalarFluxDomain_d* _scalarFluxDomain;
+    int _scalarFluxDomainSize;
+    CellTallyDomain_d* _cellTallyDomain;
+    int _cellTallyDomainSize;
+    //Fluence_d                     _fluence;
+   //EnergySpectrum_d              _spectrum;
+
+    HOST_DEVICE_CUDA
+    int GetNumBalanceReplications()
+    {
+        return _num_balance_replications;
+    }
+
+    HOST_DEVICE_CUDA
+    int GetNumFluxReplications()
+    {
+        return _num_flux_replications;
+    }
+
+    HOST_DEVICE_CUDA
+    int GetNumCellTallyReplications()
+    {
+        return _num_cellTally_replications;
+    }
+
+    ~Tallies_d() {}
+
+    /*void InitializeTallies(MonteCarlo *monteCarlo,
+                           int balance_replications,
+                           int flux_replications,
+                           int cell_replications);*/
+
+    //void CycleInitialize(MonteCarlo *monteCarlo);
+
+    //void SumTasks();
+    //void CycleFinalize(MonteCarlo *mcco);
+    //void PrintSummary(MonteCarlo *mcco);
+
+    // These atomic operations seem to be working.
+    HOST_DEVICE_CUDA
+    void TallyScalarFlux(double value, int domain, int task, int cell, int group)
+    {
+        ATOMIC_ADD( _scalarFluxDomain[domain]._task[task]._cell[cell]._group[group], value );
+    }
+
+    HOST_DEVICE_CUDA
+    void TallyCellValue(double value, int domain, int task, int cell)
+    {
+        ATOMIC_ADD(_cellTallyDomain[domain]._task[task]._cell[cell], value);
+    }
+
+    //double ScalarFluxSum(MonteCarlo *mcco);
+
+
     int _num_balance_replications;
     int _num_flux_replications;
     int _num_cellTally_replications;
