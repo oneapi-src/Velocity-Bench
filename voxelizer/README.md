@@ -79,7 +79,9 @@ libsrc/TriMesh_pointareas.cc
 
 mkdir build && cd build
 
-CXX=hipcc cmake ../ -DTrimesh2_INCLUDE_DIR=/path/to/trimesh2/include/ -DTrimesh2_LINK_DIR=/path/to/trimesh2/lib.Linux64 -DGLM_INCLUDE_DIR=/path/to/glm
+HIP_PATH=/opt/rocm-5.4.3/hip CXX=/opt/rocm-5.4.3/bin/hipcc cmake ../ -DTrimesh2_INCLUDE_DIR=/path/to/trimesh2/include/ -DTrimesh2_LINK_DIR=/path/to/trimesh2/lib.Linux64 -DGLM_INCLUDE_DIR=/path/to/glm
+
+make -sj
 
 **To run Hip version**
 

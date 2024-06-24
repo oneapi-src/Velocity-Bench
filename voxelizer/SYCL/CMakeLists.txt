@@ -76,8 +76,8 @@ ENDIF()
 
 MARK_AS_ADVANCED(Trimesh2_TriMesh_h)
 
-link_directories(${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64)
-SET(Trimesh2_LINK_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64/)
+#link_directories(${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64)
+#SET(Trimesh2_LINK_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64/)
 
 IF(NOT Trimesh2_LINK_DIR)
     MESSAGE(FATAL_ERROR "You need to set variable Trimesh2_LINK_DIR")
