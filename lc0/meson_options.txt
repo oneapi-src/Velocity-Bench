@@ -217,3 +217,18 @@ option('onnx_include',
        type: 'string',
        value: '',
        description: 'Paths to ONNX runtime includes')
+
+option('CMAKE_CXX_FLAGS',
+       type: 'array',
+       value: [],
+       description: 'Override C++ compiler options used by nvcc, clang, and icx.')
+
+option('OVERRIDE_GENERAL_CXX_FLAGS',
+       type: 'array',
+       value: [],
+       description: 'Override C++ compiler general options used by nvcc, clang, and icx.')
+
+option('CUDA_NVCC_FLAGS',
+       type: 'array',
+       value: [],
+       description: 'Override general nvcc flags.')
