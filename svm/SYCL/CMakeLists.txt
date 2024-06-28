@@ -1,4 +1,3 @@
-
 # MIT License
 
 # Copyright (c) 2015 University of West Bohemia
@@ -60,7 +59,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)        # Use -std, not -gnu
 
 option(GPU_AOT                 "Build AOT for Intel GPU"      OFF)
 option(USE_NVIDIA_BACKEND      "Build for NVIDIA backend"     OFF)
-option(USE_AMDHIP_BACKEND      "Build for AMD HIP backend"    OFF)
+option(USE_AMD_BACKEND      "Build for AMD HIP backend"    OFF)
 
 set(SOURCES
     cuSVM/cuSVMSolver.dp.cpp
@@ -76,28 +75,39 @@ set(SOURCES
     #infrastructure/SYCL.cpp
 )
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/libSVM
                     ${CMAKE_SOURCE_DIR}/cuSVM
                     ${CMAKE_SOURCE_DIR}/infrastructure)
 
 
-
 # Use either default or user defined CXX flags
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags
+set(DEF_INTEL_WL_CXX_FLAGS  " -DMKL_ILP64 ")
+set(DEF_NVIDIA_WL_CXX_FLAGS " -DUSE_CUBLAS ")
+set(DEF_AMD_WL_CXX_FLAGS    " -DUSE_HIPBLAS ")
 
-set(INTEL_GPU_CXX_FLAGS  " -O3 -fsycl")
-set(NVIDIA_GPU_CXX_FLAGS " -O3 -fsycl -DUSE_CUBLAS")
-set(AMD_GPU_CXX_FLAGS    " -O3 -fsycl -DUSE_HIPBLAS -D__HIP_PLATFORM_AMD__")
+set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O3 -fsycl ")
+set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl ")
+set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl -D__HIP_PLATFORM_AMD__ ")
 
-set(USE_DEFAULT_FLAGS ON)
-if("${CMAKE_CXX_FLAGS}" STREQUAL "")
+if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
+elseif("${CMAKE_CXX_FLAGS}" STREQUAL "" AND "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
     message(STATUS "Using DEFAULT compilation flags")
-else()
-    message(STATUS "OVERRIDING DEFAULT compilation flags")
-    set(USE_DEFAULT_FLAGS OFF)
+    set(INTEL_GPU_CXX_FLAGS        "${DEF_INTEL_GENERAL_CXX_FLAGS}   ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${DEF_NVIDIA_GENERAL_CXX_FLAGS}  ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${DEF_AMD_GENERAL_CXX_FLAGS}     ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_INTEL_WL_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_NVIDIA_WL_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${OVERRIDE_GENERAL_CXX_FLAGS}    ${DEF_AMD_WL_CXX_FLAGS}")
+elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+    message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
+    set(INTEL_GPU_CXX_FLAGS        "${CMAKE_CXX_FLAGS}")
+    set(NVIDIA_GPU_CXX_FLAGS       "${CMAKE_CXX_FLAGS}")
+    set(AMD_GPU_CXX_FLAGS          "${CMAKE_CXX_FLAGS}")
 endif()
 
 #add_compile_options(-DRUN_ON_GPU)
@@ -112,30 +122,32 @@ elseif(USE_AMD_BACKEND)
     target_link_libraries(${PROJECT_NAME} -lhipblas)
 else()
     message(STATUS "Enabling INTEL backend")
-    find_package(oneMKL REQUIRED CONFIG HINTS ${oneMKLROOT})
-    message(STATUS "Found oneMKL: ${oneMKL_DIR}")
-    target_link_libraries(${PROJECT_NAME} PRIVATE MKL::onemkl)
+    link_directories(${MKLROOT}/lib/intel64)
+    target_link_libraries(${PROJECT_NAME} mkl_sycl mkl_intel_ilp64 mkl_tbb_thread mkl_core pthread dl m)
 endif()
 
-if(GPU_AOT)
+if(GPU_AOT) 
     message(STATUS "Enabling INTEL backend")
-    if(USE_DEFAULT_FLAGS)
-        set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}") # Default flags for Intel backend
+    set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
+    if( (${GPU_AOT} STREQUAL "pvc") OR (${GPU_AOT} STREQUAL "PVC") )
+        message(STATUS "Enabling Intel GPU AOT compilation for ${GPU_AOT}")
+        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=spir64_gen -Xs \"-device 0x0bd5 -revision_id 3\" ") 
+    else()
+        message(STATUS "Using custom AOT compilation flag ${GPU_AOT}")
+        string(APPEND CMAKE_CXX_FLAGS " ${GPU_AOT} ") # User should be aware of advanced AOT compilation flags
     endif()
-    message(STATUS "Using custom AOT compilation flag ${GPU_AOT}")
-    string(APPEND CMAKE_CXX_FLAGS " ${GPU_AOT} ") # User should be aware of advanced AOT compilation flags
-elseif(USE_NVIDIA_BACKEND)
+elseif(USE_NVIDIA_BACKEND)    
     message(STATUS "Enabling NVIDIA backend")
-    if(USE_DEFAULT_FLAGS)
-        set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}") # Default flags for NV backend
-    endif()
-    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvidia_gpu_sm_${USE_SM}")
-elseif(USE_AMD_BACKEND)
-    message(STATUS "Enabling AMD HIP backend.")
-    if(USE_DEFAULT_FLAGS)
-        set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}") # Default flags for AMD backend (gfx908 for MI100)
-    endif()
-    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=amd_gpu_gfx${USE_AMD_ARCH}")
+    set(CMAKE_CXX_FLAGS "${NVIDIA_GPU_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=nvidia_gpu_sm_${USE_SM} ") 
+elseif(USE_AMDHIP_BACKEND)
+    message(STATUS "Enabling AMD HIP backend for ${USE_AMDHIP_BACKEND} AMD architecture")
+    set(CMAKE_CXX_FLAGS "${AMD_GPU_CXX_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=amd_gpu_gfx${USE_AMD_ARCH}  ")
+else()
+    # JIT case
+    message(STATUS "Enabling INTEL backend")
+    set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
 endif()
 
 # Output the compiler flags that were constructed for visual inspection
@@ -144,4 +156,4 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/a9a
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 #add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE sycl stdc++fs)
+target_link_libraries(${PROJECT_NAME} sycl stdc++fs)

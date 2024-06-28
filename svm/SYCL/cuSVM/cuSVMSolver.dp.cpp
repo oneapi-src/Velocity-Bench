@@ -491,19 +491,19 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
     q_ct1.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
-            cublasSetStream(handle, cudaStreamHandle);
-            //auto cuA = reinterpret_cast<float *>(ih.get_mem<sycl::backend::ext_oneapi_cuda>(d_A));
-            //constexpr float ALPHA = 2.f;
-            //constexpr int INCX = 1;
+            cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+            auto cuStream = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+            cublasSetStream(handle, cuStream);
             constexpr float ALPHA = 1.0f;
             constexpr float BETA = 0.0f;
             CHECK_ERROR(cublasSgemv (handle, CUBLAS_OP_N, m, n, &ALPHA, d_x, m, d_Kernel_InterRow, 1, &BETA, d_KernelDotProd, 1));
-            cublasDestroy(handle);
-            cudaStreamSynchronize(cudaStreamHandle);
+            cudaStreamSynchronize(cuStream);
             //cudaDeviceSynchronize(); 
         });
-    });    
+    }).wait_and_throw();
+
+    cublasDestroy(handle);
+
     #elif USE_HIPBLAS
 
     constexpr float ALPHA = 1.0f;
@@ -1318,8 +1318,3 @@ _kernelwidth*=-1;
  
     //return;
 }
-//catch (sycl::exception const &exc) {
-// std::cerr << exc.what() << "Exception caught at file:" << __FILE__
-   //        << ", line:" << __LINE__ << std::endl;
- //std::exit(1);
-//}
