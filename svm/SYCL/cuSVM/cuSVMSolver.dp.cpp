@@ -497,11 +497,13 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
             constexpr float ALPHA = 1.0f;
             constexpr float BETA = 0.0f;
             CHECK_ERROR(cublasSgemv (handle, CUBLAS_OP_N, m, n, &ALPHA, d_x, m, d_Kernel_InterRow, 1, &BETA, d_KernelDotProd, 1));
-            cublasDestroy(handle);
-            //cudaStreamSynchronize(cuStream);
+            cudaStreamSynchronize(cuStream);
             //cudaDeviceSynchronize(); 
         });
     }).wait_and_throw();
+
+    cublasDestroy(handle);
+
     #elif USE_HIPBLAS
 
     constexpr float ALPHA = 1.0f;
