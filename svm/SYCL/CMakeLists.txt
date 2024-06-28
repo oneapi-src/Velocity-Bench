@@ -131,7 +131,7 @@ if(GPU_AOT)
     set(CMAKE_CXX_FLAGS "${INTEL_GPU_CXX_FLAGS}")
     if( (${GPU_AOT} STREQUAL "pvc") OR (${GPU_AOT} STREQUAL "PVC") )
         message(STATUS "Enabling Intel GPU AOT compilation for ${GPU_AOT}")
-        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=spir64_gen -Xs \"-device 0x0bd5 -revision_id 3\" ") # Default flag for pvc in ORTCE
+        string(APPEND CMAKE_CXX_FLAGS " -fsycl-targets=spir64_gen -Xs \"-device 0x0bd5 -revision_id 3\" ") 
     else()
         message(STATUS "Using custom AOT compilation flag ${GPU_AOT}")
         string(APPEND CMAKE_CXX_FLAGS " ${GPU_AOT} ") # User should be aware of advanced AOT compilation flags
