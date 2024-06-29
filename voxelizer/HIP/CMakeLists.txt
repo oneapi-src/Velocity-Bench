@@ -30,7 +30,7 @@ option(Trimesh2_LINK_DIR "Path to Trimesh2 library dir")
 option(Trimesh2_INCLUDE_DIR "Path to Trimesh2 includes")
 option(GLM_INCLUDE_DIR "Path to GLM includes")
 
-set(DEF_WL_CXX_FLAGS " -D__HIP_PLATFORM_AMD__ ")
+set(DEF_WL_CXX_FLAGS " -D__HIP_PLATFORM_AMD__ -fPIE -Wl,-z,relro ")
 set(DEF_GENERAL_CXX_FLAGS " -Wall -O3 -Wextra ")
 set(DEF_COMBINED_CXX_FLAGS "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
 
@@ -38,7 +38,6 @@ include_directories(
   ${Trimesh2_INCLUDE_DIR}
 )
 
-# SET(GLM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/glm/glm)
 FIND_PACKAGE(glm REQUIRED)
 message(STATUS "glm library status:")
 message(STATUS "    version: ${glm_VERSION}")
@@ -58,12 +57,11 @@ option(WG_SIZE "Specifies the block size")
 
 if("${CMAKE_CXX_FLAGS}" STREQUAL "")
   message(STATUS "Using DEFAULT compilation flags for the application")
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -O3 -std=c++17 -ffast-math -D__HIP_PLATFORM_AMD__ ")
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -O3 -std=c++20 -ffast-math -D__HIP_PLATFORM_AMD__ -fPIE -Wl,-z,relro ")
 else()
   message(STATUS "OVERRIDING compilation flags")
 endif()
 
-# set(HIP_PATH /opt/rocm-5.4.3/hip)
 find_package(HIP REQUIRED)
 
 if(NOT HIP_FOUND)
@@ -74,7 +72,6 @@ endif()
 
 SET(HIP_VOXELIZER_EXECUTABLE voxelizer_hip)
 
-# SET(GLM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src)
 IF(NOT Trimesh2_INCLUDE_DIR)
   MESSAGE(FATAL_ERROR "You need to set variable Trimesh2_INCLUDE_DIR")
 ENDIF()
@@ -87,7 +84,6 @@ ENDIF()
 
 MARK_AS_ADVANCED(Trimesh2_TriMesh_h)
 
-# SET(Trimesh2_LINK_DIR CACHE PATH "Path to Trimesh2 library dir.")
 IF(NOT Trimesh2_LINK_DIR)
   MESSAGE(FATAL_ERROR "You need to set variable Trimesh2_LINK_DIR")
 ENDIF()
@@ -133,18 +129,15 @@ elseif(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
   message(STATUS "OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags")
 endif()
 
+set(HIP_INCLUDE_DIRS /opt/rocm-5.4.3/include)
 message(STATUS "CXX  Compilation flags to: ${CMAKE_CXX_FLAGS}")
+message(STATUS "HIP Include: ${HIP_INCLUDE_DIRS}")
 
-set(HIP_SEPARABLE_COMPILATION ON)
 set(MY_TARGET_NAME ${PROJECT_NAME})
-set(MY_HIPCC_OPTIONS)
-set(MY_NVCC_OPTIONS)
 set(CMAKE_HIP_ARCHITECTURES OFF)
+set(CMAKE_HIP_FLAGS ${CMAKE_CXX_FLAGS})
+hip_add_executable(${HIP_VOXELIZER_EXECUTABLE} ${HIP_VOXELIZER_SRCS})
 
-set_source_files_properties(${HIP_VOXELIZER_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
-hip_add_executable(${HIP_VOXELIZER_EXECUTABLE} ${HIP_VOXELIZER_SRCS} ${MY_HIPCC_OPTIONS} NVCC_OPTIONS ${MY_NVCC_OPTIONS})
-
-# include(${CMAKE_CURRENT_SOURCE_DIR}/src/glm/glm/CMakeLists.txt)
 TARGET_COMPILE_FEATURES(${HIP_VOXELIZER_EXECUTABLE} PRIVATE cxx_std_17)
-TARGET_INCLUDE_DIRECTORIES(${HIP_VOXELIZER_EXECUTABLE} PRIVATE ${Trimesh2_INCLUDE_DIR} ${GLM_INCLUDE_DIR})
+TARGET_INCLUDE_DIRECTORIES(${HIP_VOXELIZER_EXECUTABLE} PRIVATE ${Trimesh2_INCLUDE_DIR} ${GLM_INCLUDE_DIR} ${HIP_INCLUDE_DIRS})
 TARGET_LINK_LIBRARIES(${HIP_VOXELIZER_EXECUTABLE} ${Trimesh2_LIBRARY} glm::glm)

@@ -26,8 +26,6 @@ PROJECT(voxelizer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17) # SYCL code requires this
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # Enable modern C++ standards
 
-# set(CMAKE_CXX_EXTENSIONS OFF)        # Use -std, not -gnu
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 option(ENABLE_KERNEL_PROFILING "Build using kernel profiling" OFF)
 option(GPU_AOT "Build AOT for Intel GPU" OFF)
 option(USE_NVIDIA_BACKEND "Build for NVIDIA backend" OFF)
@@ -38,12 +36,10 @@ option(USE_SM "Specifies which streaming multiprocessor architecture to use")
 option(Trimesh2_LINK_DIR "Path to Trimesh2 library dir")
 option(Trimesh2_INCLUDE_DIR "Path to Trimesh2 includes")
 
-# list(APPEND CMAKE_PREFIX_PATH "/home/anudeep/dev/dependencies/test/glm")
 include_directories(
     ${CMAKE_SOURCE_DIR}/src/
 )
 
-# SET(glm_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/glm)
 find_package(glm REQUIRED)
 message(STATUS "glm library status:")
 message(STATUS "    version: ${glm_VERSION}")
@@ -63,7 +59,6 @@ message(STATUS "    include path: ${GLM_INCLUDE_DIRS}")
 # message(STATUS "    include path: ${OpenMP_INCLUDE_DIRS}")
 SET(VOXELIZER_EXECUTABLE voxelizer_sycl)
 
-# SET(Trimesh2_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/include/)
 IF(NOT Trimesh2_INCLUDE_DIR)
     MESSAGE(FATAL_ERROR "You need to set variable Trimesh2_INCLUDE_DIR")
 ENDIF()
@@ -75,9 +70,6 @@ IF(NOT Trimesh2_TriMesh_h)
 ENDIF()
 
 MARK_AS_ADVANCED(Trimesh2_TriMesh_h)
-
-link_directories(${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64)
-SET(Trimesh2_LINK_DIR ${CMAKE_SOURCE_DIR}/../../../dependencies/test/trimesh2/lib.Linux64/)
 
 IF(NOT Trimesh2_LINK_DIR)
     MESSAGE(FATAL_ERROR "You need to set variable Trimesh2_LINK_DIR")
@@ -108,8 +100,6 @@ SET(SOURCES
     ${CMAKE_SOURCE_DIR}/src/voxelize_solid.dp.cpp
 )
 
-# set(OPENMP_LIBRARIES "/usr/lib/llvm-10/lib")
-# set(OPENMP_INCLUDES "/usr/lib/llvm-10/include")
 if(USE_NVIDIA_BACKEND)
     message(STATUS "Nvidia backend")
     add_compile_options(-DUSE_NVIDIA_BACKEND)
