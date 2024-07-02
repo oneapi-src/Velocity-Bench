@@ -264,20 +264,47 @@ if get_option('USE_SYCL')
       mlink_args = ['-fsycl']
       has_backends = true  
       message('Building SYCL')
-      add_project_arguments('-O3', language : 'cpp')
-      add_project_arguments('-fsycl', language : 'cpp')
-      add_project_arguments('-ffast-math', language : 'cpp')
-      add_project_arguments('-fsycl-unnamed-lambda', language : 'cpp') 
-      add_project_arguments('-Wall', language : 'cpp')
-      add_project_arguments('-Wextra', language : 'cpp')
       
       files += 'src/neural/sycl/layers.cc.dp.cpp'
       files += 'src/neural/sycl/network_sycl.cc.dp.cpp'
       files += 'src/neural/sycl/common_kernels.dp.cpp'
 
+
+      DEF_INTEL_GENERAL_CXX_FLAGS = ['-O3','-fsycl','-ffast-math','-fsycl-unnamed-lambda','-Wall', '-Wextra'] 
+      DEF_INTEL_WL_CXX_FLAGS = ['-DDEFAULT_MINIBATCH_SIZE=248', '-DMKL_ILP64']
+      DEF_AMD_GENERAL_CXX_FLAGS = ['-O3','-fsycl','-ffast-math','-fsycl-unnamed-lambda','-Wall', '-Wextra']  
+      DEF_AMD_WL_CXX_FLAGS = ['-DUSE_HIPBLAS', '-DINLINE', '-D__HIP_PLATFORM_AMD__'] 
+      DEF_NVIDIA_GENERAL_CXX_FLAGS = ['-O3','-fsycl','-ffast-math','-fsycl-unnamed-lambda','-Wall', '-Wextra'] 
+      DEF_NVIDIA_WL_CXX_FLAGS=['-DUSE_CUBLAS', '-DINLINE', '-DNVIDIABE']
+
+
+      if(get_option('CMAKE_CXX_FLAGS') != [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') != [])
+        message('Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together')
+      elif(get_option('CMAKE_CXX_FLAGS')== [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') == [])
+        message('Using DEFAULT compilation flags')
+        INTEL_GPU_CXX_FLAGS = DEF_INTEL_GENERAL_CXX_FLAGS + DEF_INTEL_WL_CXX_FLAGS
+        NVIDIA_GPU_CXX_FLAGS = DEF_NVIDIA_GENERAL_CXX_FLAGS + DEF_NVIDIA_WL_CXX_FLAGS
+        AMD_GPU_CXX_FLAGS = DEF_AMD_GENERAL_CXX_FLAGS + DEF_AMD_WL_CXX_FLAGS
+      elif(get_option('OVERRIDE_GENERAL_CXX_FLAGS') !=[])
+        message('OVERRIDING GENERAL compilation flags')
+        INTEL_GPU_CXX_FLAGS = get_option('OVERRIDE_GENERAL_CXX_FLAGS') + DEF_INTEL_WL_CXX_FLAGS
+        NVIDIA_GPU_CXX_FLAGS = get_option('OVERRIDE_GENERAL_CXX_FLAGS') + DEF_NVIDIA_WL_CXX_FLAGS
+        AMD_GPU_CXX_FLAGS = get_option('OVERRIDE_GENERAL_CXX_FLAGS') + DEF_AMD_WL_CXX_FLAGS
+      elif(get_option('CMAKE_CXX_FLAGS') != [])
+        message('OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags')
+        INTEL_GPU_CXX_FLAGS = get_option('CMAKE_CXX_FLAGS')
+        NVIDIA_GPU_CXX_FLAGS = get_option('CMAKE_CXX_FLAGS')
+        AMD_GPU_CXX_FLAGS = get_option('CMAKE_CXX_FLAGS')
+      endif
+
+      INTEL_GPU_CXX_FLAGS += [get_option('GPU_AOT')]
+      NVIDIA_GPU_CXX_FLAGS += ['-fsycl-targets=nvidia_gpu_sm_' +  get_option('USE_SM')] 
+      AMD_GPU_CXX_FLAGS += ['-fsycl-targets=amd_gpu_gfx' +  get_option('USE_SM')]
+
+
       if(get_option('USE_L0_BACKEND') == true)
         message('Building SYCL for the L0 backend')
-        add_project_arguments('-DMKL_ILP64', language : 'cpp')
+        add_project_arguments(INTEL_GPU_CXX_FLAGS, language : 'cpp')
         deps += cc.find_library('sycl', required: true)
         deps += cc.find_library('mkl_sycl', required: true)
         deps += cc.find_library('mkl_intel_ilp64', required: true)
@@ -286,39 +313,48 @@ if get_option('USE_SYCL')
         deps += cc.find_library('OpenCL', required: true)  
         deps += cc.find_library('dl', required: true)
         deps += cc.find_library('m', required: true)
-        add_project_arguments('-DDEFAULT_MINIBATCH_SIZE=248', language : 'cpp')
-        add_project_arguments(get_option('GPU_AOT'), language : 'cpp')
-        mlink_args += get_option('GPU_AOT')
+        mlink_args += INTEL_GPU_CXX_FLAGS
       elif (get_option('USE_AMD_BACKEND') == true)
         message('Building SYCL for AMD backend')
-        sm_level = 'amd_gpu_' +  get_option('USE_SM')  
-        add_project_arguments('-fsycl-targets=' + sm_level , language : 'cpp') 
-        add_project_arguments('-DUSE_HIPBLAS', language : 'cpp') 
-        add_project_arguments('-D__HIP_PLATFORM_AMD__', language : 'cpp')
-        add_project_arguments('-DINLINE', language : 'cpp')
+        add_project_arguments(AMD_GPU_CXX_FLAGS, language : 'cpp') 
         hip_blas = cc.find_library('hipblas', required: true)
         hip_dart = cc.find_library('amdhip64', required: true)
         deps += [hip_blas, hip_dart]
         deps += cc.find_library('sycl', required: true)
-        mlink_args+= ['-fsycl', '-fsycl-targets=' + sm_level]      
+        mlink_args+= AMD_GPU_CXX_FLAGS      
       else
-        sm_level = 'nvidia_gpu_sm_' +  get_option('USE_SM')
         message('Building SYCL for the NVIDIA backend')
-        add_project_arguments('-fsycl-targets=' + sm_level, language : 'cpp') 
-        add_project_arguments('-DUSE_CUBLAS', language : 'cpp')
-        add_project_arguments('-DINLINE', language : 'cpp')
-        add_project_arguments('-DNVIDIABE', language : 'cpp') 
+        add_project_arguments(NVIDIA_GPU_CXX_FLAGS, language : 'cpp') 
         cu_blas = cc.find_library('cublas', required: true)
         cu_dart = cc.find_library('cudart', required: true)
-        deps += [cu_blas, cu_dart]
+        cu_da = cc.find_library('cuda', required: true)
+        deps += [cu_blas, cu_dart, cu_da]
         deps += cc.find_library('sycl', required: true)
         deps += cc.find_library('pthread', required: true)
-        mlink_args+= ['-fsycl', '-fsycl-targets=' + sm_level]  
+        mlink_args+= NVIDIA_GPU_CXX_FLAGS  
       endif 
-  
-  #message('Using link arguements ' + mlink_args)
-  executable('lc0_sycl', 'src/main.cc', files, include_directories: includes, dependencies: deps, install: true, link_args : mlink_args)
+    
+      executable('lc0_sycl', 'src/main.cc', files, include_directories: includes, dependencies: deps, install: true, link_args : mlink_args)
+
 elif get_option('USE_CUDA')
+
+  DEF_WL_CXX_FLAGS = ['-Xcompiler', '-fPIC']
+  DEF_GENERAL_CXX_FLAGS = ['-O2']
+  DEF_COMBINED_CXX_FLAGS = DEF_WL_CXX_FLAGS + DEF_GENERAL_CXX_FLAGS
+
+  if(get_option('CMAKE_CXX_FLAGS') != [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') != [])
+      message('Both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together')
+  elif(get_option('CMAKE_CXX_FLAGS')== [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') == [])
+      message('Using DEFAULT compilation flags')
+      CMAKE_CXX_FLAGS = DEF_COMBINED_CXX_FLAGS
+  elif(get_option('OVERRIDE_GENERAL_CXX_FLAGS') !=[])
+      message('OVERRIDING GENERAL compilation flags')
+      CMAKE_CXX_FLAGS = get_option('OVERRIDE_GENERAL_CXX_FLAGS') + DEF_WL_CXX_FLAGS
+  elif(get_option('CMAKE_CXX_FLAGS') != [])
+      message('OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags')
+  endif
+
+
   cudnn_libdirs = get_option('cudnn_libdirs')
     cu_blas = cc.find_library('cublas', dirs: cudnn_libdirs, required: false)
     cu_dnn = cc.find_library('cudnn', dirs: cudnn_libdirs, required: false)
@@ -356,7 +392,8 @@ elif get_option('USE_CUDA')
           cuda_arguments += ['-Xcompiler', '-MD']
         endif
       else
-        cuda_arguments += ['--std=c++14', '-Xcompiler', '-fPIC']
+        cuda_arguments += CMAKE_CXX_FLAGS
+        #cuda_arguments += ['--std=c++14', '-Xcompiler', '-fPIC']
       endif
       if get_option('nvcc_ccbin') != ''
         cuda_arguments += ['-ccbin=' + get_option('nvcc_ccbin')]
@@ -374,6 +411,7 @@ elif get_option('USE_CUDA')
       else
         outputname = '@BASENAME@.o'
       endif
+      nvcc_extra_args += get_option('CUDA_NVCC_FLAGS')
       files += cuda_files
       files += custom_target('cuda fp32 code',
         input : 'src/neural/cuda/common_kernels.cu',
@@ -383,18 +421,19 @@ elif get_option('USE_CUDA')
       )
 
       # Handling of fp16 cuda code.
-      nvcc_arch = '-arch=compute_' + get_option('USE_SM')
+      #nvcc_arch = '-arch=compute_' + get_option('USE_SM')
       nvcc_sm_list = ['sm_' + get_option('USE_SM')]
       # Ignore the given CC for fp16 when it is not in the supported list.
       if cuda_cc == '' or not nvcc_sm_list.contains('sm_' + cuda_cc)
-        nvcc_extra_args = [nvcc_arch]
+        nvcc_extra_args = []
         nvcc_help = run_command(nvcc, '-h').stdout()
         foreach x : nvcc_sm_list
           if nvcc_help.contains(x)
-            nvcc_extra_args += '-code=' + x
+            nvcc_extra_args += '-arch=' + x
           endif
         endforeach
       endif
+      nvcc_extra_args += get_option('CUDA_NVCC_FLAGS')
       files += custom_target('cuda fp16 code',
         input : 'src/neural/cuda/fp16_kernels.cu',
         output : outputname,
@@ -411,8 +450,23 @@ elif get_option('USE_AMD')
   files += 'src/neural/amd/network_amd.cpp'
   files += 'src/neural/amd/common_kernels.cpp'
 
-  add_project_arguments('-D__HIP_PLATFORM_AMD__', language : 'cpp')
-  add_project_arguments('-O3', language : 'cpp')
+  DEF_WL_CXX_FLAGS = ['-D__HIP_PLATFORM_AMD__']
+  DEF_GENERAL_CXX_FLAGS = ['-O3']
+  DEF_COMBINED_CXX_FLAGS = DEF_WL_CXX_FLAGS + DEF_GENERAL_CXX_FLAGS
+
+  if(get_option('CMAKE_CXX_FLAGS') != [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') != [])
+      message('Both CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together')
+  elif(get_option('CMAKE_CXX_FLAGS')== [] and get_option('OVERRIDE_GENERAL_CXX_FLAGS') == [])
+      message('Using DEFAULT compilation flags')
+      CMAKE_CXX_FLAGS = DEF_COMBINED_CXX_FLAGS
+  elif(get_option('OVERRIDE_GENERAL_CXX_FLAGS') != [])
+      message('OVERRIDING GENERAL compilation flags')
+      CMAKE_CXX_FLAGS = get_option('OVERRIDE_GENERAL_CXX_FLAGS') + DEF_WL_CXX_FLAGS
+  elif(get_option('CMAKE_CXX_FLAGS') != [])
+      message('OVERRIDING GENERAL and WORKLOAD SPECIFIC compilation flags')
+  endif
+
+  add_project_arguments(CMAKE_CXX_FLAGS, language : 'cpp')
 
   hip_blas_lib = cc.find_library('hipblas', required: true)
   hip_blas_runtime = cc.find_library('hipblas', required: true)
@@ -425,6 +479,7 @@ else
    message('Error no build option specified.')
 
 endif
+
 
 
   

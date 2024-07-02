@@ -275,7 +275,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
         
         cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
+        cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+        auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
         cublasSetStream(handle, cudaStreamHandle);  
 
         ReportCUBLASErrors(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, numFc1Out_,
@@ -332,7 +333,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
         
         cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
+        cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+        auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
         cublasSetStream(handle, cudaStreamHandle);  
 
         ReportCUBLASErrors(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, 2 * C, N,
@@ -595,7 +597,8 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
         
         cgh.host_task([=](sycl::interop_handle ih) {
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
+        cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+        auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
         cublasSetStream(handle, cudaStreamHandle);    
 
 
@@ -965,8 +968,9 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
-            cublasSetStream(handle, cudaStreamHandle);   
+          cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+          auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+          cublasSetStream(handle, cudaStreamHandle);    
 
           ReportCUBLASErrors(cublasGemmStridedBatchedEx(
             handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &floatOne, B, CUDA_R_32F, N,
@@ -1022,8 +1026,9 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
      sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
-            auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
-            cublasSetStream(handle, cudaStreamHandle); 
+            cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+            auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+            cublasSetStream(handle, cudaStreamHandle);  
 
           // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
           ReportCUBLASErrors(cublasSgemmStridedBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &floatOne, B, N, N * K, A, K,
@@ -1268,11 +1273,12 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
-         cublasSetStream(handle, cudaStreamHandle);
+          cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+          auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+          cublasSetStream(handle, cudaStreamHandle);  
 
 
-        ReportCUBLASErrors(cublasGemmStridedBatchedEx(
+          ReportCUBLASErrors(cublasGemmStridedBatchedEx(
           handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &floatOne, B, CUDA_R_32F, N,
           N * K, A, CUDA_R_32F, K, 0, &floatZero, Out, CUDA_R_32F, N, N * M,
           batchSize, CUDA_R_32F, CUBLAS_GEMM_DEFAULT));
@@ -1330,8 +1336,9 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         cgh.host_task([=](sycl::interop_handle ih) {
   
-         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue_);
-         cublasSetStream(handle, cudaStreamHandle);
+          cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+          auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+          cublasSetStream(handle, cudaStreamHandle);  
     
         // Much slower on RTX 2060.. why? Maybe a cublas bug :-/
         ReportCUBLASErrors(cublasSgemmStridedBatched(
@@ -1854,8 +1861,9 @@ static void cublasXgemm(transpose_type transa,
         
         cgh.host_task([=](sycl::interop_handle ih) {  
 
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue);
-        cublasSetStream(handle, cudaStreamHandle);  
+        cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+        auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+        cublasSetStream(handle, cudaStreamHandle);    
 
         ReportCUBLASErrors(cublasSgemm(handle, transa, transb, m, n, k, &alpha,
                                    (const float*)A, lda, (const float*)B, ldb,
@@ -1941,8 +1949,9 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
         
         cgh.host_task([=](sycl::interop_handle ih) {
     
-        auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(sycl_queue);
-        cublasSetStream(handle, cudaStreamHandle);    
+          cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
+          auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+          cublasSetStream(handle, cudaStreamHandle);     
     
         ReportCUBLASErrors(cublasGemmStridedBatchedEx(
         handle, transa, transb, m, n, k, &alpha, A, CUDA_R_32F, lda, strideA, B,
