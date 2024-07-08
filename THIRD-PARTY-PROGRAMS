@@ -761,6 +761,17 @@ Library.
 	cxxopts
 	Copyright (c) 2014 Jarryd Beck
 
+        Voxelizer CUDA
+	Copyright (c) 2019 Jeroen Baert
+	
+	Voxelizer HIP
+	Modifications Copyright (C) 2023 Intel Corporation
+	Copyright (c) 2019 Jeroen Baert
+	
+	Voxelizer SYCL
+	Modifications Copyright (C) 2023 Intel Corporation
+	Copyright (c) 2019 Jeroen Baert
+
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
