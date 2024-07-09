@@ -26,6 +26,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <iostream>
+#include <filesystem>
 #include <cmath>
 #include <iomanip>
 #include <hip/hip_runtime.h>
@@ -74,18 +75,36 @@ int main(int argc, char **argv)
 
     // Read images using OpenCV
     cv::Mat limg, rimg;
-    auto ioRead_start = std::chrono::steady_clock::now();
+    std::string inp_file_1, inp_file_2;
     if (imgSet)
     {
-      cv::imread("../../inputData/left.pgm", 0).convertTo(limg, CV_32FC1);
-      cv::imread("../../inputData/righ.pgm", 0).convertTo(rimg, CV_32FC1);
+      inp_file_1 = "../../inputData/left.pgm";
+      inp_file_2 = "../../inputData/righ.pgm";
     }
     else
     {
-      cv::imread("../../inputData/img1.png", 0).convertTo(limg, CV_32FC1);
-      cv::imread("../../inputData/img2.png", 0).convertTo(rimg, CV_32FC1);
+      inp_file_1 = "../../inputData/img1.png";
+      inp_file_2 = "../../inputData/img2.png";
     }
+
+    if (!std::filesystem::exists(inp_file_1))
+    {            
+      std::cout << "Input file 1 does not exist: " << inp_file_1 << std::endl;
+      return -1;
+    }
+    else if (!std::filesystem::exists(inp_file_2))
+    {
+      std::cout << "Input file 2 does not exist: " << inp_file_2 << std::endl;
+      return -1;
+    }
+    
+    auto ioRead_start = std::chrono::steady_clock::now();
+
+    cv::imread(inp_file_1, 0).convertTo(limg, CV_32FC1);
+    cv::imread(inp_file_2, 0).convertTo(rimg, CV_32FC1);    
+
     auto ioRead_stop = std::chrono::steady_clock::now();
+
     ioReadTime = std::chrono::duration<float, std::micro>(ioRead_stop - ioRead_start).count();
 
     unsigned int w = limg.cols;
