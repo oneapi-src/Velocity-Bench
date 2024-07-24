@@ -306,25 +306,11 @@ int main(int argc, char **argv)
     {
         sycl_device_queue = sycl::gpu_selector{};
     }
-    else if (devname == "HOST")
-    {
-        sycl_device_queue = sycl::host_selector{};
-    }
     else
     {
         std::cout << "QS_DEVICE must be CPU, GPU or HOST" << std::endl;
         std::abort();
     }
-
-    // DEBUG - REMOVE LATER
-    if (sycl_device_queue.get_device().is_cpu())
-        std::cout << "is cpu" << std::endl;
-    if (sycl_device_queue.get_device().is_gpu())
-        std::cout << "is gpu" << std::endl;
-    if (sycl_device_queue.get_device().is_host())
-        std::cout << "is host" << std::endl;
-    if (sycl_device_queue.get_device().is_accelerator())
-        std::cout << "is accelerator" << std::endl;
 #endif
 
     // mcco stores just about everything.
