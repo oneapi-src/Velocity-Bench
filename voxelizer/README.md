@@ -88,6 +88,10 @@ make -sj
 ./voxelizer_hip -f ../../test_models/bunny.OBJ -s 1024 -i 20
 
 
+**To view the output**
+
+To view the generated output file as a voxelized model use this online voxelizer, https://drububu.com/miscellaneous/voxelizer/?out=bin where you can import the file and view
+
 ## Citation
 @Voxelizer{cudavoxelizer17,
 author = "Jeroen Baert",
