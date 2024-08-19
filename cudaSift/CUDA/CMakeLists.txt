@@ -52,12 +52,17 @@ set(cuda_sources
 
 set(sources
   ${CMAKE_SOURCE_DIR}/../common/Utility.cpp
+  ${CMAKE_SOURCE_DIR}/../common/workload_params.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/CommandLineParser.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/TestBenchBase.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/Utilities.cpp  
   geomFuncs.cpp  
   mainSift.cpp  
 )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/../common/
+  ${CMAKE_SOURCE_DIR}/../../infrastructure
   ${CMAKE_CURRENT_SOURCE_DIR} 
 )
 if(DEVICE_TIMER)
