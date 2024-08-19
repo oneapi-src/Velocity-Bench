@@ -90,3 +90,15 @@ ONEAPI_DEVICE_SELECTOR=hip:* ./cudaSift
 **To run hip version**
 
 ./cudasift
+
+
+
+
+***NOTE: Regarding default input files location:***
+
+Input files for this workload are located at cudaSift/inputData by default. \
+If this needs to be changed, please use the following command line argument to provide the path of a different location: 
+
+./cudasift **-input_data_loc**  <INPUT_FILES_DIR> 
+
+
