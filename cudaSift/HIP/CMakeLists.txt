@@ -57,6 +57,10 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(SOURCES
   ${CMAKE_SOURCE_DIR}/../common/Utility.cpp
+  ${CMAKE_SOURCE_DIR}/../common/workload_params.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/CommandLineParser.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/TestBenchBase.cpp
+  ${CMAKE_SOURCE_DIR}/../../infrastructure/Utilities.cpp  
   cudaImage.cpp
   cudaImage.h
   cudaSiftH.cpp
@@ -71,6 +75,7 @@ set(SOURCES
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/../common/
+  ${CMAKE_SOURCE_DIR}/../../infrastructure
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${HIP_INCLUDE_DIRS}
 )
