@@ -38,6 +38,9 @@
 #include "Utility.h"
 #include "cudaImage.h"
 #include "cudaSift.h"
+#include "../common/workload_params.h"
+#include "Utilities.h"
+#include "CommandLineParser.h"
 
 int ImproveHomography(SiftData &data, float *homography, int numLoops, float minScore, float maxAmbiguity, float thresh);
 void PrintMatchData(SiftData &siftData1, SiftData &siftData2, CudaImage &img);
@@ -48,7 +51,7 @@ double ScaleUp(CudaImage &res, CudaImage &src);
 ///////////////////////////////////////////////////////////////////////////////
 // Main program
 ///////////////////////////////////////////////////////////////////////////////
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
   auto totalProgTimer_start = std::chrono::steady_clock::now();
   int devNum = 0, imgSet = 0;
@@ -56,6 +59,9 @@ int main(int argc, char **argv)
     devNum = std::atoi(argv[1]);
   if (argc > 2)
     imgSet = std::atoi(argv[2]);
+
+  common::WorkloadParams workload_params(argc, argv);
+  std::string inputDataLoc = workload_params.getInputDataLoc();
 
   float totTime = 0.0;
   float imageInitTime = 0.0;
@@ -78,13 +84,13 @@ int main(int argc, char **argv)
     std::string inp_file_1, inp_file_2;
     if (imgSet)
     {
-      inp_file_1 = "../../inputData/left.pgm";
-      inp_file_2 = "../../inputData/righ.pgm";
+      inp_file_1 = inputDataLoc + "/left.pgm";
+      inp_file_2 = inputDataLoc + "/righ.pgm";
     }
     else
     {
-      inp_file_1 = "../../inputData/img1.png";
-      inp_file_2 = "../../inputData/img2.png";
+      inp_file_1 = inputDataLoc + "/img1.png";
+      inp_file_2 = inputDataLoc + "/img2.png";
     }
 
     if (!std::filesystem::exists(inp_file_1))
