@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include "tracing.h"
 #include "timing.h"

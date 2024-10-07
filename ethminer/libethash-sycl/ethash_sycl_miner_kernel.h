@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <stdint.h>
 #include <sstream>
 #include <stdexcept>

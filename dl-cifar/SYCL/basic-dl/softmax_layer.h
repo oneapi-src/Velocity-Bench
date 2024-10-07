@@ -24,12 +24,12 @@
 #ifndef DL_CIFAR_SOFTMAX_LAYER_H_
 #define DL_CIFAR_SOFTMAX_LAYER_H_
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "timing.h"
 #include "tracing.h"
 #include "handle.h"
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #if defined(USE_CUBLAS)
 #include <cublas_v2.h>

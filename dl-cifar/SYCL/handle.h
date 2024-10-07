@@ -27,7 +27,7 @@
 #include <iostream>
 #include <string>
 #include "timing.h"
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #if defined(USE_CUBLAS)
 #include <cublas_v2.h>

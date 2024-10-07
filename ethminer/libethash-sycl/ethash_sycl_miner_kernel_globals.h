@@ -19,7 +19,7 @@
  * 
  */ 
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <vector>
 #pragma once
 

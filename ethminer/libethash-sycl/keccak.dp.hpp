@@ -19,7 +19,7 @@
  * 
  */ 
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "dpcpp_helper.h"
 
 DEV_INLINE sycl::uint2 xor5(const sycl::uint2 a, const sycl::uint2 b, const sycl::uint2 c, const sycl::uint2 d, const sycl::uint2 e)

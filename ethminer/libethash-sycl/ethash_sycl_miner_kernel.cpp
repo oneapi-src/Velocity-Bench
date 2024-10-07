@@ -19,7 +19,7 @@
  * 
  */ 
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "SYCLMiner.h"
 #include "ethash_sycl_miner_kernel.h"
 

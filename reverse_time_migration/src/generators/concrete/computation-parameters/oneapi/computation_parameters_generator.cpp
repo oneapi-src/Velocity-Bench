@@ -29,7 +29,7 @@
 #include <set>
 #include <unistd.h>
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 using namespace std;
 using namespace operations::common;
