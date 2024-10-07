@@ -44,7 +44,7 @@
 #define CPP_MODULE "CGPU"
 #include "Logging.h"
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "ewCudaKernels.hpp"
 #include "ewGpuNode.hpp"
 #include <cmath>

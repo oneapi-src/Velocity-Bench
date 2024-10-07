@@ -46,7 +46,7 @@
 #define EW_GPUNODE_H
 
 /* FIXME: check header dependencies */
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <stdio.h>
 #include <utility>
 

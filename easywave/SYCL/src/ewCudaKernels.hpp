@@ -13,7 +13,7 @@
 #ifndef EW_CUDA_KERNELS
 #define EW_CUDA_KERNELS
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "ewGpuNode.hpp"
 
 #ifdef USE_INLINE_KERNELS
