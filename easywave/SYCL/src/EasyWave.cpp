@@ -48,7 +48,7 @@
 #include "Utilities.h"
 #include "Timer.h"
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

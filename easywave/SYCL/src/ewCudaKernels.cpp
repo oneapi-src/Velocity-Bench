@@ -12,7 +12,7 @@
 
 #include "ewCudaKernels.hpp"
 #include "ewGpuNode.hpp"
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <cmath>
 
 SYCL_EXTERNAL __attribute__((always_inline)) void waveUpdate(KernelData data, sycl::nd_item<2> item_ct1)

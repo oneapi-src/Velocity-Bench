@@ -31,7 +31,7 @@
 #include <list>
 #include <array>
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "oneapi/dnnl/dnnl.hpp"
 #include "../common/workload_params.h"
 

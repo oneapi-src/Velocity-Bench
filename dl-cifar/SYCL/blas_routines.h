@@ -31,7 +31,7 @@
 #include "tracing.h"
 #include "handle.h"
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 
 #if defined(USE_CUBLAS)

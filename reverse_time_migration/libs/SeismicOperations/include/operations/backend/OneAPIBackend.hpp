@@ -18,7 +18,7 @@
 #define OPERATIONS_LIB_BACKEND_ONEAPI_BACKEND_HPP
 
 #include <operations/common/Singleton.tpp>
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace operations {
     namespace backend {

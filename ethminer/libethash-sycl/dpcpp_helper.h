@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
 #define DEV_INLINE      __dpct_inline__

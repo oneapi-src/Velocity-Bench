@@ -36,7 +36,7 @@ You should have received a copy of the GNU General Public License
 along with ethminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <libethcore/Farm.h>
 #include <ethash/ethash.hpp>
 

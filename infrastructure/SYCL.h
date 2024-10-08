@@ -41,7 +41,7 @@
 
 #include "CommandLineParser.h"
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <string>
 #include <vector>
 

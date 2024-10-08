@@ -38,7 +38,7 @@ along with ethminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "ethash_sycl_miner_kernel.h"
 
 #include <libdevcore/Worker.h>
