@@ -43,7 +43,10 @@ typedef struct ModelInfo
 
     float **vel2d, **rho2d;             // 2D array to store velocity and density model 
     float vmax, vmin;
-
+    ModelInfo() {
+        memset(velfile, 0, 224);
+        memset(densfile, 0, 224);
+    }
 }mod_t;
 
 typedef struct Wavelet
