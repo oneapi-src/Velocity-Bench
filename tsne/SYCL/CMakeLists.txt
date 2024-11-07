@@ -149,8 +149,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_SOURCE_DIR}/../data
-    /nfs/pdx/home/mgrabban/oneDPL/include
-    /nfs/pdx/home/mgrabban/oneTBB/include
 )
 
 add_executable(tsne ${SOURCES})

@@ -21,6 +21,7 @@
 
 // #define DEBUG_TIME
 #define CPP_MODULE "MAIN"
+#define ITERATIONS 10
 
 #define TIMER_START() time_start = std::chrono::steady_clock::now();
 #define TIMER_END()                                                                         \
@@ -170,7 +171,11 @@ START_TIMER();
 #ifdef DEBUG_TIME
 STOP_TIMER();
 PRINT_TIMER("init               ");
+#endif
 
+    std::vector<KeyValue> kvs;
+    for (int iter = 0; iter < ITERATIONS; iter++){
+#ifdef DEBUG_TIME
 START_TIMER();
 #endif
         // Allocates device memory for the hashtable and
@@ -231,7 +236,7 @@ PRINT_TIMER("delete_hashtable   ");
 START_TIMER();
 #endif
         // Get all the key-values from the hash table
-        std::vector<KeyValue> kvs = iterate_hashtable(pHashTable);
+        kvs = iterate_hashtable(pHashTable);
 #ifdef DEBUG_TIME
 STOP_TIMER();
 PRINT_TIMER("iterate_hashtable  ");
@@ -243,10 +248,10 @@ PRINT_TIMER("iterate_hashtable  ");
         // seconds = milliseconds / 1000.0f;
 
         destroy_hashtable(pHashTable);
-
+    }
     TIMER_END()
     TIMER_PRINT("hashtable - total time for whole calculation")
-    printf("%f million keys/second\n", kNumKeyValues / (time_total / 1000.0f) / 1000000.0f);
+    printf("%f million keys/second\n", kNumKeyValues / (time_total / ITERATIONS / 1000.0f) / 1000000.0f);
 
         bool verify = true;
         if (argc > 1 && strcmp(argv[1], "--no-verify") == 0) {
