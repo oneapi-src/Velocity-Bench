@@ -86,7 +86,7 @@ namespace dl_infra {
         }
 
         ConvLayer::ConvLayer(WorkloadParams* workloadParams, int index_in_network, int total_layers_in_nw, 
-            Timer* timer, TensorMgr* tensor_mgr, engine eng, stream s, 
+            Timer* timer, TensorMgr* tensor_mgr, engine *eng, stream *s, 
             int input_tensor_dims[], int filter_tensor_dims[], int output_tensor_dims[]): workloadParams_(workloadParams)  {
             
             Tracer::func_begin("ConvLayer::ConvLayer");
@@ -94,8 +94,8 @@ namespace dl_infra {
             index_in_network_ = index_in_network;
             total_layers_in_nw_ = total_layers_in_nw;
             timer_ = timer;
-            eng_ = std::move(eng);
-            s_ = std::move(s);
+            eng_ = eng;
+            s_ = s;
             tensor_mgr_ = tensor_mgr;
 
             input_tensor_dims_  = input_tensor_dims;
@@ -106,9 +106,9 @@ namespace dl_infra {
         }
 
         ConvLayer::ConvLayer(WorkloadParams* workloadParams, int index_in_network, int total_layers_in_nw, 
-            Timer* timer, TensorMgr* tensor_mgr, IConvLayer* nextConvLayer, engine eng, stream s, 
+            Timer* timer, TensorMgr* tensor_mgr, IConvLayer* nextConvLayer, engine *eng, stream *s, 
             int input_tensor_dims[], int filter_tensor_dims[], int output_tensor_dims[])
-                    : ConvLayer(workloadParams, index_in_network, total_layers_in_nw, timer, tensor_mgr, std::move(eng), std::move(s), input_tensor_dims, filter_tensor_dims, output_tensor_dims) {
+                    : ConvLayer(workloadParams, index_in_network, total_layers_in_nw, timer, tensor_mgr, eng, s, input_tensor_dims, filter_tensor_dims, output_tensor_dims) {
             nextConvLayer_ = nextConvLayer;                        
         };
 
@@ -132,7 +132,7 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER    
             Time start = get_time_now();
 #endif            
-            conv_pd = convolution_forward::primitive_desc(eng_,
+            conv_pd = convolution_forward::primitive_desc(*eng_,
             prop_kind::forward_inference, algo,
                     tensor_mgr_->getTensorBagAt(index_in_network_)->conv_src_md, 
                     tensor_mgr_->getTensorBagAt(index_in_network_)->conv_weights_md,
@@ -151,8 +151,31 @@ namespace dl_infra {
             timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "CONV_FORWARD CREATION");
 #endif
             createWorkspace();
-
+            reorderWeightsIfRequired();
+            
             Tracer::func_end("ConvLayer::initialize");  
+        }
+
+        void ConvLayer::reorderWeightsIfRequired() {
+            need_reorder_weights_ = conv_pd.weights_desc() != tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_.get_desc();
+            // if(need_reorder_weights_)
+            //     std::cout << "need_reorder_weights_" << std::endl;
+            auto conv_weights_mem = need_reorder_weights_ ? memory(conv_pd.weights_desc(), *eng_) : tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;
+
+            if (need_reorder_weights_) {
+#ifdef DEVICE_TIMER                    
+                start = get_time_now();
+#endif                  
+                auto reorder_weights = reorder(tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_, conv_weights_mem);
+                reorder_weights.execute(*s_,
+                        {{DNNL_ARG_FROM, tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_},
+                                {DNNL_ARG_TO, conv_weights_mem}});
+                s_->wait(); // wait for the reorder to complete
+                tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_ = conv_weights_mem;
+#ifdef DEVICE_TIMER                   
+                timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "REORDER WEIGHTS"); 
+#endif   
+            }
         }
 
         void ConvLayer::doIOTensorAndWSAllocs() {
@@ -167,7 +190,7 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER                
             Time start = get_time_now();
 #endif            
-            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(eng_));
+            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(*eng_));
             sycl::free(tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_.get_data_handle(), sycl_queue);
 #ifdef DEVICE_TIMER                
             timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "FREE_INPUT_DEV_PTR");
@@ -194,7 +217,7 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER                
             Time start = get_time_now();
 #endif            
-            conv_scratchpad_mem_ = memory(conv_pd.scratchpad_desc(), eng_);
+            conv_scratchpad_mem_ = memory(conv_pd.scratchpad_desc(), *eng_);
 #ifdef DEVICE_TIMER                
             timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "MEMALLOC_SCRATCHPAD_DEV_MEM");
 #endif
@@ -225,6 +248,8 @@ namespace dl_infra {
             need_reorder_src_     = conv_pd.src_desc()     != tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_.get_desc();
             
             //need_reorder_weights_ = conv_pd.weights_desc() != tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_.get_desc();
+            // if(need_reorder_weights_)
+            //     std::cout << "need_reorder_weights_" << std::endl;
             
             if(index_in_network_ == total_layers_in_nw_-1) {
                 need_reorder_dst_     = conv_pd.dst_desc()     != tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_.get_desc();
@@ -239,13 +264,14 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER                    
                 start = get_time_now();
 #endif                
-                auto conv_src_mem     = need_reorder_src_ ? memory(conv_pd.src_desc(), eng_) : tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_;
-                //auto conv_weights_mem = need_reorder_weights_ ? memory(conv_pd.weights_desc(), eng_) : tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;
+                auto conv_src_mem     = need_reorder_src_ ? memory(conv_pd.src_desc(), *eng_) : tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_;
+                //auto conv_weights_mem = need_reorder_weights_ ? memory(conv_pd.weights_desc(), *eng_) : tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;
+                auto conv_weights_mem = tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;
                 
                 // in this workload we will forego reordering of weights
                 // we will assume that the pre-trained weights have been created in the memory format as determined by conv_pd.weights_desc()
-                auto conv_weights_mem = tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;     
-                auto conv_dst_mem     = memory(conv_pd.dst_desc(), eng_, tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_.get_data_handle());
+                //auto conv_weights_mem = tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_;     
+                auto conv_dst_mem     = memory(conv_pd.dst_desc(), *eng_, tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_.get_data_handle());
                 tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_ = conv_dst_mem;
 #ifdef DEVICE_TIMER                    
                 timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "REORDERED MEM CREATE");
@@ -257,8 +283,8 @@ namespace dl_infra {
 #endif                    
                     auto reorder_src = reorder(tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_, conv_src_mem);
                     reorder_src.execute(
-                            s_, {{DNNL_ARG_FROM, tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_}, {DNNL_ARG_TO, conv_src_mem}});
-                    s_.wait(); // wait for the reorder to complete
+                            *s_, {{DNNL_ARG_FROM, tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_}, {DNNL_ARG_TO, conv_src_mem}});
+                    s_->wait(); // wait for the reorder to complete
 #ifdef DEVICE_TIMER                        
                     timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "REORDER SRC");
 #endif                    
@@ -267,10 +293,10 @@ namespace dl_infra {
                 // if (need_reorder_weights_) {
                 //     //start = get_time_now();
                 //     auto reorder_weights = reorder(tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_, conv_weights_mem);
-                //     reorder_weights.execute(s_,
+                //     reorder_weights.execute(*s_,
                 //             {{DNNL_ARG_FROM, tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_},
                 //                     {DNNL_ARG_TO, conv_weights_mem}});
-                //     s_.wait(); // wait for the reorder to complete
+                //     s_->wait(); // wait for the reorder to complete
                 //     timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "REORDER WEIGHTS"); 
                 // }
             //}
@@ -281,10 +307,10 @@ namespace dl_infra {
             // conv_.execute(s_,
             //     {{DNNL_ARG_SRC, tensor_mgr_->getTensorBagAt(index_in_network_)->src_mem_}, {DNNL_ARG_WEIGHTS, tensor_mgr_->getTensorBagAt(index_in_network_)->weights_mem_},
             //         {DNNL_ARG_DST, tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_}});
-            conv_.execute(s_,
+            conv_.execute(*s_,
                {{DNNL_ARG_SRC, conv_src_mem}, {DNNL_ARG_WEIGHTS, conv_weights_mem},
                        {DNNL_ARG_DST, conv_dst_mem}});            
-            s_.wait();
+            s_->wait();
 #ifdef DEVICE_TIMER                
             timer_->recordOpTimeTaken(index_in_network_, calculate_op_time_taken(start), "CONV_FORWARD EXECUTION");
 #endif

@@ -47,8 +47,8 @@ namespace dl_infra {
             private:
                 int index_in_network_, total_layers_in_nw_;
                 Timer* timer_;
-                engine eng_;
-                stream s_;
+                engine *eng_;
+                stream *s_;
                 
                 TensorMgr* tensor_mgr_;
 
@@ -71,7 +71,7 @@ namespace dl_infra {
                 bool add_mem_transfer_time_ = false;
 
                 bool need_reorder_src_ = false;
-                //bool need_reorder_weights_ = false;
+                bool need_reorder_weights_ = false;
                 bool need_reorder_dst_ = false;
 
                 void write_to_dnnl_memory(void *handle, dnnl::memory &mem);
@@ -83,10 +83,10 @@ namespace dl_infra {
                 
             public:
                 ConvLayer(WorkloadParams* workloadParams, int index_in_network, int total_layers_in_nw, 
-                    Timer* timer, TensorMgr* tensor_mgr, engine eng, stream s, 
+                    Timer* timer, TensorMgr* tensor_mgr, engine *eng, stream *s, 
                     int input_tensor_dims[], int filter_tensor_dims[], int output_tensor_dims[]);
                 ConvLayer(WorkloadParams* workloadParams, int index_in_network, int total_layers_in_nw, 
-                    Timer* timer, TensorMgr* tensor_mgr, IConvLayer* nextConvLayer, engine eng, stream s, 
+                    Timer* timer, TensorMgr* tensor_mgr, IConvLayer* nextConvLayer, engine *eng, stream *s, 
                     int input_tensor_dims[], int filter_tensor_dims[], int output_tensor_dims[]);
                 ~ConvLayer();
 
@@ -106,6 +106,7 @@ namespace dl_infra {
                 void createWorkspace();
                 void createTensorDescriptors();
                 void createTensors();
+                void reorderWeightsIfRequired();
 
                 void calculateStrideDims();                
         };
