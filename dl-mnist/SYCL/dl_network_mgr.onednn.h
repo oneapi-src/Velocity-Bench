@@ -53,8 +53,8 @@ namespace dl_infra {
         class DlNetworkMgr {
             private:
                 Timer* timer_, *dataFileReadTimer_;
-                engine eng_;
-                stream s_;
+                engine *eng_;
+                stream *s_;
                 WorkloadParams* workloadParams_;
                 //WorkloadParams::TensorMemPolicy tensorMemPolicy_;
 
@@ -69,8 +69,8 @@ namespace dl_infra {
                 void initializeNetwork(string networkName);
 
             public:
-                DlNetworkMgr(WorkloadParams* workloadParams, engine eng, stream s, Timer* timer, Timer* dataFileReadTimer)
-                    : workloadParams_(workloadParams), eng_(std::move(eng)), s_(std::move(s)), timer_(timer), tensorMgr(0), dataFileReadTimer_(dataFileReadTimer) {}
+                DlNetworkMgr(WorkloadParams* workloadParams, engine* eng, stream* s, Timer* timer, Timer* dataFileReadTimer)
+                    : workloadParams_(workloadParams), eng_(eng), s_(s), timer_(timer), tensorMgr(0), dataFileReadTimer_(dataFileReadTimer) {}
                 void createDLNetwork(string networkName, int no_of_conv_layers, int *conv_dims);
                 void executeInferenceRun(string networkName);
         };

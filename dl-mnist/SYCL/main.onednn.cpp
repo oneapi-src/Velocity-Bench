@@ -52,11 +52,11 @@ int main(int argc, const char** argv) {
 
         cout << endl << "\t\tWelcome to DL-MNIST workload: SYCL version." << endl << endl;
         cout << "=======================================================================" << endl;
-        sycl::device* dht = new sycl::device(sycl::gpu_selector());
+        sycl::device* dht = new sycl::device(sycl::gpu_selector_v);
 #ifdef DEVICE_TIMER  
         start = get_time_now();
 #endif    
-        sycl::context context(*dht);
+        sycl::context *context = new sycl::context(*dht);
 #ifdef DEVICE_TIMER  
         timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_CONTEXT");
 #endif    
@@ -64,15 +64,15 @@ int main(int argc, const char** argv) {
 #ifdef DEVICE_TIMER  
         start = get_time_now();  
 #endif     
-        sycl::queue deviceQueue1(context, *dht);
+        sycl::queue *deviceQueue1 = new sycl::queue(*context, *dht);
 #ifdef DEVICE_TIMER  
         timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_QUEUE");
 #endif    
 #ifdef DEVICE_TIMER  
         start = get_time_now();
 #endif    
-        //engine eng(engine::kind::gpu, 0);
-        engine eng = dnnl::sycl_interop::make_engine(*dht, context);
+        engine eng = dnnl::sycl_interop::make_engine(*dht, *context);
+
 #ifdef DEVICE_TIMER  
         timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_ONEDNN_ENGINE");
 #endif    
@@ -80,11 +80,11 @@ int main(int argc, const char** argv) {
         start = get_time_now();
 #endif    
         //stream s(eng);
-        stream s = dnnl::sycl_interop::make_stream(eng, deviceQueue1);
+        stream s = dnnl::sycl_interop::make_stream(eng, *deviceQueue1);
 #ifdef DEVICE_TIMER      
         timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_ONEDNN STREAM");
 #endif
-        SYCL sycl(dnnl::sycl_interop::get_queue(s).get_device());
+        SYCL sycl(*dht);
         sycl.DisplayProperties();
         cout << "=======================================================================" << endl;
         cout << endl;
@@ -146,7 +146,7 @@ int main(int argc, const char** argv) {
         cout.precision(3); 
 
         int noOfIterations = workload_params.getNoOfIterations();
-        DlNetworkMgr* dlNetworkMgr = new DlNetworkMgr(&workload_params, eng, s, timer, dataFileReadTimer);
+        DlNetworkMgr* dlNetworkMgr = new DlNetworkMgr(&workload_params, &eng, &s, timer, dataFileReadTimer);
 
         string networkName1_1 = "nw_1.1";
         dlNetworkMgr->createDLNetwork(networkName1_1, 10, (int *)&conv_dims1);
@@ -173,6 +173,11 @@ int main(int argc, const char** argv) {
         cout << "Final time across all networks: " << timer->getTotalOpTime() << " s" << std::endl;
 #endif
         delete dlNetworkMgr;
+
+        delete dht;
+        delete context;
+        delete deviceQueue1;
+
         delete timer;
 
         std::cout << "dl-mnist - total time for whole calculation: " << calculate_op_time_taken(wallClockStart) - dataFileReadTimer->getTotalOpTime()<< " s" << std::endl;    

@@ -72,11 +72,13 @@ namespace dl_infra {
             public:
              memory::desc conv_src_md, conv_weights_md, conv_dst_md;
 
+
             float* ooc_input_host_ptr_   = NULL;
             float* ooc_filter_host_ptr_  = NULL;
             float* ooc_output_host_ptr_  = NULL;
 
             memory src_mem_, weights_mem_, dst_mem_, conv_scratchpad_mem_;
+            convolution_forward::primitive_desc *conv_pd_;
                
             public:
                 TensorBag(Timer* timer): timer_(timer) {}
@@ -87,15 +89,14 @@ namespace dl_infra {
 
         class TensorMgr {
             private:
-                //sycl::queue Q;
-                engine eng_;
+                engine *eng_;
                 Timer* timer_, *dataFileReadTimer_;
                 int no_of_layers_;
                 std::vector<TensorBag*> tensorBags;
                 WorkloadParams* workloadParams_;
                 bool dryRun_ = false;
             public:
-                TensorMgr(WorkloadParams* workloadParams, Timer* timer, Timer* dataFileReadTimer, int no_of_layers, engine eng);
+                TensorMgr(WorkloadParams* workloadParams, Timer* timer, Timer* dataFileReadTimer, int no_of_layers, engine *eng);
                 TensorBag* setupTensorsForConvLayer(int conv_layer_index, int* input_tensor_dims_, int* filter_tensor_dims_, int* output_tensor_dims_);
                 TensorBag* createAndSetupTensorBag(int conv_layer_index, int* input_tensor_dims_, int* filter_tensor_dims_, int* output_tensor_dims_);
                 TensorBag* getTensorBagAt(int index) { 
