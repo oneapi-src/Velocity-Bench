@@ -106,7 +106,7 @@ namespace dl_infra {
                 //if (!dst_ptr)
                 //        throw std::runtime_error("get_data_handle returned nullptr.");
                 std::cout << "Before get_queue" << std::endl;
-                auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(eng_));
+                auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(*eng_));
                 std::cout << "After get_queue" << std::endl;
                 sycl_queue.memcpy(dst_ptr, src_ptr, size).wait();
                 std::cout << "After memcpy" << std::endl;
@@ -150,8 +150,8 @@ namespace dl_infra {
             return  tensorBags.at(conv_layer_index);
         }
 
-        TensorMgr::TensorMgr(WorkloadParams* workloadParams, Timer* timer, Timer* dataFileReadTimer, int no_of_layers, engine eng)
-        : workloadParams_(workloadParams), eng_(std::move(eng)), timer_(timer), dataFileReadTimer_(dataFileReadTimer), no_of_layers_(no_of_layers) {
+        TensorMgr::TensorMgr(WorkloadParams* workloadParams, Timer* timer, Timer* dataFileReadTimer, int no_of_layers, engine *eng)
+        : workloadParams_(workloadParams), eng_(eng), timer_(timer), dataFileReadTimer_(dataFileReadTimer), no_of_layers_(no_of_layers) {
 
             Tracer::func_begin("TensorMgr::TensorMgr"); 
 
@@ -170,9 +170,10 @@ namespace dl_infra {
             int input_size  =  input_tensor_dims_[0] *  input_tensor_dims_[1] *  input_tensor_dims_[2] *  input_tensor_dims_[3];
             int output_size = output_tensor_dims_[0] * output_tensor_dims_[1] * output_tensor_dims_[2] * output_tensor_dims_[3];
 
-            tensorBag->ooc_output_host_ptr_ = (float*)calloc(output_size, sizeof(float));
+            //tensorBag->ooc_output_host_ptr_ = (float*)calloc(output_size, sizeof(float));
+            //initImage(tensorBag->ooc_output_host_ptr_, output_size);
 
-            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(eng_));
+            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(*eng_));
 
 #ifdef DEVICE_TIMER    
             start = get_time_now();
@@ -180,8 +181,8 @@ namespace dl_infra {
             void * d_output = sycl::malloc_device(output_size*sizeof(float), sycl_queue);
             tensorBag->dst_mem_ = memory(
                     {{output_tensor_dims_[0], output_tensor_dims_[1], output_tensor_dims_[2], output_tensor_dims_[3]},
-                    memory::data_type::f32, memory::format_tag::nchw}, eng_, d_output);
-            tensorBag->dst_mem_.set_data_handle(d_output);
+                    memory::data_type::f32, memory::format_tag::nchw}, *eng_, d_output);
+            //tensorBag->dst_mem_.set_data_handle(d_output);
             // tensorBag->dst_mem_ = memory(
             //         {{output_tensor_dims_[0], output_tensor_dims_[1], output_tensor_dims_[2], output_tensor_dims_[3]},
             //         memory::data_type::f32, memory::format_tag::nchw}, eng_);
@@ -190,7 +191,7 @@ namespace dl_infra {
 #endif           
             assert(d_output);
 
-            initImage(tensorBag->ooc_output_host_ptr_, output_size);
+            // initImage(tensorBag->ooc_output_host_ptr_, output_size);
 
             //std::cout<< "MEM_SIZE - sizeof(float): " << sizeof(float) << ", output_size: " << output_size << ", sizeof(float) * output_size: " << sizeof(float) * output_size << "\t\tLayer: " << conv_layer_index << std::endl;
             Tracer::mem_op("MEM_SIZE - sizeof(float): " + to_string(sizeof(float)) + "B, output_size: " + to_string(output_size) + ", sizeof(float) * output_size: " + to_string((((double)(sizeof(float) * output_size)/1000000)/1000)) + " GB" + "\t\tLayer: " + to_string(conv_layer_index));
@@ -206,10 +207,11 @@ namespace dl_infra {
                 start = get_time_now();
 #endif                  
                 void * d_input = sycl::malloc_device(input_size*sizeof(float), sycl_queue);
+                sycl_queue.memcpy(d_input, tensorBag->ooc_input_host_ptr_, sizeof(float) * input_size).wait();
                 tensorBag->src_mem_ = memory(
                         {{input_tensor_dims_[0], input_tensor_dims_[1], input_tensor_dims_[2], input_tensor_dims_[3]}, 
-                        memory::data_type::f32, memory::format_tag::nchw}, eng_, d_input);
-                tensorBag->src_mem_.set_data_handle(d_input);       
+                        memory::data_type::f32, memory::format_tag::nchw}, *eng_, d_input);
+                //tensorBag->src_mem_.set_data_handle(d_input);       
                 // tensorBag->src_mem_ = memory(
                 //         {{input_tensor_dims_[0], input_tensor_dims_[1], input_tensor_dims_[2], input_tensor_dims_[3]}, 
                 //         memory::data_type::f32, memory::format_tag::nchw}, eng_);                 
@@ -221,7 +223,7 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER    
                 start = get_time_now();
 #endif                  
-                write_to_dnnl_memory2(tensorBag->ooc_input_host_ptr_, tensorBag->src_mem_);
+                //write_to_dnnl_memory2(tensorBag->ooc_input_host_ptr_, tensorBag->src_mem_);
 #ifdef DEVICE_TIMER    
                 timer_->recordOpTimeTaken(conv_layer_index, calculate_op_time_taken(start), "USM_MEMCPY_INPUT_FROM_HOST_TO_DEVICE"); 
 #endif                  
@@ -229,6 +231,18 @@ namespace dl_infra {
             if(conv_layer_index != 0) {
                 tensorBag->ooc_input_host_ptr_ = tensorBags.at(conv_layer_index-1)->ooc_output_host_ptr_;
                 tensorBag->src_mem_            = tensorBags.at(conv_layer_index-1)->dst_mem_;
+
+                //void * d_input = tensorBags.at(conv_layer_index-1)->dst_mem_.get_data_handle();
+                // tensorBag->src_mem_ = memory(
+                //         {{input_tensor_dims_[0], input_tensor_dims_[1], input_tensor_dims_[2], input_tensor_dims_[3]}, 
+                //         memory::data_type::f32, memory::format_tag::nchw}, *eng_,
+                //         getTensorBagAt(conv_layer_index-1)->dst_mem_.get_data_handle());
+                // tensorBag->src_mem_ = memory(
+                //         getTensorBagAt(conv_layer_index-1)->dst_mem_.get_desc(), *eng_,
+                //         getTensorBagAt(conv_layer_index-1)->dst_mem_.get_data_handle());
+
+                //tensorBag->src_mem_ = memory(conv_pd.dst_desc(), *eng_, tensor_mgr_->getTensorBagAt(index_in_network_-1)->dst_mem_.get_data_handle());
+                //tensor_mgr_->getTensorBagAt(index_in_network_)->dst_mem_ = conv_dst_mem;
             }
 
             Tracer::func_end("TensorMgr::createIOTensors");    
@@ -244,20 +258,25 @@ namespace dl_infra {
             int filter_size = filter_tensor_dims_[0] * filter_tensor_dims_[1] * filter_tensor_dims_[2] * filter_tensor_dims_[3];
             
             tensorBag->ooc_filter_host_ptr_ = (float*)calloc(filter_size, sizeof(float));
+            initImage(tensorBag->ooc_filter_host_ptr_, filter_size);
 
-            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(eng_));
+            auto sycl_queue = dnnl::sycl_interop::get_queue(dnnl::stream(*eng_));
 
 #ifdef DEVICE_TIMER    
             start = get_time_now();
 #endif              
+            void * d_filter = sycl::malloc_device(filter_size*sizeof(float), sycl_queue);
+            sycl_queue.memcpy(d_filter, tensorBag->ooc_filter_host_ptr_, sizeof(float) * filter_size).wait();
             tensorBag->weights_mem_ = memory(
                     {{filter_tensor_dims_[0], filter_tensor_dims_[1], filter_tensor_dims_[2], filter_tensor_dims_[3]}, 
-                    memory::data_type::f32, memory::format_tag::oihw}, eng_);
+                    memory::data_type::f32, memory::format_tag::oihw}, *eng_, d_filter);
+
+            
 #ifdef DEVICE_TIMER    
             timer_->recordOpTimeTaken(conv_layer_index, calculate_op_time_taken(start), "MEMALLOC_WEIGHTS_DEV_MEM");
 #endif              
 
-            initImage(tensorBag->ooc_filter_host_ptr_, filter_size);
+            //initImage(tensorBag->ooc_filter_host_ptr_, filter_size);
             
             //std::cout<< "MEM_SIZE - sizeof(float): " << sizeof(float) << ", filter_size: " << filter_size << ", sizeof(float) * filter_size: " << sizeof(float) * filter_size << "\t\tLayer: " << conv_layer_index << std::endl;
             
@@ -266,7 +285,7 @@ namespace dl_infra {
 #ifdef DEVICE_TIMER                
             start = get_time_now();
 #endif              
-            write_to_dnnl_memory2(tensorBag->ooc_filter_host_ptr_, tensorBag->weights_mem_);
+            //write_to_dnnl_memory2(tensorBag->ooc_filter_host_ptr_, tensorBag->weights_mem_);
 #ifdef DEVICE_TIMER    
             timer_->recordOpTimeTaken(conv_layer_index, calculate_op_time_taken(start), "USM_MEMCPY_WEIGHTS_FROM_HOST_TO_DEVICE");
 #endif             
