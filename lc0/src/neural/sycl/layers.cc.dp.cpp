@@ -1681,7 +1681,7 @@ void allocAndUpload(DataType** gpu_dest, std::vector<float> cpu_src,
     return;
   }
   
-  gpu_dest = (DataType **)sycl::malloc_device(size, sycl_queue);
+  *gpu_dest = sycl::malloc_device<DataType>(cpu_src.size(), sycl_queue);
 
   //sycl_queue.memcpy(scratch, &cpu_src[0], cpu_src.size() * sizeof(float)).wait();
   sycl_queue.memcpy(scratch, &cpu_src[0], cpu_src.size() * sizeof(float)).wait();
