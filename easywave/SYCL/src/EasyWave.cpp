@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
         if (Par.outProgress) {
             if (lastProgress >= Par.outProgress) {
-                /////LOG("Model time: " << utlTimeSplitString(Par.time)); //// << " Elapsed: " << tCumulatedComputeTime.GetTimeAsString(Timer::Units::SECONDS));
+                LOG("Model time: " << utlTimeSplitString(Par.time)); //// << " Elapsed: " << tCumulatedComputeTime.GetTimeAsString(Timer::Units::SECONDS));
                                                                      /////printf( "Model time = %s,   elapsed: %ld msec\n", utlTimeSplitString(Par.time), elapsed );
                                                                      //
 #ifdef SHOW_GRID
@@ -238,8 +238,8 @@ int main(int argc, char **argv)
 
     LOG("Program successfully completed");
     tWallClock.Stop();
-    /////LOG("I/O Time            : " << dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
-    /////LOG("Total Execution Time: " << tWallClock.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    LOG("I/O Time            : " << dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    LOG("Total Execution Time: " << tWallClock.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
     return 0;
 }
 
