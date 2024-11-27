@@ -254,7 +254,7 @@ void tsnecuda::SearchPerplexity(
         // Check if searching is done
         myQueue.parallel_for(
             sycl::nd_range<1>{NUM_WGS2 * WG_SIZE2, WG_SIZE2}, std::move(e4),
-            sycl::reduction(all_found, sycl::plus<int>(), sycl::property::reduction::initialize_to_identity{}),
+            sycl::reduction(all_found, sycl::plus<int>(), {sycl::property::reduction::initialize_to_identity{}}),
             [=](sycl::nd_item<1> item, auto& sum) {
                 int i = item.get_global_id(0);
                 if (i >= num_points) return;
