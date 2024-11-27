@@ -50,7 +50,7 @@ option(USE_SM                  "Build for CUDA architecture"     )
 
 ### SYCL RELATED FLAGS START HERE
 set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O2 -fsycl ")
-set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl ")
+set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl -Xcuda-ptxas --maxrregcount=64 ")
 set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl ")
 
 set(DEF_INTEL_WL_CXX_FLAGS  " ")
