@@ -549,24 +549,22 @@ void SVMTrain(float *mexalpha,float* beta,float*y,float *x ,float _C, float _ker
 
 	printf("_C %f\n", _C);
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> start_ct1;
-    std::chrono::time_point<std::chrono::high_resolution_clock> stop_ct1;
+	std::chrono::time_point<std::chrono::steady_clock> start_clock_init;
+	std::chrono::time_point<std::chrono::steady_clock> start_clock_exec;
+	std::chrono::time_point<std::chrono::steady_clock> stop_clock;
 
-    
-	start_ct1 = std::chrono::high_resolution_clock::now();
+	start_clock_init = std::chrono::steady_clock::now();
 
+	// Creating and recording an event implicitly initialises device queue
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
+	cudaEventRecord(start,0);
 
-	
-    //cudaSetDevice(0);
+	start_clock_exec = std::chrono::steady_clock::now();
 
 	mxArray *mexelapsed =mxCreateNumericMatrix(1, 1,mxSINGLE_CLASS, mxREAL);
 	float * elapsed=(float *)mxGetData(mexelapsed);
-
-
-	cudaEventRecord(start,0);
 
 	int numBlocks=64;
 	dim3 ReduceGrid(numBlocks, 1, 1);
@@ -831,11 +829,12 @@ void SVMTrain(float *mexalpha,float* beta,float*y,float *x ,float _C, float _ker
 	cudaEventElapsedTime(elapsed, start, stop);
 
 
-	stop_ct1 = std::chrono::high_resolution_clock::now();
+	stop_clock = std::chrono::steady_clock::now();
     
-    	//stop.wait_and_throw();
-    	float duration = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
-    	printf("Total run time: %f seconds\n", duration/1000.00); 
+	float duration_compute = std::chrono::duration<float, std::milli>(stop_clock - start_clock_exec).count();
+	float duration_total = std::chrono::duration<float, std::milli>(stop_clock - start_clock_init).count();
+	printf("Compute time: %f seconds\n", duration_compute/1000.00);
+	printf("Total run time: %f seconds\n", duration_total/1000.00);
 
 	printf("Iter:%i\n", iter);
 	printf("M:%i\n", m);
