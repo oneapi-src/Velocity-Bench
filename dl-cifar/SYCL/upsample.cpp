@@ -78,7 +78,8 @@ void Upsampler::upsample(LangHandle *langHandle, float *d_src, float *d_dst, int
                 d_dst[dst_pixCntUntilSegment + relPixIdxInSegment] = d_src[src_imgIdx*src_noOfPixelsPerImg + (pixelIY*srcWidth) + pixelIX];
             }
         });
-    }).wait();
+    });
+    langHandle->getSyclQueue()->wait();
 
     Tracer::func_end("Upsampler::upsample");   
 }
