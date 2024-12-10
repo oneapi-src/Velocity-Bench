@@ -28,6 +28,7 @@
 #include "timing.h"
 #include "tracing.h"
 #include "handle.h"
+#include "SYCL.h"
 
 #include <sycl/sycl.hpp>
 
