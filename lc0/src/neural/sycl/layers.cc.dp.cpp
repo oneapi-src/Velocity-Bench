@@ -70,6 +70,7 @@
 #include <cstring>
 #include <vector>
 
+#include "SYCL.h"
 #include "sycl_common.h"
 #include "kernels.h"
 #include "utils/fp16_utils.h"
@@ -273,7 +274,7 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
         auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -283,7 +284,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
                                  N, C, &alpha, w1_, C, op2, C, &beta, op1,
                                  numFc1Out_));
 
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
         
         
         });
@@ -295,7 +297,7 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);  
@@ -304,7 +306,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
                                  N, C, &alpha, w1_, C, op2, C, &beta, op1,
                                  numFc1Out_);
 
-        hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
         
         
         });
@@ -331,7 +334,7 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
         auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -341,7 +344,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
                                  numFc1Out_, &alpha, w2_, numFc1Out_, op1,
                                  numFc1Out_, &beta, op2, 2 * C));
 
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
         
         });
   });
@@ -351,7 +355,7 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
   sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);  
@@ -360,7 +364,8 @@ void SELayer<float>::Eval(int N, float* output, const float* input,
                                  numFc1Out_, &alpha, w2_, numFc1Out_, op1,
                                  numFc1Out_, &beta, op2, 2 * C);
 
-        hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
         
         });
   });
@@ -419,7 +424,7 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
     q_ct1->submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
         cublasSetStream(handle, cudaStreamHandle);  
@@ -428,7 +433,8 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
                                    N, C, &alpha, w1_, C, op2, C, &beta, op1,
                                    numFc1Out_));
     
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
         
         });
     });
@@ -441,7 +447,7 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
     q_ct1->submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
         cublasSetStream(handle, cudaStreamHandle);   
@@ -451,7 +457,8 @@ void SELayer<sycl::half>::Eval(int N, sycl::half* output, const sycl::half* inpu
                                    numFc1Out_, &alpha, w2_, numFc1Out_, op1,
                                    numFc1Out_, &beta, op2, 2 * C));
   
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
         
         });
     });  
@@ -558,7 +565,7 @@ void FCLayer<float>::LoadWeights(float* cpuWeight, float* cpuBias,
 
 //   q_ct1->submit([&](sycl::handler &cgh) {
         
-//         cgh.host_task([=](sycl::interop_handle ih) {
+//         SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
 //         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(*q_ct1);
 //         cublasSetStream(handle, cudaStreamHandle);    
@@ -568,7 +575,8 @@ void FCLayer<float>::LoadWeights(float* cpuWeight, float* cpuBias,
 //                                  input_tensor, num_inputs, &beta, output_tensor,
 //                                  num_outputs));
 
-//         cudaStreamSynchronize(cudaStreamHandle);
+//         if constexpr (SYCL::NativeCommandNeedsSync)
+//           cudaStreamSynchronize(cudaStreamHandle);
         
 //       });
 //   });  
@@ -595,7 +603,7 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
   cublasHandle_t handle = cuBlasContextManager::getcuBlasHandle_t();
   sycl_queue_.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
         auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -607,7 +615,8 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
                                  input_tensor, num_inputs, &beta, output_tensor,
                                  num_outputs));
 
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
         
       });
   });  
@@ -615,7 +624,7 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
   hipblasHandle_t handle = hipBlasContextManager::gethipBlasHandle_t();
   sycl_queue_.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
         hipblasSetStream(handle, hipStreamHandle);    
@@ -626,7 +635,8 @@ void FCLayer<float>::Eval(int N, float* output_tensor,
                                  input_tensor, num_inputs, &beta, output_tensor,
                                  num_outputs);
 
-        hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
         
       });
   });
@@ -921,7 +931,7 @@ void FusedWinogradConvSELayer<DataType>::LoadSEWeights(float* w1, float* b1,
   
 //   q_ct1->submit([&](sycl::handler &cgh) {
 //         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-//         cgh.host_task([=](sycl::interop_handle ih) {
+//         SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
 //          auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
 //          cublasSetStream(handle, cudaStreamHandle);
@@ -932,6 +942,7 @@ void FusedWinogradConvSELayer<DataType>::LoadSEWeights(float* w1, float* b1,
 //             batchSize, CUDA_R_16F, CUBLAS_GEMM_DEFAULT));
 
           
+//         if constexpr (SYCL::NativeCommandNeedsSync)
 //           cudaStreamSynchronize(cudaStreamHandle);
         
 //         });   
@@ -967,7 +978,7 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
     #ifdef USE_CUBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
           cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
           auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
           cublasSetStream(handle, cudaStreamHandle);    
@@ -978,14 +989,15 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
           batchSize, CUDA_R_32F, CUBLAS_GEMM_DEFAULT));
 
           
-          cudaStreamSynchronize(cudaStreamHandle);
+          if constexpr (SYCL::NativeCommandNeedsSync)
+            cudaStreamSynchronize(cudaStreamHandle);
 
         });
     });
     #elifdef USE_HIPBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
             auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
             hipblasSetStream(handle, hipStreamHandle);   
 
@@ -995,7 +1007,8 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
           batchSize, HIPBLAS_R_32F, HIPBLAS_GEMM_DEFAULT);
 
           
-          hipStreamSynchronize(hipStreamHandle);
+          if constexpr (SYCL::NativeCommandNeedsSync)
+            hipStreamSynchronize(hipStreamHandle);
 
         });
     });  
@@ -1025,7 +1038,7 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
     #ifdef USE_CUBLAS
      sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
             cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
             auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
             cublasSetStream(handle, cudaStreamHandle);  
@@ -1035,14 +1048,15 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
               K * M, &floatZero, Out, N, N * M, batchSize));
 
           
-          cudaStreamSynchronize(cudaStreamHandle);
+          if constexpr (SYCL::NativeCommandNeedsSync)
+            cudaStreamSynchronize(cudaStreamHandle);
 
         });
      });
      #elifdef USE_HIPBLAS
      sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
             auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
             hipblasSetStream(handle, hipStreamHandle); 
 
@@ -1051,7 +1065,8 @@ template <> void BaseLayer<float>::cublasRowMajorMatrixMul(const float* A, const
               K * M, &floatZero, Out, N, N * M, batchSize);
 
           
-          hipStreamSynchronize(hipStreamHandle);
+          if constexpr (SYCL::NativeCommandNeedsSync)
+            hipStreamSynchronize(hipStreamHandle);
 
         });
      });
@@ -1223,7 +1238,7 @@ template <typename DataType> void Conv1Layer<DataType>::LoadWeights(float* pfilt
  
 //   q_ct1->submit([&](sycl::handler &cgh) {
 //         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-//         cgh.host_task([=](sycl::interop_handle ih) {
+//         SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
 //          auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
 //          cublasSetStream(handle, cudaStreamHandle);
@@ -1234,7 +1249,8 @@ template <typename DataType> void Conv1Layer<DataType>::LoadWeights(float* pfilt
 //         N * K, A, CUDA_R_16F, K, 0, &halfZero, Out, CUDA_src/neuralR_16F, N, N * M,
 //         batchSize, CUDA_R_16F, CUBLAS_GEMM_DEFAULT));
 
-//         cudaStreamSynchronize(cudaStreamHandle);
+//         if constexpr (SYCL::NativeCommandNeedsSync)
+//           cudaStreamSynchronize(cudaStreamHandle);
         
 //         });   
 //   });
@@ -1271,7 +1287,7 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
     #ifdef USE_CUBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
           cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
           auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -1283,14 +1299,15 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
           N * K, A, CUDA_R_32F, K, 0, &floatZero, Out, CUDA_R_32F, N, N * M,
           batchSize, CUDA_R_32F, CUBLAS_GEMM_DEFAULT));
 
-         cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
 
         });   
     });
     #elifdef USE_HIPBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
          auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
          hipblasSetStream(handle, hipStreamHandle);
@@ -1301,7 +1318,8 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
           N * K, A, HIPBLAS_R_32F, K, 0, &floatZero, Out, HIPBLAS_R_32F, N, N * M,
           batchSize, HIPBLAS_R_32F, HIPBLAS_GEMM_DEFAULT);
 
-         hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
 
         });   
     });
@@ -1334,7 +1352,7 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
     #ifdef USE_CUBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
           cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
           auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -1345,14 +1363,15 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &floatOne, B, N, N * K, A, K,
         0, &floatZero, Out, N, N * M, batchSize));
 
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
 
         });
     });
     #elifdef USE_HIPBLAS
     sycl_queue_.submit([&](sycl::handler &cgh) {
         //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
   
          auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue_);
          hipblasSetStream(handle, hipStreamHandle);
@@ -1361,7 +1380,8 @@ void Conv1Layer<float>::cublasSpecialMatrixMul(const float* A, const float* B,
         hipblasSgemmStridedBatched(
         handle, HIPBLAS_OP_N, HIPBLAS_OP_N, N, M, K, &floatOne, B, N, N * K, A, K, 0, &floatZero, Out, N, N * M, batchSize);
 
-        hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
 
         });
     });
@@ -1838,7 +1858,7 @@ static void cublasXgemm(transpose_type transa,
 
     q_ct1.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
         cublasSetStream(handle, cudaStreamHandle);    
@@ -1848,7 +1868,8 @@ static void cublasXgemm(transpose_type transa,
           handle, transa, transb, m, n, k, (const sycl::half*)&alpha_h, (const sycl::half*)A,
           lda, (const sycl::half*)B, ldb, (const sycl::half*)&beta_h, (sycl::half*)C, ldc));
 
-         cudaStreamSynchronize(cudaStreamHandle); 
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
 
         });
     });
@@ -1859,7 +1880,7 @@ static void cublasXgemm(transpose_type transa,
 
     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {  
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
         auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -1869,7 +1890,8 @@ static void cublasXgemm(transpose_type transa,
                                    (const float*)A, lda, (const float*)B, ldb,
                                    &beta, (float*)C, ldc));
 
-         cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
 
         });
       });
@@ -1880,14 +1902,15 @@ static void cublasXgemm(transpose_type transa,
 
     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {  
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
 
         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue);
         hipblasSetStream(handle, hipStreamHandle);  
 
         hipblasSgemm(handle, transa, transb, m, n, k, &alpha, (const float*)A, lda, (const float*)B, ldb, &beta, (float*)C, ldc);
 
-         hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
 
         });
       });
@@ -1927,7 +1950,7 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
     
     q_ct1.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
     
         auto cudaStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_cuda>(q_ct1);
         cublasSetStream(handle, cudaStreamHandle);    
@@ -1937,7 +1960,8 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
           B, CUDA_R_16F, ldb, strideB, &beta_h, C, CUDA_R_16F, ldc, strideC,
           batchCount, CUDA_R_16F, CUBLAS_GEMM_DEFAULT));
         
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
 
       });
 
@@ -1947,7 +1971,7 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
     
     sycl_queue.submit([&](sycl::handler &cgh) {
         
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
     
           cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
           auto cudaStreamHandle = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
@@ -1958,7 +1982,8 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
         CUDA_R_32F, ldb, strideB, &beta, C, CUDA_R_32F, ldc, strideC,
         batchCount, CUDA_R_32F, CUBLAS_GEMM_DEFAULT));
   
-        cudaStreamSynchronize(cudaStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          cudaStreamSynchronize(cudaStreamHandle);
   
       });
     });
@@ -1969,7 +1994,7 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
 
      sycl_queue.submit([&](sycl::handler &cgh) {
 
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::EnqueueNativeCommand(cgh, [=](sycl::interop_handle ih) {
     
         auto hipStreamHandle = sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl_queue);
         hipblasSetStream(handle, hipStreamHandle);    
@@ -1979,7 +2004,8 @@ static void cublasXGemmStridedBatched(transpose_type transa, transpose_type tran
         HIPBLAS_R_32F, ldb, strideB, &beta, C, HIPBLAS_R_32F, ldc, strideC,
         batchCount, HIPBLAS_R_32F, HIPBLAS_GEMM_DEFAULT);
   
-        hipStreamSynchronize(hipStreamHandle);
+        if constexpr (SYCL::NativeCommandNeedsSync)
+          hipStreamSynchronize(hipStreamHandle);
   
       });
     });
