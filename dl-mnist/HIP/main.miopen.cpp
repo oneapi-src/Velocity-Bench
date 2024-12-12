@@ -63,6 +63,8 @@ int main(int argc, const char** argv) {
     cout << "=======================================================================" << endl;
     cout << endl;
 
+    Time wallClockCompute = get_time_now();
+
     WorkloadParams workload_params(argc, argv);
     
     
@@ -151,14 +153,20 @@ int main(int argc, const char** argv) {
 #ifdef DEVICE_TIMER           
     cout << "Final time across all networks: " << timer->getTotalOpTime() << " s" << std::endl;
 #endif
+
+    double computeTime = calculate_op_time_taken(wallClockCompute);
+
     delete dlNetworkMgr;
     delete timer;
 
     if (handle) miopenDestroy(handle);
-    
 
-    std::cout << "dl-mnist - total time for whole calculation: " << calculate_op_time_taken(wallClockStart) - dataFileReadTimer->getTotalOpTime()<< " s" << std::endl;    
+    double totalTime = calculate_op_time_taken(wallClockStart);
+    double ioTime = dataFileReadTimer->getTotalOpTime();
 
+    std::cout << "dl-mnist - I/O time: " << ioTime << " s" << std::endl;
+    std::cout << "dl-mnist - compute time: " << computeTime - ioTime << " s" << std::endl;
+    std::cout << "dl-mnist - total time for whole calculation: " << totalTime - ioTime << " s" << std::endl;
 
 };
 
