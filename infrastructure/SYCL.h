@@ -83,6 +83,16 @@ public:
         #endif
     }
 
+    // Extensions ensure native stream sync happens with the sycl::event sync,
+    // wheras plain host_task requires an explicit native sync
+    constexpr static bool NativeCommandNeedsSync{
+        #if defined(SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND) || defined(ACPP_EXT_ENQUEUE_CUSTOM_OPERATION)
+            false
+        #else
+            true
+        #endif
+    };
+
     /// Wrapper using SYCL extensions to submit a native command when available,
     /// or a plain host_task otherwise. Calls queue::wait_and_throw after the
     /// command submission and additionally nativeSync() when plain host_task is
@@ -95,9 +105,8 @@ public:
         q.wait_and_throw();
         // Extensions ensure native stream sync happens with the above
         // queue::wait, but plain host_task requires an explicit native sync
-        #if !defined(SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND) && !defined(ACPP_EXT_ENQUEUE_CUSTOM_OPERATION)
+        if constexpr (SYCL::NativeCommandNeedsSync)
             nativeSync();
-        #endif
     }
 
 #ifdef USE_INFRASTRUCTURE // Move to testbench base??
