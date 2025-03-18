@@ -119,6 +119,28 @@ void test_unordered_map(
         milliseconds, kNumKeyValues / seconds / 1000000.0f);
 }
 
+void process_cmdline_arguments(int argc, char* argv[], bool &verify, uint32_t &seed) {
+    if (argc == 1) {
+        return;
+    } else if (argc == 2) {
+        if (strcmp(argv[1], "--no-verify") == 0) {
+            verify = false;
+            return;
+        }
+    } else if (argc == 4) {
+        if (strcmp(argv[1], "--no-verify") == 0 || strcmp(argv[2], "--seed") == 0) {
+            verify = false;
+            seed = std::stoi(argv[3]);
+            return;
+        } else if (strcmp(argv[1], "--seed") == 0 || strcmp(argv[3], "--no-verify") == 0) {
+            verify = false;
+            seed = std::stoi(argv[2]);
+            return;
+        }
+    }
+    throw std::runtime_error("Wrong number/type of arguments was provided\n");
+}
+
 void test_correctness(
     std::vector<KeyValue>,
     std::vector<KeyValue>,
@@ -132,10 +154,12 @@ int main(int argc, char* argv[])
 
     try {
 
+    bool verify = true;
     // To recreate the same random numbers across runs of the program, set seed to a specific
     // number instead of a number from random_device
     std::random_device rd;
     uint32_t seed = rd();
+    process_cmdline_arguments(argc, argv, verify, seed);
     std::mt19937 rnd(seed);  // mersenne_twister_engine
 
     // printf("Random number generator seed = %u\n", seed);
@@ -253,10 +277,6 @@ PRINT_TIMER("iterate_hashtable  ");
     TIMER_PRINT("hashtable - total time for whole calculation")
     printf("%f million keys/second\n", kNumKeyValues / (time_total / ITERATIONS / 1000.0f) / 1000000.0f);
 
-        bool verify = true;
-        if (argc > 1 && strcmp(argv[1], "--no-verify") == 0) {
-            verify = false;
-        }
         if (verify) {
             test_unordered_map(insert_kvs, delete_kvs);
             test_correctness(insert_kvs, delete_kvs, std::move(kvs));
