@@ -91,6 +91,10 @@ For HIP:
 ./hashtable_hip
 ```
 
+## Coomand line options
+- `--seed seeding_number`: To recreate the same random numbers across runs of the program.
+- `--no-verify`: To disable verification for the results.
+
 # Output
 
 Output gives number of keys per second.
