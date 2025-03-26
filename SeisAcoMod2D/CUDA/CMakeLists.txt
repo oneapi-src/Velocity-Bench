@@ -84,4 +84,4 @@ include_directories(
 
 cuda_add_executable(SeisAcoMod2D ${SOURCES})
 
-target_link_libraries(SeisAcoMod2D -L${MPI_HOME}/lib -L${MPI_CXX_LIBRARIES} -L${CUDA_LIBRARIES})
+target_link_libraries(SeisAcoMod2D -L${MPI_HOME}/lib ${MPI_CXX_LIBRARIES} ${CUDA_LIBRARIES})
