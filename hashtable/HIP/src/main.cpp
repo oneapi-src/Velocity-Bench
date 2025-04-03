@@ -127,6 +127,11 @@ void process_cmdline_arguments(int argc, char* argv[], bool &verify, uint32_t &s
             verify = false;
             return;
         }
+    } else if (argc == 3) {
+        if (strcmp(argv[1], "--seed") == 0) {
+            seed = std::stoi(argv[2]);
+            return;
+        }
     } else if (argc == 4) {
         if (strcmp(argv[1], "--no-verify") == 0 || strcmp(argv[2], "--seed") == 0) {
             verify = false;
