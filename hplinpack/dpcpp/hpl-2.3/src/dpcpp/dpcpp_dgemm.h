@@ -101,21 +101,21 @@ class DeviceManager;
 static DeviceManager *instance[2];
 
 class DeviceManager{
-    cl::sycl::device *m_pDevice; 
-    cl::sycl::queue queues[NUMBER_OF_STREAMS]; 
+    sycl::device *m_pDevice;
+    sycl::queue queues[NUMBER_OF_STREAMS];
     
     DeviceManager(){ 
         try{
-              m_pDevice = new cl::sycl::device(cl::sycl::default_selector());
+              m_pDevice = new sycl::device(sycl::default_selector());
         }catch(...){
             std::cout << "ERROR: failed to create sycl device.\n";
         }   
 
-        auto exception_handler = [] (cl::sycl::exception_list exceptions) {
+        auto exception_handler = [] (sycl::exception_list exceptions) {
             for (std::exception_ptr const& e : exceptions) {
                 try {
                     std::rethrow_exception(e);
-                } catch(cl::sycl::exception const& e) {
+                } catch(sycl::exception const& e) {
                     std::cout << "Caught asynchronous SYCL exception during GEMM:\n"
                         << e.what() << std::endl;
                 }
@@ -124,7 +124,7 @@ class DeviceManager{
         
        
         	
-        queues[0] = cl::sycl::queue(*m_pDevice, exception_handler);   
+        queues[0] = sycl::queue(*m_pDevice, exception_handler);
         //DeviceManager::display_device_properties(*m_pDevice);
         //std::cout << "Done\n"; 
 
@@ -149,9 +149,9 @@ class DeviceManager{
         return instance[mpi_id];
     }
 
-    cl::sycl::device &getDevice(){ return *m_pDevice;}
-    cl::sycl::queue *getQueues(){ return queues;}
+    sycl::device &getDevice(){ return *m_pDevice;}
+    sycl::queue *getQueues(){ return queues;}
 
-    static void display_device_properties(cl::sycl::device const &dev);
+    static void display_device_properties(sycl::device const &dev);
     static void destroyAllInstances() {delete instance[0]; delete instance[1];}
 };
