@@ -16,6 +16,12 @@ SYCL for Nvidia backend - CC=clang CXX=clang++ cmake -DUSE_NVIDIA_BACKEND=TRUE -
 SYCL for AMD backend - CC=clang CXX=clang++ cmake -DUSE_AMD_BACKEND=TRUE -DUSE_AMD_ARCH={flag for hip i.e 90a for MI250} ../ \ 
 make \
 
+
+### In-order queue
+The CMake option `-DIN_ORDER_QUEUE` adds the `in_order` property to the SYCL
+queue, as well as `discard_events` if available. The default value of this
+option is `ON` for NVIDIA and AMD backends, and `OFF` otherwise.
+
 ### Running the workload
 ./svm_sycl a9a a.m
 

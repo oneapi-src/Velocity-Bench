@@ -500,7 +500,8 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
             cudaStreamSynchronize(cuStream);
             //cudaDeviceSynchronize(); 
         });
-    }).wait_and_throw();
+    });
+    q_ct1.wait_and_throw();
 
     cublasDestroy(handle);
 
@@ -520,10 +521,12 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
                       //hipblasSetStream(handle, ih.get_native_queue<sycl::backend::ext_oneapi_hip>());
                       hipblasSgemv (handle, HIPBLAS_OP_N, m, n, &ALPHA, d_x, m, d_Kernel_InterRow, 1, &BETA, d_KernelDotProd, 1); 
                 });
-        }).wait_and_throw();
+        });
+        q_ct1.wait_and_throw();
     
     #else
-        oneapi::mkl::blas::column_major::gemv(q_ct1,  oneapi::mkl::transpose::nontrans, m, n, 1, d_x, m, d_Kernel_InterRow, 1, 0, d_KernelDotProd, 1).wait();
+        oneapi::mkl::blas::column_major::gemv(q_ct1,  oneapi::mkl::transpose::nontrans, m, n, 1, d_x, m, d_Kernel_InterRow, 1, 0, d_KernelDotProd, 1);
+        q_ct1.wait();
     #endif
     
 
@@ -806,12 +809,18 @@ extern "C" void SVMTrain(float *mexalpha, float *beta, float *y, float *x,
     auto max_wgroup_size = selected_device.get_info<sycl::info::device::max_work_group_size>();
     printf("Workgroup Size: %lu\n", max_wgroup_size);
 
-    #if KERNEL_USE_PROFILE
-       auto propList = sycl::property_list{sycl::property::queue::enable_profiling()};
-       sycl::queue q_ct1(context, selected_device, propList);
-    #else
-       sycl::queue q_ct1(context, selected_device);
-   #endif
+    auto propList = sycl::property_list{
+        #if IN_ORDER_QUEUE
+        sycl::property::queue::in_order{},
+        #ifdef SYCL_EXT_ONEAPI_DISCARD_QUEUE_EVENTS
+        sycl::ext::oneapi::property::queue::discard_events{},
+        #endif
+        #endif
+        #if KERNEL_USE_PROFILE
+        sycl::property::queue::enable_profiling{},
+        #endif
+    };
+    sycl::queue q_ct1(context, selected_device, propList);
 
 
  mxArray *mexelapsed =mxCreateNumericMatrix(1, 1,mxSINGLE_CLASS, mxREAL);
@@ -873,7 +882,8 @@ _kernelwidth*=-1;
 
     mxCUDA_SAFE_CALL((d_x = sycl::malloc_device<float>(m * n * sizeof(float), q_ct1), 0));
     mxCUDA_SAFE_CALL((d_xT = sycl::malloc_device<float>(m * n * sizeof(float), q_ct1), 0));
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_x, x, sizeof(float) * n * m).wait(), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_x, x, sizeof(float) * n * m), 0));
+    q_ct1.wait();
  
 
     sycl::range<3> gridtranspose(ceil((float)m / TRANS_BLOCK_DIM),
@@ -937,7 +947,8 @@ _kernelwidth*=-1;
 
     float *xT=new float [n*m];
  
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(xT, d_xT, sizeof(float) * m * n).wait(), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(xT, d_xT, sizeof(float) * m * n), 0));
+    q_ct1.wait();
     (sycl::free(d_xT, q_ct1), 0);
  
 
@@ -949,10 +960,11 @@ _kernelwidth*=-1;
     mxCUDA_SAFE_CALL((d_SelfDotProd = sycl::malloc_device<float>(m * sizeof(float), q_ct1), 0));
     mxCUDA_SAFE_CALL((d_KernelDotProd = sycl::malloc_device<float>(m * sizeof(float), q_ct1), 0));
     
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_y, y, sizeof(float) * m).wait(), 0));
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_alpha, h_alpha, sizeof(float) * m).wait(), 0));
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_F, h_F, sizeof(float) * m).wait(), 0));
-    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_SelfDotProd, SelfDotProd, sizeof(float) * m).wait(), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_y, y, sizeof(float) * m), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_alpha, h_alpha, sizeof(float) * m), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_F, h_F, sizeof(float) * m), 0));
+    mxCUDA_SAFE_CALL((q_ct1.memcpy(d_SelfDotProd, SelfDotProd, sizeof(float) * m), 0));
+    q_ct1.wait();
  
 
     delete [] SelfDotProd;
@@ -1058,13 +1070,14 @@ _kernelwidth*=-1;
             elapsed_kernel_time += (time_end - time_start)/1e9;
         #endif
         
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks).wait(), 0));
-        
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(index_inter, d_index_inter, sizeof(int) * numBlocks).wait(), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(index_inter, d_index_inter, sizeof(int) * numBlocks), 0));
+        q_ct1.wait();
   
         CpuMaxInd(BIValue,BIIndex,value_inter,index_inter,numBlocks);
 
-        q_ct1.memcpy(&Fi, d_F + BIIndex, sizeof(float)).wait();
+        q_ct1.memcpy(&Fi, d_F + BIIndex, sizeof(float));
+        q_ct1.wait();
 
         if (iter == (NUM_ITERATIONS - 1))
         {
@@ -1105,7 +1118,8 @@ _kernelwidth*=-1;
             
             
             
-            mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks).wait(), 0));
+            mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks), 0));
+            q_ct1.wait();
             
             CpuMin(SJValue,value_inter,numBlocks);
 
@@ -1128,7 +1142,8 @@ _kernelwidth*=-1;
 			
             d_KernelI=d_Kernel_Cache+CacheDiffI*m;
    
-            mxCUDA_SAFE_CALL((q_ct1.memcpy(d_KernelInterRow, xT + BIIndex * n, n * sizeof(float)).wait(), 0));
+            mxCUDA_SAFE_CALL((q_ct1.memcpy(d_KernelInterRow, xT + BIIndex * n, n * sizeof(float)), 0));
+            q_ct1.wait();
 
             RBFKernel(d_KernelI,BIIndex,d_x,d_KernelInterRow,d_KernelDotProd,d_SelfDotProd, m,n,nbrCtas,threadsPerCta, q_ct1, elapsed_kernel_time);
             
@@ -1181,23 +1196,19 @@ _kernelwidth*=-1;
 
 
 
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks).wait(), 0));
-  
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(index_inter, d_index_inter, sizeof(int) * numBlocks).wait(), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(value_inter, d_value_inter, sizeof(float) * numBlocks), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(index_inter, d_index_inter, sizeof(int) * numBlocks), 0));
+        q_ct1.wait();
         
         CpuMaxInd(BJSecondOrderValue,BJIndex,value_inter,index_inter,numBlocks);
 
-        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&Kij, d_KernelI + BJIndex, sizeof(float)).wait(), 0));
-
-        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&alphai, d_alpha + BIIndex, sizeof(float)).wait(), 0));
-        
-        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&alphaj, d_alpha + BJIndex, sizeof(float)).wait(), 0));
-
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(&yi, d_y + BIIndex, sizeof(float)).wait(), 0));
-  
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(&yj, d_y + BJIndex, sizeof(float)).wait(), 0));
-  
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(&Fj, d_F + BJIndex, sizeof(float)).wait(), 0));
+        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&Kij, d_KernelI + BJIndex, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&alphai, d_alpha + BIIndex, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL( (q_ct1.memcpy(&alphaj, d_alpha + BJIndex, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(&yi, d_y + BIIndex, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(&yj, d_y + BJIndex, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(&Fj, d_F + BJIndex, sizeof(float)), 0));
+        q_ct1.wait();
 
         oldalphai=alphai;
 		
@@ -1206,9 +1217,9 @@ _kernelwidth*=-1;
 
 		UpdateAlphas(alphai,alphaj,Kij,yi,yj,Fi,Fj,_C,h_taumin);
 
-        mxCUDA_SAFE_CALL((q_ct1.memcpy(d_alpha + BIIndex, &alphai, sizeof(float)).wait(), 0));
-  
-        mxCUDA_SAFE_CALL( (q_ct1.memcpy(d_alpha + BJIndex, &alphaj, sizeof(float)).wait(), 0));
+        mxCUDA_SAFE_CALL((q_ct1.memcpy(d_alpha + BIIndex, &alphai, sizeof(float)), 0));
+        mxCUDA_SAFE_CALL( (q_ct1.memcpy(d_alpha + BJIndex, &alphaj, sizeof(float)), 0));
+        q_ct1.wait();
 
         float deltaalphai = alphai - oldalphai;
 		float deltaalphaj = alphaj - oldalphaj;
@@ -1221,7 +1232,8 @@ _kernelwidth*=-1;
 			d_KernelJ=d_Kernel_Cache+CacheDiffJ*m;
    
 
-            mxCUDA_SAFE_CALL( (q_ct1.memcpy(d_KernelInterRow, xT + BJIndex * n, n * sizeof(float)).wait(), 0));
+            mxCUDA_SAFE_CALL( (q_ct1.memcpy(d_KernelInterRow, xT + BJIndex * n, n * sizeof(float)), 0));
+            q_ct1.wait();
           
             RBFKernel(d_KernelJ,BJIndex,d_x,d_KernelInterRow,d_KernelDotProd, d_SelfDotProd, m,n,nbrCtas,threadsPerCta, q_ct1, elapsed_kernel_time);
 			*(KernelCacheIndices.begin()+CacheDiffJ)=BJIndex;
@@ -1278,7 +1290,8 @@ _kernelwidth*=-1;
 		//cout << "Average Kernel Time per run: " << (elapsed/NUM_OF_RUNS) << " sec.\n";
 	#endif
     
-    q_ct1.memcpy(mexalpha, d_alpha, m * sizeof(float)).wait();
+    q_ct1.memcpy(mexalpha, d_alpha, m * sizeof(float));
+    q_ct1.wait();
 
     stop_ct1 = std::chrono::high_resolution_clock::now();
     
