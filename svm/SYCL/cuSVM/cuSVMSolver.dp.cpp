@@ -68,7 +68,7 @@ SPDX-License-Identifier: MIT License
 #include <vector>
 #include <chrono>
 #include "CommandLineParser.h"
-//#include "SYCL.h"
+#include "SYCL.h"
 
 #ifdef USE_CUBLAS
 #include <sycl/backend/cuda.hpp>
@@ -487,21 +487,16 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
     #if USE_CUBLAS
         cublasHandle_t handle;
         CHECK_ERROR(cublasCreate(&handle)); 
+        CUstream cuStream;
 
-    q_ct1.submit([&](sycl::handler &cgh) {
-        //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-        cgh.host_task([=](sycl::interop_handle ih) {
+        SYCL::ExecNativeCommand(q_ct1, [=, &cuStream](sycl::interop_handle ih) {
             cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
-            auto cuStream = ih.get_native_queue<sycl::backend::ext_oneapi_cuda>();
+            cuStream = ih.template get_native_queue<sycl::backend::ext_oneapi_cuda>();
             cublasSetStream(handle, cuStream);
             constexpr float ALPHA = 1.0f;
             constexpr float BETA = 0.0f;
             CHECK_ERROR(cublasSgemv (handle, CUBLAS_OP_N, m, n, &ALPHA, d_x, m, d_Kernel_InterRow, 1, &BETA, d_KernelDotProd, 1));
-            cudaStreamSynchronize(cuStream);
-            //cudaDeviceSynchronize(); 
-        });
-    });
-    q_ct1.wait_and_throw();
+        }, [&cuStream]{cudaStreamSynchronize(cuStream);});
 
     cublasDestroy(handle);
 
@@ -514,15 +509,11 @@ float *d_SelfDotProd,const int& m,const int& n,const int &nbrCtas,const int& thr
   	hipblasCreate(&handle); 
 
          
-  	q_ct1.submit([&](sycl::handler &h){
-
-                h.host_task([=](sycl::interop_handle ih) {
+    SYCL::ExecNativeCommand(q_ct1, [&cuStream, =](sycl::interop_handle ih) {
                       //hipCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_hip>());
                       //hipblasSetStream(handle, ih.get_native_queue<sycl::backend::ext_oneapi_hip>());
                       hipblasSgemv (handle, HIPBLAS_OP_N, m, n, &ALPHA, d_x, m, d_Kernel_InterRow, 1, &BETA, d_KernelDotProd, 1); 
-                });
-        });
-        q_ct1.wait_and_throw();
+    }, []{});
     
     #else
         oneapi::mkl::blas::column_major::gemv(q_ct1,  oneapi::mkl::transpose::nontrans, m, n, 1, d_x, m, d_Kernel_InterRow, 1, 0, d_KernelDotProd, 1);

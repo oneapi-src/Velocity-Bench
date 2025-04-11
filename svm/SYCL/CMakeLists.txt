@@ -84,7 +84,8 @@ set(SOURCES
 include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/libSVM
                     ${CMAKE_SOURCE_DIR}/cuSVM
-                    ${CMAKE_SOURCE_DIR}/infrastructure)
+                    ${CMAKE_SOURCE_DIR}/infrastructure
+                    ${CMAKE_SOURCE_DIR}/../../infrastructure)
 
 
 # Use either default or user defined CXX flags
