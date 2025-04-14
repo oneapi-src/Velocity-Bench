@@ -36,7 +36,7 @@ using namespace operations::engines;
 
 int main(int argc, char *argv[]) {
     try {
-        std::chrono::steady_clock::time_point const tpStart(std::chrono::steady_clock::now());
+        std::chrono::steady_clock::time_point const tpStartTotal(std::chrono::steady_clock::now());
         string parameter_file = WORKLOAD_PATH "/computation_parameters.json";
         string configuration_file = WORKLOAD_PATH "/engine_configuration.json";
         string callback_file = WORKLOAD_PATH "/callback_configuration.json";
@@ -67,7 +67,9 @@ int main(int argc, char *argv[]) {
         auto *agent = g->GenerateAgent();
         agent->AssignEngine(engine);
         agent->AssignArgs(argc, argv);
+        std::chrono::steady_clock::time_point const tpStartCompute(std::chrono::steady_clock::now());
         MigrationData *md = agent->Execute();
+        std::chrono::steady_clock::time_point const tpEndCompute(std::chrono::steady_clock::now());
 
         std::cout << "Finished executing" << std::endl;
         auto *writer = g->GenerateWriter();
@@ -82,8 +84,9 @@ int main(int argc, char *argv[]) {
         delete cp;
         delete engine;
 
-        std::chrono::steady_clock::time_point const tpEnd(std::chrono::steady_clock::now());
-        std::cout << "Total Execution Time: " << std::chrono::duration<double>( (tpEnd - tpStart) - (tpIOWriteEnd - tpIOWriteStart)).count() - dIOReadTime << " s" << std::endl;
+        std::chrono::steady_clock::time_point const tpEndTotal(std::chrono::steady_clock::now());
+        std::cout << "Compute time: " << std::chrono::duration<double>(tpEndCompute - tpStartCompute).count() - dIOReadTime << " s" << std::endl;
+        std::cout << "Total Execution Time: " << std::chrono::duration<double>( (tpEndTotal - tpStartTotal) - (tpIOWriteEnd - tpIOWriteStart)).count() - dIOReadTime << " s" << std::endl;
     } catch (std::exception const &e) {
         std::cerr << "Exception caught: " << e.what() << std::endl;
         exit(EXIT_FAILURE);
