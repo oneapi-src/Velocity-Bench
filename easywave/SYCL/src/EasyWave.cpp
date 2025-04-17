@@ -83,8 +83,8 @@ int commandLineHelp(void);
 
 int main(int argc, char **argv)
 {
-    Timer tWallClock("WallClock");
-    tWallClock.Start();
+    Timer tWallClockTotal("WallClockTotal");
+    tWallClockTotal.Start();
     LOG("Starting SYCL main program"); ///. Process ID: " << Utility::GetProcessID());
 
     std::vector<std::string> eWaveFiles(Utility::FileHandler::GetFilesFromDirectory(Utility::FileHandler::GetCurrentDirectory()));
@@ -147,6 +147,9 @@ int main(int argc, char **argv)
 
     if (Par.outPropagation)
         ewStart2DOutput();
+
+    Timer tWallClockCompute("WallClockCompute");
+    tWallClockCompute.Start();
 
     Node.copyToGPU();
 
@@ -237,9 +240,11 @@ int main(int argc, char **argv)
     delete gNode;
 
     LOG("Program successfully completed");
-    tWallClock.Stop();
-    LOG("I/O Time            : " << dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
-    LOG("Total Execution Time: " << tWallClock.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    tWallClockTotal.Stop();
+    tWallClockCompute.Stop();
+    LOG("I/O Time            : " << dAccumulatedIOWriteTime + dAccumulateIOReadTime << " s");
+    LOG("Compute Time        : " << tWallClockCompute.GetTime() << " s");
+    LOG("Total Execution Time: " << tWallClockTotal.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
     return 0;
 }
 
