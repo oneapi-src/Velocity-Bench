@@ -23,11 +23,12 @@
 #define CPP_MODULE "MAIN"
 #define ITERATIONS 10
 
-#define TIMER_START() time_start = std::chrono::steady_clock::now();
-#define TIMER_END()                                                                         \
-    time_end = std::chrono::steady_clock::now();                                            \
-    time_total  = std::chrono::duration<double, std::milli>(time_end - time_start).count();
-#define TIMER_PRINT(name) std::cout << name <<": " << time_total / 1e3 << " s\n";
+#define TIMER_START(name) time_start_ ## name = std::chrono::steady_clock::now();
+#define TIMER_END(name)                                         \
+    time_ ## name = std::chrono::duration<double, std::milli>(  \
+        std::chrono::steady_clock::now() - time_start_ ## name  \
+    ).count();
+#define TIMER_PRINT(name, msg) std::cout << msg <<": " << time_ ## name / 1e3 << " s\n";
 
 #ifdef DEBUG_TIME
 #define START_TIMER() start_time = std::chrono::steady_clock::now();
@@ -153,9 +154,10 @@ void test_correctness(
 
 int main(int argc, char* argv[])
 {
-    std::chrono::steady_clock::time_point time_start;
-    std::chrono::steady_clock::time_point time_end;
+    std::chrono::steady_clock::time_point time_start_total;
+    std::chrono::steady_clock::time_point time_start_compute;
     double time_total = 0.0;
+    double time_compute = 0.0;
 
     try {
 
@@ -190,7 +192,7 @@ STOP_TIMER();
 PRINT_TIMER("generate_hashtable ");
 #endif
 
-        TIMER_START()
+        TIMER_START(total)
 
 #ifdef DEBUG_TIME
 START_TIMER();
@@ -201,6 +203,8 @@ START_TIMER();
 STOP_TIMER();
 PRINT_TIMER("init               ");
 #endif
+
+    TIMER_START(compute)
 
     std::vector<KeyValue> kvs;
     for (int iter = 0; iter < ITERATIONS; iter++){
@@ -278,9 +282,11 @@ PRINT_TIMER("iterate_hashtable  ");
 
         destroy_hashtable(pHashTable);
     }
-    TIMER_END()
-    TIMER_PRINT("hashtable - total time for whole calculation")
-    printf("%f million keys/second\n", kNumKeyValues / (time_total / ITERATIONS / 1000.0f) / 1000000.0f);
+    TIMER_END(compute)
+    TIMER_END(total)
+    TIMER_PRINT(compute, "hashtable - compute time")
+    TIMER_PRINT(total, "hashtable - total time for whole calculation")
+    printf("%f million keys/second\n", kNumKeyValues / (time_compute / ITERATIONS / 1000.0f) / 1000000.0f);
 
         if (verify) {
             test_unordered_map(insert_kvs, delete_kvs);
