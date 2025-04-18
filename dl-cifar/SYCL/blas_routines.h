@@ -30,6 +30,7 @@
 #include <string>
 #include "tracing.h"
 #include "handle.h"
+#include "SYCL.h"
 
 #include <sycl/sycl.hpp>
 
@@ -64,9 +65,7 @@ class BlasRoutines {
         static rocblas_status_ doAxpy(LangHandle *langHandle, int noOfElems, float *scalingFactor, float *d_x, float *d_y) {
             Tracer::func_begin("MklRoutines::doAxpy");    
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -77,10 +76,7 @@ class BlasRoutines {
                     assertBlasInvar(rocblas_saxpy(*(langHandle->getRocblasHandle()), noOfElems, scalingFactor, d_x, 1, d_y, 1));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDlApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
 
             Tracer::func_end("MklRoutines::doAxpy");  
@@ -90,9 +86,7 @@ class BlasRoutines {
         static rocblas_status_ scaleVector(LangHandle *langHandle, int noOfElements, float *scalingFactor, float* vector, int inc) {
             Tracer::func_begin("MklRoutines::scaleVector");    
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -102,10 +96,7 @@ class BlasRoutines {
                     assertBlasInvar(rocblas_sscal(*(langHandle->getRocblasHandle()), noOfElements, scalingFactor, vector, inc));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDlApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
             //cublasStatus_t status = cublasSscal(*(langHandle->getCublasHandle()), noOfElements, scalingFactor, vector, inc);
             Tracer::func_end("MklRoutines::scaleVector");  
@@ -118,9 +109,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
                     
@@ -131,10 +120,7 @@ class BlasRoutines {
                                                 n, m, k, &alpha_, B, n, A, k, &beta_, C, n));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDlApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, n, A, k, &beta_, C, n);
@@ -150,9 +136,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -163,10 +147,7 @@ class BlasRoutines {
                                                 n, m, k, &alpha_, B, n, A, m, &beta_, C, n));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_T,
             //                                        n, m, k, &alpha_, B, n, A, m, &beta_, C, n);
@@ -181,9 +162,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -194,10 +173,7 @@ class BlasRoutines {
                                                 n, m, k, &alpha_, B, k, A, k, &beta_, C, n));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_T, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, k, A, k, &beta_, C, n);
@@ -213,9 +189,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     //cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     //cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -226,10 +200,7 @@ class BlasRoutines {
                                                 n, m, k, &alpha_, B, n, A, k, &beta_, C, n, batchCount));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(hipDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(hipDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemmBatched(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, n, A, k, &beta_, C, n, batchCount);
@@ -243,9 +214,7 @@ class BlasRoutines {
 
             //cublasStatus_t status = cublasSaxpy(*(langHandle->getCublasHandle()), noOfElems, scalingFactor, d_x, 1, d_y, 1);
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -256,10 +225,7 @@ class BlasRoutines {
                     assertBlasInvar(cublasSaxpy(*(langHandle->getCublasHandle()), noOfElems, scalingFactor, d_x, 1, d_y, INCX));
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
 
             Tracer::func_end("MklRoutines::doAxpy");  
@@ -269,9 +235,7 @@ class BlasRoutines {
         static cublasStatus_t scaleVector(LangHandle *langHandle, int noOfElements, float *scalingFactor, float* vector, int inc) {
             Tracer::func_begin("MklRoutines::scaleVector");    
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -281,10 +245,7 @@ class BlasRoutines {
                     cublasSscal(*(langHandle->getCublasHandle()), noOfElements, scalingFactor, vector, inc);
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
             //cublasStatus_t status = cublasSscal(*(langHandle->getCublasHandle()), noOfElements, scalingFactor, vector, inc);
             Tracer::func_end("MklRoutines::scaleVector");  
@@ -297,9 +258,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
                     
@@ -310,10 +269,7 @@ class BlasRoutines {
                                                     n, m, k, &alpha_, B, n, A, k, &beta_, C, n);
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, n, A, k, &beta_, C, n);
@@ -329,9 +285,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -342,10 +296,7 @@ class BlasRoutines {
                                                     n, m, k, &alpha_, B, n, A, m, &beta_, C, n);
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_T,
             //                                        n, m, k, &alpha_, B, n, A, m, &beta_, C, n);
@@ -360,9 +311,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -373,10 +322,7 @@ class BlasRoutines {
                                                     n, m, k, &alpha_, B, k, A, k, &beta_, C, n);
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemm(*(langHandle->getCublasHandle()), CUBLAS_OP_T, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, k, A, k, &beta_, C, n);
@@ -392,9 +338,7 @@ class BlasRoutines {
             float alpha_ = 1.0;
             float beta_ = 0.0;
 
-            langHandle->getSyclQueue()->submit([&](sycl::handler &cgh) {
-                //auto d_A = b_A.get_access<sycl::access::mode::read_write>(cgh);
-                cgh.host_task([=](sycl::interop_handle ih) {
+            SYCL::ExecNativeCommand(*langHandle->getSyclQueue(), [=](sycl::interop_handle ih) {
                     cuCtxSetCurrent(ih.get_native_context<sycl::backend::ext_oneapi_cuda>());
                     cublasSetStream(*(langHandle->getCublasHandle()), ih.get_native_queue<sycl::backend::ext_oneapi_cuda>());
 
@@ -405,10 +349,7 @@ class BlasRoutines {
                                                     n, m, k, &alpha_, B, n, A, k, &beta_, C, n, batchCount);
                     //cublasDestroy(handle);
                     //cudaStreamSynchronize(cudaStreamHandle);
-                    assertDevApiInvar(cudaDeviceSynchronize());
-                });
-            });
-            langHandle->getSyclQueue()->wait_and_throw();
+                }, []{assertDevApiInvar(cudaDeviceSynchronize())});
 
             //cublasStatus_t status =  cublasSgemmBatched(*(langHandle->getCublasHandle()), CUBLAS_OP_N, CUBLAS_OP_N,
             //                                        n, m, k, &alpha_, B, n, A, k, &beta_, C, n, batchCount);

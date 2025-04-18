@@ -96,6 +96,11 @@ CC=clang CXX=clang++ **cmake** -DUSE_AMD_BACKEND=YES -DUSE_AMD_ARCH=gfx90a .. \
 **ONEAPI_DEVICE_SELECTOR=hip:gpu ./dl-cifar_sycl** 
 
 ---------------------------------------------------------------------------------------------------------
+## In-order queue
+The CMake option `-DIN_ORDER_QUEUE` adds the `in_order` property to the SYCL
+queue, as well as `discard_events` if available. The default value of this
+option is `ON` for NVIDIA and AMD backends, and `OFF` otherwise.
+
 ## Workload logging/tracing
 
 **DL-CIFAR provides function tracing:**
