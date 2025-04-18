@@ -181,10 +181,10 @@ namespace dl_cifar::common {
                     ImageProcessor::resize(langHandle, d_cifarRawImgs, d_resizedImgs, selectedVitParams.batchSize, 
                                             VitConfigs::cifarNoOfChannels, VitConfigs::cifarImgWidth, VitConfigs::cifarImgWidth, 
                                             selectedVitParams.imgWidth, selectedVitParams.imgHeight); 
-                    ImageProcessor::resizeInHost(langHandle, h_cifarRawImgs, h_resizedImgs, selectedVitParams.batchSize, 
-                                            VitConfigs::cifarNoOfChannels, VitConfigs::cifarImgWidth, VitConfigs::cifarImgWidth, 
-                                            selectedVitParams.imgWidth, selectedVitParams.imgHeight); 
-                    langHandle->memCpyH2D(d_resizedImgs, h_resizedImgs, sizeof(float) * resizedSize, true);
+                    // ImageProcessor::resizeInHost(langHandle, h_cifarRawImgs, h_resizedImgs, selectedVitParams.batchSize,
+                    //                         VitConfigs::cifarNoOfChannels, VitConfigs::cifarImgWidth, VitConfigs::cifarImgWidth,
+                    //                         selectedVitParams.imgWidth, selectedVitParams.imgHeight);
+                    // langHandle->memCpyH2D(d_resizedImgs, h_resizedImgs, sizeof(float) * resizedSize, true);
 
 
 

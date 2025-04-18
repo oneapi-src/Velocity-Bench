@@ -33,7 +33,7 @@ option(DEVICE_TIMER            "Build using Device Timer" OFF)
 
 
 set(DEF_WL_CXX_FLAGS           " -D__HIP_PLATFORM_AMD__ ")
-set(DEF_GENERAL_CXX_FLAGS      " -Wall -O3 -Wextra ")
+set(DEF_GENERAL_CXX_FLAGS      " -Wall -O3 -ffast-math -Wextra ")
 set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
 
 

@@ -34,7 +34,7 @@ option(USE_SM                  "Specifies which streaming multiprocessor archite
 option(DEVICE_TIMER            "Build using Device Timer" OFF)
 
 set(DEF_WL_CXX_FLAGS           " ")
-set(DEF_GENERAL_CXX_FLAGS      " -O2 ")
+set(DEF_GENERAL_CXX_FLAGS      " -O3 -ffast-math ")
 set(DEF_COMBINED_CXX_FLAGS     "${DEF_GENERAL_CXX_FLAGS} ${DEF_WL_CXX_FLAGS}")
 
 set(SOURCES 

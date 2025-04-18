@@ -102,10 +102,32 @@ namespace dl_cifar::common {
             static void initImage(float* image, int imageSize) {
                 Tracer::func_begin("ImageProcessor::initImage");
 
-                unsigned seed = 123456789;
-                for (int index = 0; index < imageSize; index++) {
+                struct ImageCache {
+                    size_t size{0};
+                    float* image{nullptr};
+                    ~ImageCache() {
+                        if (image==nullptr) {return;}
+                        delete[] image;
+                        image = nullptr;
+                    }
+                };
+                static ImageCache cache{};
+                static unsigned seed = 123456789;
+
+                // grow the cache allocation to image size
+                if (imageSize > cache.size) {
+                    float* newCacheImage = new float[imageSize];
+                    std::memcpy(newCacheImage, cache.image, cache.size*sizeof(float));
+                    delete[] cache.image;
+                    cache.image = newCacheImage;
+                }
+
+                // fill image with cached data and compute the remaining part
+                std::memcpy(image, cache.image, std::min(cache.size,static_cast<size_t>(imageSize))*sizeof(float));
+                for (; cache.size < imageSize; ++cache.size) {
                     seed         = (1103515245 * seed + 12345) & 0xffffffff;
-                    image[index] = float(seed) * 2.3283064e-10;  // 2^-32
+                    cache.image[cache.size-1] = float(seed) * 2.3283064e-10;  // 2^-32
+                    image[cache.size-1] = cache.image[cache.size-1];
                 }
                 Tracer::func_end("ImageProcessor::initImage");
 
