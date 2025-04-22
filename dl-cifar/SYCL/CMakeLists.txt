@@ -31,11 +31,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)        # Use -std, not -gnu
 
 option(GPU_AOT                 "Build AOT for Intel GPU"      OFF)
 option(USE_NVIDIA_BACKEND      "Build for NVIDIA backend"     OFF)
-option(USE_AMDHIP_BACKEND      "Build for AMD HIP backend"    OFF)
+option(USE_AMD_BACKEND         "Build for AMD backend"        OFF)
 option(DEVICE_TIMER            "Build using Device Timer" OFF)
 
 set(IN_ORDER_QUEUE_DEFAULT OFF)
-if (${USE_NVIDIA_BACKEND} OR ${USE_AMDHIP_BACKEND})
+if (${USE_NVIDIA_BACKEND} OR ${USE_AMD_BACKEND})
     set(IN_ORDER_QUEUE_DEFAULT ON)
 endif()
 option(IN_ORDER_QUEUE "Use in-order SYCL queue" ${IN_ORDER_QUEUE_DEFAULT})
