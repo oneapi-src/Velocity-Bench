@@ -104,11 +104,18 @@ class LangHandle {
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_CONTEXT");
 #endif    
-            //auto propList = sycl::property_list{sycl::property::queue::in_order()};    
+            auto propList = sycl::property_list{
+                #ifdef IN_ORDER_QUEUE
+                sycl::property::queue::in_order{},
+                #ifdef SYCL_EXT_ONEAPI_DISCARD_QUEUE_EVENTS
+                sycl::ext::oneapi::property::queue::discard_events{}
+                #endif
+                #endif
+            };
 #ifdef DEVICE_TIMER  
             start = get_time_now();  
 #endif     
-            sycl_queue_ = new sycl::queue(*context_, *dht_);
+            sycl_queue_ = new sycl::queue(*context_, *dht_, propList);
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_QUEUE");
 #endif    
@@ -246,11 +253,18 @@ class LangHandle {
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_CONTEXT");
 #endif    
-            //auto propList = sycl::property_list{sycl::property::queue::in_order()};    
+            auto propList = sycl::property_list{
+                #ifdef IN_ORDER_QUEUE
+                sycl::property::queue::in_order{},
+                #ifdef SYCL_EXT_ONEAPI_DISCARD_QUEUE_EVENTS
+                sycl::ext::oneapi::property::queue::discard_events{}
+                #endif
+                #endif
+            };
 #ifdef DEVICE_TIMER  
             start = get_time_now();  
 #endif     
-            sycl_queue_ = new sycl::queue(*context_, *dht_);
+            sycl_queue_ = new sycl::queue(*context_, *dht_, propList);
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_QUEUE");
 #endif    
@@ -343,11 +357,18 @@ class LangHandle {
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_CONTEXT");
 #endif    
-            //auto propList = sycl::property_list{sycl::property::queue::in_order()};    
+            auto propList = sycl::property_list{
+                #ifdef IN_ORDER_QUEUE
+                sycl::property::queue::in_order{},
+                #ifdef SYCL_EXT_ONEAPI_DISCARD_QUEUE_EVENTS
+                sycl::ext::oneapi::property::queue::discard_events{}
+                #endif
+                #endif
+            };
 #ifdef DEVICE_TIMER  
             start = get_time_now();  
 #endif     
-            sycl_queue_ = new sycl::queue(*context_, *dht_);
+            sycl_queue_ = new sycl::queue(*context_, *dht_, propList);
 #ifdef DEVICE_TIMER  
             timer->recordOpTimeTaken(1000, calculate_op_time_taken(start), "CREATE_SYCL_QUEUE");
 #endif    

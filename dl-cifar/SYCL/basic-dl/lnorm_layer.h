@@ -88,7 +88,8 @@ class LNormLayerController {
             float *d_input, *d_d_input;
             d_input   = (float *)sycl::malloc_device(inputSize*sizeof(float),   sycl_queue);
             d_d_input   = (float *)sycl::malloc_device(inputSize*sizeof(float),   sycl_queue);
-            sycl_queue.memcpy(d_input, h_input, sizeof(float) * inputSize).wait();
+            sycl_queue.memcpy(d_input, h_input, sizeof(float) * inputSize);
+            sycl_queue.wait();
 
             int outputSize   = inputSize;
             float *h_d_output   = (float*)calloc(outputSize,   sizeof(float));  
@@ -104,12 +105,14 @@ class LNormLayerController {
             for(int i=0; i<iterCount; i++) {
                 // for some reason the compiler is not liking calls to ImageProcessor::initImage() from here
                 //ImageProcessor::initImage(h_input, inputSize);
-                sycl_queue.memcpy(d_input, h_input, sizeof(float) * inputSize).wait();
+                sycl_queue.memcpy(d_input, h_input, sizeof(float) * inputSize);
+                sycl_queue.wait();
                 lNormLayer->doFw();
 
                 // for some reason the compiler is not liking calls to ImageProcessor::initImage() from here
                 //ImageProcessor::initImage(h_d_output, outputSize);
-                sycl_queue.memcpy(d_d_output, h_d_output, sizeof(float) * outputSize).wait();
+                sycl_queue.memcpy(d_d_output, h_d_output, sizeof(float) * outputSize);
+                sycl_queue.wait();
                 lNormLayer->doBw();
             }
 

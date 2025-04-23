@@ -31,8 +31,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)        # Use -std, not -gnu
 
 option(GPU_AOT                 "Build AOT for Intel GPU"      OFF)
 option(USE_NVIDIA_BACKEND      "Build for NVIDIA backend"     OFF)
-option(USE_AMDHIP_BACKEND      "Build for AMD HIP backend"    OFF)
+option(USE_AMD_BACKEND         "Build for AMD backend"        OFF)
 option(DEVICE_TIMER            "Build using Device Timer" OFF)
+
+set(IN_ORDER_QUEUE_DEFAULT OFF)
+if (${USE_NVIDIA_BACKEND} OR ${USE_AMD_BACKEND})
+    set(IN_ORDER_QUEUE_DEFAULT ON)
+endif()
+option(IN_ORDER_QUEUE "Use in-order SYCL queue" ${IN_ORDER_QUEUE_DEFAULT})
 
 set(DEF_INTEL_WL_CXX_FLAGS  " -DMKL_ILP64 ")
 set(DEF_NVIDIA_WL_CXX_FLAGS " -DUSE_CUBLAS ")
@@ -42,6 +48,11 @@ set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O3 -fsycl -ffast-math ")
 set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl -ffast-math ")
 set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl -ffast-math ")
 
+if (${IN_ORDER_QUEUE})
+    string(APPEND DEF_INTEL_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+    string(APPEND DEF_NVIDIA_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+    string(APPEND DEF_AMD_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+endif()
 
 # -DCMAKE_CXX_FLAGS=" -blah -blah " overrides the default flags (BOTH general and WL specific)
 # -DOVERRIDE_GENERAL_CXX_FLAGS=" -blah -blah " overrides the general flags only (and not the workload specific flags)

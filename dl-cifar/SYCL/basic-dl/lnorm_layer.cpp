@@ -80,7 +80,8 @@ void LNormLayer::doFw() {
                 }
             }
         });
-    }).wait();
+    });
+    langHandle_->getSyclQueue()->wait();
 
 
     Tracer::func_end("LNormLayer::doFw");   
@@ -157,7 +158,8 @@ void LNormLayer::doBw() {
 
             }
         });
-    }).wait();    
+    });
+    langHandle_->getSyclQueue()->wait();
 
     Tracer::func_end("LNormLayer::doBw");   
 }

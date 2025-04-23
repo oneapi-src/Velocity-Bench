@@ -70,6 +70,36 @@ public:
 
     static std::chrono::steady_clock::duration ConvertKernelTimeToDuration(sycl::event const &Event);
 
+    /// Wrapper using SYCL extensions to submit a native command when available,
+    /// or a plain host_task otherwise
+    template<typename F>
+    inline static void EnqueueNativeCommand(sycl::handler& cgh, F&& command) {
+        #if defined SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND
+            cgh.ext_codeplay_enqueue_native_command(std::forward<F>(command));
+        #elif defined ACPP_EXT_ENQUEUE_CUSTOM_OPERATION
+            cgh.AdaptiveCpp_enqueue_custom_operation(std::forward<F>(command));
+        #else
+            cgh.host_task(std::forward<F>(command));
+        #endif
+    }
+
+    /// Wrapper using SYCL extensions to submit a native command when available,
+    /// or a plain host_task otherwise. Calls queue::wait_and_throw after the
+    /// command submission and additionally nativeSync() when plain host_task is
+    /// used (extensions do not require extra synchronisation).
+    template<typename F, typename S>
+    inline static void ExecNativeCommand(sycl::queue& q, F&& command, S&& nativeSync) {
+        q.submit([&](sycl::handler &cgh) {
+            EnqueueNativeCommand(cgh, std::forward<F>(command));
+        });
+        q.wait_and_throw();
+        // Extensions ensure native stream sync happens with the above
+        // queue::wait, but plain host_task requires an explicit native sync
+        #if !defined(SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND) && !defined(ACPP_EXT_ENQUEUE_CUSTOM_OPERATION)
+            nativeSync();
+        #endif
+    }
+
 #ifdef USE_INFRASTRUCTURE // Move to testbench base??
     static void RegisterDeviceSettings (VelocityBench::CommandLineParser &cmdLineParser);
 #endif
