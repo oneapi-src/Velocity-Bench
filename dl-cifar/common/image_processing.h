@@ -28,6 +28,7 @@
 #include <cassert>
 #include <vector>
 #include <exception>
+#include <memory>
 #include "tracing.h"
 #include"handle.h"
 #include "upsample.h"
@@ -102,32 +103,24 @@ namespace dl_cifar::common {
             static void initImage(float* image, int imageSize) {
                 Tracer::func_begin("ImageProcessor::initImage");
 
-                struct ImageCache {
-                    size_t size{0};
-                    float* image{nullptr};
-                    ~ImageCache() {
-                        if (image==nullptr) {return;}
-                        delete[] image;
-                        image = nullptr;
-                    }
-                };
-                static ImageCache cache{};
+                static size_t cacheSize{0};
+                static std::unique_ptr<float[]> cacheImage{};
                 static unsigned seed = 123456789;
 
                 // grow the cache allocation to image size
-                if (imageSize > cache.size) {
-                    float* newCacheImage = new float[imageSize];
-                    std::memcpy(newCacheImage, cache.image, cache.size*sizeof(float));
-                    delete[] cache.image;
-                    cache.image = newCacheImage;
+                if (imageSize > cacheSize) {
+                    auto newCacheImage = std::make_unique<float[]>(imageSize);
+                    std::memcpy(newCacheImage.get(), cacheImage.get(), cacheSize*sizeof(float));
+                    cacheImage.reset(newCacheImage.release());
                 }
 
                 // fill image with cached data and compute the remaining part
-                std::memcpy(image, cache.image, std::min(cache.size,static_cast<size_t>(imageSize))*sizeof(float));
-                for (; cache.size < imageSize; ++cache.size) {
+                std::memcpy(image, cacheImage.get(), std::min(cacheSize,static_cast<size_t>(imageSize))*sizeof(float));
+                while (cacheSize < imageSize) {
+                    ++cacheSize;
                     seed         = (1103515245 * seed + 12345) & 0xffffffff;
-                    cache.image[cache.size-1] = float(seed) * 2.3283064e-10;  // 2^-32
-                    image[cache.size-1] = cache.image[cache.size-1];
+                    cacheImage[cacheSize-1] = float(seed) * 2.3283064e-10;  // 2^-32
+                    image[cacheSize-1] = cacheImage[cacheSize-1];
                 }
                 Tracer::func_end("ImageProcessor::initImage");
 
