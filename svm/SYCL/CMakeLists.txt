@@ -61,6 +61,12 @@ option(GPU_AOT                 "Build AOT for Intel GPU"      OFF)
 option(USE_NVIDIA_BACKEND      "Build for NVIDIA backend"     OFF)
 option(USE_AMD_BACKEND      "Build for AMD HIP backend"    OFF)
 
+set(IN_ORDER_QUEUE_DEFAULT OFF)
+if (${USE_NVIDIA_BACKEND} OR ${USE_AMD_BACKEND})
+    set(IN_ORDER_QUEUE_DEFAULT ON)
+endif()
+option(IN_ORDER_QUEUE "Use in-order SYCL queue" ${IN_ORDER_QUEUE_DEFAULT})
+
 set(SOURCES
     cuSVM/cuSVMSolver.dp.cpp
     cuSVM/cuSVM_wrapper.cpp
@@ -78,7 +84,8 @@ set(SOURCES
 include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/libSVM
                     ${CMAKE_SOURCE_DIR}/cuSVM
-                    ${CMAKE_SOURCE_DIR}/infrastructure)
+                    ${CMAKE_SOURCE_DIR}/infrastructure
+                    ${CMAKE_SOURCE_DIR}/../../infrastructure)
 
 
 # Use either default or user defined CXX flags
@@ -90,6 +97,12 @@ set(DEF_AMD_WL_CXX_FLAGS    " -DUSE_HIPBLAS ")
 set(DEF_INTEL_GENERAL_CXX_FLAGS  " -O3 -fsycl ")
 set(DEF_NVIDIA_GENERAL_CXX_FLAGS " -O3 -fsycl ")
 set(DEF_AMD_GENERAL_CXX_FLAGS    " -O3 -fsycl -D__HIP_PLATFORM_AMD__ ")
+
+if (${IN_ORDER_QUEUE})
+    string(APPEND DEF_INTEL_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+    string(APPEND DEF_NVIDIA_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+    string(APPEND DEF_AMD_GENERAL_CXX_FLAGS " -DIN_ORDER_QUEUE ")
+endif()
 
 if(NOT "${CMAKE_CXX_FLAGS}" STREQUAL "" AND NOT "${OVERRIDE_GENERAL_CXX_FLAGS}" STREQUAL "")
     message(FATAL_ERROR "Both  CMAKE_CXX_FLAGS and OVERRIDE_GENERAL_CXX_FLAGS cannot be passed in together")
