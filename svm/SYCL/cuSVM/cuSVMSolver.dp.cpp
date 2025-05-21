@@ -794,17 +794,15 @@ extern "C" void SVMTrain(float *mexalpha, float *beta, float *y, float *x,
     sycl::event queue_event;
 
     sycl::event start, stop;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_ct1;
-    std::chrono::time_point<std::chrono::high_resolution_clock> stop_ct1;
+    std::chrono::time_point<std::chrono::steady_clock> start_clock_init;
+    std::chrono::time_point<std::chrono::steady_clock> start_clock_exec;
+    std::chrono::time_point<std::chrono::steady_clock> stop_clock;
 
-    start_ct1 = std::chrono::high_resolution_clock::now();
+    start_clock_init = std::chrono::steady_clock::now();
 
-
+    // Select device and initialise the queue
     sycl::device selected_device = sycl::device(sycl::default_selector());
     sycl::context context({selected_device});
-
-    auto max_wgroup_size = selected_device.get_info<sycl::info::device::max_work_group_size>();
-    printf("Workgroup Size: %lu\n", max_wgroup_size);
 
     #if KERNEL_USE_PROFILE
        auto propList = sycl::property_list{sycl::property::queue::enable_profiling()};
@@ -813,6 +811,7 @@ extern "C" void SVMTrain(float *mexalpha, float *beta, float *y, float *x,
        sycl::queue q_ct1(context, selected_device);
    #endif
 
+    start_clock_exec = std::chrono::steady_clock::now();
 
  mxArray *mexelapsed =mxCreateNumericMatrix(1, 1,mxSINGLE_CLASS, mxREAL);
  float * elapsed=(float *)mxGetData(mexelapsed);
@@ -1280,12 +1279,12 @@ _kernelwidth*=-1;
     
     q_ct1.memcpy(mexalpha, d_alpha, m * sizeof(float)).wait();
 
-    stop_ct1 = std::chrono::high_resolution_clock::now();
+    stop_clock = std::chrono::steady_clock::now();
     
-    //stop.wait_and_throw();
-    float duration = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
-    printf("Total run time: %f seconds\n", duration/1000.00); 
-
+    float duration_compute = std::chrono::duration<float, std::milli>(stop_clock - start_clock_exec).count();
+    float duration_total = std::chrono::duration<float, std::milli>(stop_clock - start_clock_init).count();
+    printf("Compute time: %f seconds\n", duration_compute/1000.00);
+    printf("Total run time: %f seconds\n", duration_total/1000.00);
 
     printf("Iter:%i\n", iter);
 	printf("M:%i\n", m);
