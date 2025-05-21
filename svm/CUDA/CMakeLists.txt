@@ -101,7 +101,7 @@ endif()
 
 set(CUDA_SEPARABLE_COMPILATION ON)
 message(STATUS "CXX  Compilation flags to: ${CMAKE_CXX_FLAGS}")
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/a9a
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../data/a9a
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 include_directories(${CUDA_TOOLKIT_INCLUDE})

@@ -152,7 +152,7 @@ endif()
 
 # Output the compiler flags that were constructed for visual inspection
 message(STATUS "Compilation flags set to: ${CMAKE_CXX_FLAGS}")
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/a9a
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../data/a9a
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 #add_executable(${PROJECT_NAME} ${SOURCES})
