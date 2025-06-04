@@ -245,6 +245,7 @@ int main(int argc, char **argv)
     LOG("I/O Time            : " << dAccumulatedIOWriteTime + dAccumulateIOReadTime << " s");
     LOG("Compute Time        : " << tWallClockCompute.GetTime() << " s");
     LOG("Total Execution Time: " << tWallClockTotal.GetTime() - dAccumulatedIOWriteTime - dAccumulateIOReadTime << " s");
+    LOG("Program completed");
     return 0;
 }
 
