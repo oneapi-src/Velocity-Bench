@@ -88,7 +88,8 @@ has_backends = false
 #add_project_arguments('-fsycl-targets=spir64_gen -Xs -device 0x0bd5 -revision_id 3' ', language : 'cpp') 
 #endif
 
-
+# Common includes
+includes +=  include_directories('../infrastructure')
 
 # Third party files.
 includes += include_directories('third_party', is_system: true)
