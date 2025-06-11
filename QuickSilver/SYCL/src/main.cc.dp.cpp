@@ -112,7 +112,7 @@ void copyParticleVault_d2h(ParticleVault* P, ParticleVault_d* P_d)
     int _particlesCap = P->_particles._capacity;
     sycl_device_queue.memcpy(&(P->_particles._size), &(P_d->_particlesSize), sizeof(int));
     MC_Base_Particle* _particles_add;
-    sycl_device_queue.memcpy(&_particles_add, &(P_d->_particles), sizeof(MC_Base_Particle*));
+    sycl_device_queue.memcpy(&_particles_add, &(P_d->_particles), sizeof(MC_Base_Particle*)).wait();
     sycl_device_queue.memcpy(P->_particles._data, _particles_add, _particlesCap*sizeof(MC_Base_Particle)).wait();
     sycl::free(_particles_add, sycl_device_queue);
 }
