@@ -5,6 +5,7 @@ Patches to this project are no longer accepted by Intel.
 If you have an ongoing need to use this project, are interested in independently developing it, or would like to maintain patches for the community, please create your own fork of the project.  
 
 contact: webadmin@linux.intel.com
+
 Many computational scenarios for data-parallel applications exist today. They use and target:
 
 •	Varying heterogeneous platforms leveraging CPUs, GPUs, FPGAs, ASICs, and other specialized accelerators.
